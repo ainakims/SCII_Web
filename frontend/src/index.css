@@ -1,0 +1,71 @@
+@import "tailwindcss";
+
+@theme {
+  --color-sea-blue: #002E6D;
+  --color-sky-blue: #009BDE;
+  --color-horz-blue: #9ACAEB;
+  --color-aqua-green: #54BBAB;
+  --color-sunray-yellow: #FFC627;
+  --color-sunset-orange: #EE7523;
+  /* --font-sans: "Inter", "Roboto", sans-serif; */
+  --font-sans: "Montserrat", sans-serif;
+}
+
+@layer base {
+  /* body {
+    background-color: var(--color-clinical-gray);
+    color: var(--color-clinical-darkGray);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  } */
+
+  body
+  { 
+    font-family: 'Montserrat', sans-serif;
+    background-color: #f3f4f6;
+    color: var(--color-sea-blue);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    /* overflow-y: scroll; */
+  }
+}
+
+/**/
+
+/* .body-component svg path.selected,
+.body-component svg path.active.selected,
+.body-component svg path.selected.active {
+  fill: #002E6D !important;
+} */
+
+.body-component svg path[style] {
+  fill: #002E6D !important;
+}
+
+.body-component svg path {
+  fill: #c7cfda;
+}
+
+.body-component svg path:hover {
+  fill: #efd4d0 !important;
+}
+
+/* .body-component svg path.active {
+  fill: #002E6D !important;
+} */
+
+.swal2-validation-message {
+  margin: 0 28px;
+  margin-top: 10px;
+  background-color: #fef2f2 !important;
+  /* background-color: transparent !important; */
+  color: #fb2c36;
+  border-color: white;
+  font-weight: 600;
+  font-size: 14px;;
+}
+
+.swal2-validation-message::before {
+  content: none !important;
+}
