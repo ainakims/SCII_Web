@@ -111,10 +111,10 @@ export function AgendaController(db: DB) {
         { Nombre: "@Inicio",     Valor: "" },
         { Nombre: "@Final",      Valor: "" },
         { Nombre: "@IdAgenda",   Valor: idAgenda },
-        { Nombre: "@IdConsulta", Valor: consultaId },
+        { Nombre: "@IdConsulta", Valor: consultaId || '' },
         { Nombre: "@Estado",     Valor: esActivo },
       ];
-
+      
       const sql = "[TNGCORE].[dbo].[SCII_Control_Agenda]";
       const result = await executeConnection<boolean>(sql, TipoConsulta.ProcedimientoAlmacenado, params);
     
