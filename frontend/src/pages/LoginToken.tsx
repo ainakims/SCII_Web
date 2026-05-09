@@ -341,8 +341,6 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center relative overflow-hidden font-sans p-4">
       <CrossBackground />
-
-      {/* Contenedor del Login (Ahora con z-10 para estar por encima) */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -356,7 +354,7 @@ const Login: React.FC = () => {
             backgroundPosition: "center",
           }}
         >
-          <div className="absolute inset-0 bg-sea-blue from-clinical-blue to-clinical-darkBlue opacity-90"></div>
+          <div className="absolute inset-0 bg-sea-blue opacity-90"></div>
           <div className="relative z-10 text-center text-white">
             <img
               src={hospital}
@@ -375,7 +373,6 @@ const Login: React.FC = () => {
           </div>
         </div>
 
-        {/* COLUMNA DERECHA: FORMULARIO (Contenedor existente) */}
         <div className="w-full md:w-1/2 flex flex-col bg-white">
           <div className="relative flex-1 overflow-hidden">
             <div
@@ -386,6 +383,7 @@ const Login: React.FC = () => {
               <div className="w-full shrink-0 px-8 md:px-12 py-8 flex flex-col justify-center">
                 <div className="text-center mb-8">
                   <h2 className="text-2xl font-black text-primary uppercase tracking-tight mb-2">
+                  {/* <h2 className="text-2xl font-black bg-linear-to-r from-sea-blue to-sky-blue bg-clip-text text-transparent uppercase tracking-tight mb-2"> */}
                     Bienvenido
                   </h2>
                   <p className="text-sm text-gray-700 font-semibold mt-2">
@@ -404,7 +402,7 @@ const Login: React.FC = () => {
                         type="text"
                         value={usuario}
                         onChange={(e) => setUsuario(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 text-xs font-semibold text-slate-400 bg-gray-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-clinical-blue/20 focus:border-clinical-blue transition-all"
+                        className="w-full pl-10 pr-4 py-3 text-xs font-semibold text-slate-400 bg-gray-50 border border-gray-100 shadow-md rounded-md focus:outline-none focus:ring-2 focus:ring-clinical-blue/20 focus:border-clinical-blue transition-all"
                         // className="peer w-full px-6 pt-7 pb-3 bg-slate-50/50 border border-slate-100 rounded-xl text-xs font-semibold text-slate-400 outline-none focus:border-secondary focus:bg-white transition-all shadow-sm"
                         placeholder="Cuenta"
                       />
@@ -421,7 +419,7 @@ const Login: React.FC = () => {
                         type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-10 pr-12 py-3 text-xs font-semibold text-slate-400 bg-gray-50 border border-slate-200 rounded-md focus:outline-none focus:ring-2 focus:ring-clinical-blue/20 focus:border-clinical-blue transition-all"
+                        className="w-full pl-10 pr-12 py-3 text-xs font-semibold text-slate-400 bg-gray-50 border border-gray-100 shadow-md rounded-md focus:outline-none focus:ring-2 focus:ring-clinical-blue/20 focus:border-clinical-blue transition-all"
                         placeholder="Clave de Acceso"
                       />
                       <button
@@ -448,7 +446,7 @@ const Login: React.FC = () => {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full flex items-center justify-center font-bold uppercase tracking-[0.2em] mt-6 py-3.5 px-4 bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white rounded-md shadow-lg shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-80 disabled:transform-none"
+                    className="w-full flex items-center justify-center font-bold uppercase tracking-[0.2em] mt-6 py-3.5 px-4 bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white rounded-md shadow-lg shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-80 disabled:transform-none focus:outline-none"
                   >
                     Siguiente{" "}
                     {isLoading ? (
@@ -465,10 +463,7 @@ const Login: React.FC = () => {
               </div>
               
 
-              {/* PANEL 2: Verificación MFA (step 2) o Configuración MFA (step 3) */}
               <div className="w-full shrink-0 px-8 md:px-12 pt-24.5 pb-8 flex flex-col justify-start">
-
-                {/* Contenido step 2: ingreso de código */}
                 {panelContent === 2 && (
                   <>
                     <div className="mb-15">
@@ -521,7 +516,7 @@ const Login: React.FC = () => {
                       <button
                         type="submit"
                         disabled={isLoading || mfaDigits.join("").length < 6}
-                        className="w-full flex items-center justify-center font-bold uppercase tracking-[0.2em] py-3.5 px-4 bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white rounded-md shadow-lg shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-80 disabled:transform-none focus:outline-none"
+                        className="w-full flex items-center justify-center font-bold uppercase tracking-[0.2em] py-3.5 px-4 bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white rounded-md shadow-lg shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-80 disabled:transform-none focus:outline-none"
                       >
                         Continuar{" "}
                         {isLoading
@@ -566,9 +561,9 @@ const Login: React.FC = () => {
                               <img
                                   src={microsoft}
                                   draggable={false}
-                                  className="w-15 h-auto mx-auto group-hover:-translate-y-1 border border-gray-200 px-2 py-2.5 shadow-lg drop-shadow-2xl transition-all rounded-lg mb-2"
+                                  className="w-15 h-auto mx-auto group-hover:-translate-y-1 border border-gray-100 px-2 py-2.5 shadow-lg drop-shadow-2xl transition-all rounded-lg mb-2"
                                 />
-                              <p className="text-[9px] text-gray-400 text-center group-hover:text-sea-blue cursor-pointer">
+                              <p className="text-[9px] text-gray-400 font-semibold text-center group-hover:text-sea-blue cursor-pointer">
                                 Microsoft Authenticator
                               </p>
                             </a>
@@ -576,9 +571,9 @@ const Login: React.FC = () => {
                               <img
                                 src={google}
                                 draggable={false}
-                                className="w-15 h-auto mx-auto group-hover:-translate-y-1 border border-gray-200 px-2 py-3 shadow-lg drop-shadow-2xl transition-all rounded-lg mb-2"
+                                className="w-15 h-auto mx-auto group-hover:-translate-y-1 border border-gray-100 px-2 py-3 shadow-lg drop-shadow-2xl transition-all rounded-lg mb-2"
                               />
-                              <p className="text-[9px] text-gray-400 text-center group-hover:text-sea-blue cursor-pointer">
+                              <p className="text-[9px] text-gray-400 font-semibold text-center group-hover:text-sea-blue cursor-pointer">
                                 Google Authenticator
                               </p>
                             </a>
@@ -593,7 +588,7 @@ const Login: React.FC = () => {
                             src={mfaData.object.authenticationBarCodeImage}
                             // src={`data:image/png;base64,${mfaData.object.authenticationBarCodeImage}`}
                             draggable={false}
-                            className="border border-gray-200 shadow-lg drop-shadow-2xl rounded-lg"
+                            className="border border-gray-100 shadow-lg drop-shadow-2xl rounded-lg"
                           />
                           <p className="text-xs text-center text-gray-700 mt-2">
                             Clave secreta:
@@ -619,14 +614,14 @@ const Login: React.FC = () => {
                                 value={setupCode}
                                 onChange={(e) => { if (e.target.value.length > 6) return; setSetupCode(e.target.value); if (setupError) setSetupError(""); }}
                                 // className={`w-full p-2 pl-9 text-center border ${setupError ? "border-red-200 bg-red-50 text-red-500" : "border-gray-300 bg-white"} rounded-tl-lg rounded-bl-lg text-sm font-bold tracking-[18px] focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
-                                className={`w-full p-2 pl-8 px-0 text-center border ${ setupError ? "border-red-200 bg-red-50 text-red-500" : "border-gray-300 bg-white" } rounded-tl-lg rounded-bl-lg text-sm font-bold tracking-[1em] focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                                className={`w-full p-2 pl-8 px-0 text-center border shadow-md ${ setupError ? "border-red-200 bg-red-50 text-red-500" : "border-gray-100 bg-white" } rounded-tl-lg rounded-bl-lg text-sm font-bold tracking-[1em] focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                                 placeholder="••••••"
                               />
                               <button
                                 title="Enviar"
                                 disabled={setupCode.length < 6 || isValidatingMfa}
                                 onClick={() => { fetchValidarMFA(); }}
-                                className={`flex items-center justify-center bg-sea-blue hover:bg-sea-blue/80 disabled:opacity-50 text-white px-4 py-[4px] rounded-tr-lg rounded-br-lg text-lg font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap`}
+                                className={`flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-50 text-white px-4 py-[4px] rounded-tr-lg rounded-br-lg text-lg font-semibold shadow-lg shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap`}
                               >
                                 <i className={`mdi ${isValidatingMfa ? "mdi-loading animate-spin" : "mdi-share"}`}></i>
                               </button>

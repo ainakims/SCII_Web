@@ -331,7 +331,7 @@ const Configuracion: React.FC = () => {
   };
 
   const handleDelete = async (estado: number | null, id: number | null, nombre: string) => {
-    const result = await confirmModal(`${estado == 0 ? "alert-outline" : "help-circle-outline"}`, `${estado == 0 ? "¿Eliminar usuario?" : "¿Reactivar usuario?"}`, `Si confirma esta acción se ${estado == 0 ? "dará de baja" : "reactivará"} el usuario </br><b>${nombre}</b>.`);
+    const result = await confirmModal(`${estado == 0 ? "alert-circle-outline" : "help-circle-outline"}`, `${estado == 0 ? "¿Eliminar usuario?" : "¿Reactivar usuario?"}`, `Si confirma esta acción se ${estado == 0 ? "dará de baja" : "reactivará"} el usuario </br><b>${nombre}</b>.`);
 
     if (!result.isConfirmed) {
       return;
@@ -357,7 +357,7 @@ const Configuracion: React.FC = () => {
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">${title}</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">${message}</p>`,
       iconHtml: `
-      <i class="mdi mdi-check-decagram-outline success-icon"></i>
+      <i class="mdi mdi-check-circle-outline success-icon"></i>
       <style>
         .success-icon {
           color: #54BBAB;
@@ -376,7 +376,7 @@ const Configuracion: React.FC = () => {
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
       customClass:
       { 
-        confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+        confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
       },
     })
   };
@@ -406,7 +406,7 @@ const Configuracion: React.FC = () => {
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
       customClass:
       {
-        confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+        confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
       },
     });
   };
@@ -434,10 +434,9 @@ const Configuracion: React.FC = () => {
         if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" });
       },
       buttonsStyling: false,
-      showCloseButton: true,
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
       customClass: {
-        confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+        confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
       },
     })
   };
@@ -456,7 +455,7 @@ const Configuracion: React.FC = () => {
         // style={{ marginRight: isPanelOpen ? 420 : 0 }}
       >
         <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4">
             <div>
               <h1 className="text-2xl font-bold text-sea-blue flex items-center">
                 Gestión de Perfiles
@@ -467,7 +466,7 @@ const Configuracion: React.FC = () => {
             </div>
             <button
               onClick={openPanelNew}
-              className="w-35 flex items-center justify-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
             >
               <i className="mdi mdi-plus-thick mr-2"></i>
               Nuevo
@@ -477,14 +476,14 @@ const Configuracion: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-125"
+            className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col min-h-125"
           >
-            <div className="flex items-center justify-between px-6 py-[21px] border-b border-gray-100">
+            <div className="flex items-center justify-between px-6 py-[21px] bg-linear-to-r from-white to-gray-100 rounded-t-xl">
               <div className="relative w-92">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
-                  className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none transition-colors border-gray-300 focus:border-clinical-blue focus:ring-1`}
+                  className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none transition-colors border-gray-100 shadow-md focus:border-clinical-blue focus:ring-1`}
                   placeholder="Buscar por nombre o cuenta"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -495,12 +494,12 @@ const Configuracion: React.FC = () => {
               </span>
             </div>
 
-            <div className="space-y-4 p-6">
-              <div className="border border-gray-300 rounded-lg h-[493px] flex flex-col">
+            <div className="space-y-4">
+              <div className="rounded-lg h-[541px] flex flex-col">
                 <div className="flex-1 overflow-y-auto">
                   <table className="table-fixed w-full text-xs">
-                    <thead className="sticky top-0 bg-gray-50 z-10">
-                      <tr className="bg-gray-50 border-b border-gray-300">
+                    <thead className="sticky top-0 z-10">
+                      <tr className="bg-linear-to-r from-white to-gray-100">
                         <th className="px-3 py-2 pl-6 text-left font-medium text-gray-700 mb-1 w-[108px]">
                           Estado
                         </th>
@@ -546,12 +545,12 @@ const Configuracion: React.FC = () => {
                           >
                             <td className="px-3 pl-6 text-left font-medium text-gray-700 mb-1">
                               {medico.Activo == "true" ?
-                                <span className="flex items-center bg-aqua-green/10 border border-aqua-green/20 text-aqua-green text-xs font-semibold px-1.5 py-0.5 rounded-md">
+                                <span className="flex items-center bg-linear-to-r from-sky-blue/20 to-gray-100 text-sea-blue text-xs font-semibold px-1.5 py-0.5 rounded-md">
                                   <i className="mdi mdi-shield-check mr-2"></i>
                                   Activo
                                 </span>
                                 :
-                                <span className="flex items-center bg-red-50 border border-red-100 text-red-600 text-xs font-semibold px-1.5 py-0.5 rounded-md">
+                                <span className="flex items-center bg-linear-to-r from-red-200 to-gray-100 text-red-700 text-xs font-semibold px-1.5 py-0.5 rounded-md">
                                   <i className="mdi mdi-cancel mr-2"></i>
                                   Baja
                                 </span>
@@ -590,7 +589,7 @@ const Configuracion: React.FC = () => {
                               <div className="flex items-center gap-1">
                                 <button
                                   onClick={() => openPanelEdit(medico)}
-                                  className="w-9 h-9 text-gray-400 hover:text-sky-blue hover:bg-sky-blue/10 rounded-xl transition-all cursor-pointer"
+                                  className="w-9 h-9 text-gray-400 hover:text-sky-blue bg-linear-to-b hover:from-sky-blue/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
                                   title="Editar"
                                 >
                                   <i className="mdi mdi-account-edit-outline text-lg"></i>
@@ -598,14 +597,14 @@ const Configuracion: React.FC = () => {
                                 {medico.Activo == "true" ?
                                   <button
                                     onClick={() => handleDelete(0, medico.ID, medico.Nombre)}
-                                    className="w-9 h-9 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
+                                    className="w-9 h-9 text-gray-400 hover:text-red-500 bg-linear-to-b hover:from-red-100 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
                                     title="Dar de Baja"
                                   >
                                     <i className="mdi mdi-trash-can-outline text-lg"></i>
                                   </button>
                                 :
                                   <button
-                                    className="w-9 h-9 text-gray-400 hover:text-aqua-green hover:bg-aqua-green/10 rounded-xl transition-all cursor-pointer"
+                                    className="w-9 h-9 text-gray-400 hover:text-aqua-green bg-linear-to-b hover:from-aqua-green/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
                                     onClick={() => handleDelete(1, medico.ID, medico.Nombre)}
                                     title="Reactivar"
                                   >
@@ -642,22 +641,22 @@ const Configuracion: React.FC = () => {
       >
         <div className="flex h-full w-full">
           <div className="flex flex-col border-r border-gray-100 h-full shrink-0" style={{ width: 420 }}>
-            <div className="px-3 py-4 border-b border-gray-100 shrink-0">
+            <div className="px-3 py-4 shrink-0 bg-linear-to-r from-white to-gray-100">
               <div className="flex items-center gap-2 justify-between">
                 <div className="flex items-center gap-2">
                   <button 
                     title="Regresar"
-                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-sea-blue hover:bg-gray-100 rounded-xl transition-all cursor-pointer"
+                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-sea-blue bg-linear-to-b hover:from-sea-blue/10 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
                     onClick={() => setIsPanelOpen(false)}
                   >
                     <i className={`mdi mdi-chevron-right text-2xl`}></i>
                   </button>
                   <div>
-                    <h2 className="text-sm font-bold text-gray-800 upp flex items-center">
+                    <p className="text-xs font-bold text-gray-800 truncate uppercase max-w-[320px]">
                       <i className="mdi mdi-account-multiple-plus mr-2"></i>
                       {formData.ID ? "Editar Usuario" : "Nuevo Usuario"}
-                    </h2>
-                    <p className="text-xs text-gray-500 truncate font-medium">
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
                       {formData.ID ? "Edición de cuenta de usuario" : "Registro de cuenta de usuario."}
                     </p>
                   </div>
@@ -690,7 +689,7 @@ const Configuracion: React.FC = () => {
                           placeholder="5 dígitos"
                           disabled={loadingMat || formData.ID !== null}
                           maxLength={5}
-                          className={`w-full border rounded-lg px-3 py-2 pr-8 text-xs outline-none ${loadingMat || formData.ID !== null ? "bg-gray-50 text-gray-800 border-gray-300" : matriculaDuplicada || matriculaNoEncontrada ? "border-red-200 bg-red-50 text-red-500" : "border-gray-300 focus:border-clinical-blue focus:ring-1 focus:ring-clinical-blue"}`}
+                          className={`w-full border rounded-lg px-3 py-2 pr-8 text-xs shadow-md outline-none ${loadingMat || formData.ID !== null ? "bg-gray-50 text-gray-800 border-gray-100" : matriculaDuplicada || matriculaNoEncontrada ? "border-red-200 bg-red-50 text-red-500" : "border-gray-100 focus:border-clinical-blue focus:ring-1 focus:ring-clinical-blue"}`}
                         />
                         {loadingMat && (
                           <div className="absolute right-2 top-1/2 -translate-y-1/2">
@@ -726,7 +725,7 @@ const Configuracion: React.FC = () => {
                           const selectedOption = e.target.options[e.target.selectedIndex];
                           setFormData((prev) => ({  ...prev,  Id_Rol: parseInt(e.target.value),  Rol: selectedOption.text  }));
                         }}
-                        className="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
+                        className="w-full border border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
                       >
                         <option value="" disabled hidden>Seleccionar</option>
                         <option value="1">Admin</option>
@@ -747,7 +746,7 @@ const Configuracion: React.FC = () => {
                         value={formData.Usuario}
                         onChange={handleInputChange}
                         placeholder="Cuenta"
-                        className={`w-full border rounded-lg px-3 py-2 pr-10 text-xs outline-none ${cuentaNoEncontrada ? "border-red-200 bg-red-50 text-red-500" : "border-gray-300 bg-gray-50 text-gray-800"}`}
+                        className={`w-full border rounded-lg px-3 py-2 pr-10 text-xs shadow-md outline-none ${cuentaNoEncontrada ? "border-red-200 bg-red-50 text-red-500" : "border-gray-100 bg-gray-50 text-gray-800"}`}
                         disabled
                       />
                     </div>
@@ -763,7 +762,7 @@ const Configuracion: React.FC = () => {
                           value={formData.Correo}
                           onChange={handleInputChange}
                           disabled={!emailEdit}
-                          className={`w-full border rounded-lg px-3 py-2 text-xs outline-none ${cuentaNoEncontrada ? "border-red-200 bg-red-50 text-red-500" : !emailEdit ? "border-gray-300 bg-gray-50 text-gray-800" : "border-gray-300 focus:ring-1 focus:ring-sea-blue"}`}
+                          className={`w-full border rounded-lg px-3 py-2 text-xs shadow-md outline-none ${cuentaNoEncontrada ? "border-red-200 bg-red-50 text-red-500" : !emailEdit ? "border-gray-100 bg-gray-50 text-gray-800" : "border-gray-100 focus:ring-1 focus:ring-sea-blue"}`}
                           // pr-10
                           placeholder="Correo"
                         />
@@ -788,7 +787,7 @@ const Configuracion: React.FC = () => {
                       name="Nombre"
                       value={formData.Nombre}
                       disabled={true}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs bg-gray-50 text-gray-800"
+                      className="w-full border border-gray-100 shadow-md rounded-lg px-3 py-2 text-xs bg-gray-50 text-gray-800"
                       placeholder="Nombre(s)"
                     />
                   </div>
@@ -801,7 +800,7 @@ const Configuracion: React.FC = () => {
                       name="Puesto"
                       value={formData.Puesto}
                       disabled={true}
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs bg-gray-50 text-gray-800"
+                      className="w-full border border-gray-100 shadow-md rounded-lg px-3 py-2 text-xs bg-gray-50 text-gray-800"
                       placeholder="Puesto"
                     />
                   </div>
@@ -821,7 +820,7 @@ const Configuracion: React.FC = () => {
                           value={formData.Especialidad}
                           onChange={handleInputChange}
                           placeholder="Especialidad"
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
+                          className="w-full border border-gray-100 shadow-md rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
                         />
                       </div>
                       <div>
@@ -832,7 +831,7 @@ const Configuracion: React.FC = () => {
                           value={formData.Cedula}
                           onChange={handleInputChange}
                           placeholder="Número de cédula"
-                          className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
+                          className="w-full border border-gray-100 shadow-md rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
                         />
                       </div>
                     </div>
@@ -845,11 +844,11 @@ const Configuracion: React.FC = () => {
                 </div>
               )} */}
             </form>
-            <div className={`px-5 py-4 border-t border-gray-100 shrink-0 flex justify-between items-center `}>
+            <div className={`px-5 py-4 shrink-0 flex justify-between items-center `}>
               <button
                 // onClick={() => handleSubmit()}
                 form="medicoForm"
-                className="w-full flex items-center justify-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
+                className="w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
               >
                 <i className="mdi mdi-account-check mr-2"></i>
                 Guardar Usuario

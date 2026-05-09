@@ -176,21 +176,21 @@ const VerticalStepper = memo(({ currentStep, onStepClick }: {
   onStepClick: (i: number) => void;
 }) => {
   return (
-    <ol className="space-y-[16.5px] w-100">
+    <ol className="space-y-[18.5px] w-100">
       {STEPS.map((step, i) => {
         const isDone = i < currentStep;
         const isActive = i === currentStep;
         // const isPending = i > currentStep;
 
         const containerClasses =
-          isActive ? "bg-sky-blue text-white"
-          : isDone ? "bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white cursor-pointer"
-          : "bg-white border-gray-200 shadow-sm text-gray-700";
-
+          isActive ? "bg-linear-to-r from-sea-blue to-sea-blue/50 text-white"
+          : isDone ? "bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white cursor-pointer"
+          : "bg-white shadow-sm text-gray-700";
+          
         return (
           <li key={i} onClick={() => isDone && onStepClick(i)}>
             <div
-              className={`w-full py-2.5 px-5 border rounded-xl transition-colors duration-200 ${containerClasses}`}
+              className={`w-full py-2.5 px-5 rounded-xl transition-colors duration-200 shadow-xl ${containerClasses}`}
               role="alert"
             >
               <div className="flex items-center justify-between">
@@ -339,10 +339,10 @@ const Toggle2: React.FC<{
         key={opt}
         type="button"
         onClick={() => onChange(value === opt ? "" : opt)}
-        className={`flex-1 px-2 py-1.5 rounded-lg text-xs border transition-all cursor-pointer ${
+        className={`flex-1 px-2 py-1.5 rounded-lg text-xs border transition-all cursor-pointer shadow-md ${
           value === opt
-            ? "bg-gray-100 text-gray-800 border-gray-400 font-semibold"
-            : "bg-white text-gray-400 border-gray-300"
+            ? "bg-gray-100 text-gray-800 border-gray-100 font-semibold"
+            : "bg-white text-gray-400 border-gray-100"
         }`}
       >
         {opt}
@@ -355,8 +355,8 @@ const CkCell = memo(({ checked, onChange }: { checked: boolean | null; onChange:
   <button
     type="button"
     onClick={() => onChange(checked ? null : true)}
-    className={`w-5 h-5 rounded border transition-all cursor-pointer flex items-center justify-center ${
-      checked ? "bg-sea-blue border-sea-blue text-white" : "border-gray-300 bg-white"
+    className={`w-5 h-5 rounded border transition-all cursor-pointer flex items-center justify-center shadow-md ${
+      checked ? "bg-linear-to-b from-sea-blue to-sky-blue text-white border-gray-400" : "border-gray-100 bg-white"
     }`}
   >
     {checked && <span className="text-[10px] font-bold">✓</span>}
@@ -374,7 +374,8 @@ const StepNavButtons: React.FC<{
       title="Anterior"
       onClick={onBack}
       disabled={currentStep === 0}
-      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+      // className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+      className="p-1.5 rounded-full bg-linear-to-b hover:from-gray-300 hover:to-gray-50 disabled:opacity-30 disabled:pointer-events-none text-gray-600 hover:text-sea-blue cursor-pointer"
     >
       <ChevronLeft className="h-4 w-4" />
     </button>
@@ -382,7 +383,7 @@ const StepNavButtons: React.FC<{
       title="Siguiente"
       onClick={onNext}
       disabled={currentStep === totalSteps - 1}
-      className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+      className="p-1.5 rounded-full bg-linear-to-b hover:from-gray-300 hover:to-gray-50 disabled:opacity-30 disabled:pointer-events-none text-gray-600 hover:text-sea-blue cursor-pointer"
     >
       <ChevronRight className="h-4 w-4" />
     </button>
@@ -406,19 +407,27 @@ const selectAllSection = (
 
 const thSelectCls = (active: boolean, type: "normal" | "anormal") =>
   `px-3 py-2 text-center font-medium w-1/4 cursor-pointer select-none transition-colors ` +
-  (active
-    ? type === "normal"
-      ? "bg-blue-50 text-blue-600"
-      : "bg-red-50 text-red-500"
-    : "bg-gray-50 text-gray-700 hover:bg-gray-100");
+  (active && "bg-gray-200/60 text-gray-700 hover:bg-gray-200");
 
 const thSelectClsNarrow = (active: boolean, type: "normal" | "anormal") =>
   `px-3 py-2 text-center font-medium w-[10%] cursor-pointer select-none transition-colors ` +
-  (active
-    ? type === "normal"
-      ? "bg-gray-200/60"
-      : "bg-gray-200/60"
-    : "bg-gray-50 text-gray-700 hover:bg-gray-100");
+  (active && "bg-gray-200/60 text-gray-700 hover:bg-gray-200");
+
+// const thSelectCls = (active: boolean, type: "normal" | "anormal") =>
+//   `px-3 py-2 text-center font-medium w-[10%] cursor-pointer select-none transition-colors ` +
+//   (active
+//     ? type === "normal"
+//       ? "bg-blue-50 text-blue-600"
+//       : "bg-red-50 text-red-500"
+//     : "bg-gray-50 text-gray-700 hover:bg-gray-100");
+
+// const thSelectClsNarrow = (active: boolean, type: "normal" | "anormal") =>
+//   `px-3 py-2 text-center font-medium w-[10%] cursor-pointer select-none transition-colors ` +
+//   (active
+//     ? type === "anormal"
+//       ? "bg-gray-200/60"
+//       : "bg-gray-200/60"
+//     : "bg-gray-50 text-gray-700 hover:bg-gray-100");
 
 const ExpTable: React.FC<{
   title: string;
@@ -457,7 +466,9 @@ const ExpTable: React.FC<{
           <tbody>
             {fields.map((field) => (
               <tr key={field}>
-                <td className="px-3 py-2 font-medium text-gray-700">{field}</td>
+                <td className="px-3 py-2 font-medium text-gray-700">
+                  {field}
+                </td>
                 <td className="px-3 py-2 text-center">
                   <div className="flex justify-center">
                     <CkCell
@@ -499,11 +510,11 @@ function ExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter, rightT
   const rAllA = rightFields.every((f) => rightSection[f]?.valor === "Anormal");
 
   return (
-    <div className="border border-gray-300 rounded-lg overflow-hidden mb-4">
+    <div className="overflow-hidden mb-4">
       <table className="w-full text-xs">
         <thead>
-          <tr className="border-b border-gray-300">
-            <th className="px-3 py-2 text-left font-medium text-gray-700 bg-gray-50 w-[30%]">
+          <tr className="bg-linear-to-r from-white to-gray-100">
+            <th className="px-6 py-2 text-left font-medium text-gray-700 w-[30%]">
               {leftTitle}
             </th>
             <th
@@ -514,13 +525,13 @@ function ExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter, rightT
               Normal
             </th>
             <th
-              className={thSelectClsNarrow(lAllA, "anormal")}
+              className={`${thSelectClsNarrow(lAllA, "anormal")}`}
               title="Clic para marcar todo"
               onClick={() => selectAllSection(leftFields, leftSection, leftSetter, "Anormal")}
             >
               Anormal
             </th>
-            <th className="px-3 py-2 text-left font-medium border-l border-gray-300 text-gray-700 bg-gray-50 w-[30%]">
+            <th className="px-3 py-2 text-left font-medium text-gray-700 w-[30%]">
               {rightTitle}
             </th>
             <th
@@ -531,7 +542,7 @@ function ExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter, rightT
               Normal
             </th>
             <th
-              className={thSelectClsNarrow(rAllA, "anormal")}
+              className={`${thSelectClsNarrow(rAllA, "anormal")}`}
               title="Clic para marcar todo"
               onClick={() => selectAllSection(rightFields, rightSection, rightSetter, "Anormal")}
             >
@@ -546,7 +557,9 @@ function ExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter, rightT
             return (
               <tr key={i}>
                 {/* LEFT */}
-                <td className="px-3 py-2 font-medium text-gray-700">{lf ?? ""}</td>
+                <td className="px-6 py-2 font-medium text-gray-700">
+                  {lf ?? ""}
+                </td>
                 <td className="px-3 py-2 text-center">
                   {lf && (
                     <div className="flex justify-center">
@@ -578,7 +591,9 @@ function ExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter, rightT
                   )}
                 </td>
                 {/* RIGHT */}
-                <td className="px-3 py-2 font-medium text-gray-700 border-l border-gray-300">{rf ?? ""}</td>
+                <td className="px-3 py-2 font-medium text-gray-700">
+                  {rf ?? ""}
+                </td>
                 <td className="px-3 py-2 text-center">
                   {rf && (
                     <div className="flex justify-center">
@@ -700,11 +715,13 @@ const DescExpTable = memo(({ title, fields, section, setter }: {
   const allN = fields.every((f) => section[f]?.valor === "Normal");
   const allA = fields.every((f) => section[f]?.valor === "Anormal");
   return (
-    <div className="border border-gray-300 rounded-lg overflow-hidden mb-4">
+    <div className="overflow-hidden mb-4">
       <table className="w-full text-xs">
         <thead>
-          <tr className="border-b border-gray-300">
-            <th className="px-3 py-2 text-left font-medium text-gray-700 bg-gray-50 w-[30%]">{title}</th>
+          <tr className="bg-linear-to-r from-white to-gray-100">
+            <th className="px-6 py-2 text-left font-medium text-gray-700 w-[30%]">
+              {title}
+            </th>
             <th
               className={thSelectClsNarrow(allN, "normal")}
               title="Clic para marcar todo"
@@ -719,7 +736,7 @@ const DescExpTable = memo(({ title, fields, section, setter }: {
             >
               Anormal
             </th>
-            <th className="px-3 py-2 text-left font-medium text-gray-700 bg-gray-50 w-[50%]">
+            <th className="px-3 py-2 text-left font-medium text-gray-700 w-[50%]">
               Descripción
             </th>
           </tr>
@@ -727,7 +744,9 @@ const DescExpTable = memo(({ title, fields, section, setter }: {
         <tbody>
           {fields.map((field) => (
             <tr key={field}>
-              <td className="px-3 py-2 font-medium text-gray-700">{field}</td>
+              <td className="px-6 py-2 font-medium text-gray-700">
+                {field}
+              </td>
               <td className="px-3 py-2 text-center">
                 <div className="flex justify-center">
                   <CkCell
@@ -750,7 +769,7 @@ const DescExpTable = memo(({ title, fields, section, setter }: {
                   value={section[field]?.descripcion ?? ""}
                   onChange={(e) => setter((p) => ({ ...p, [field]: { ...p[field], descripcion: e.target.value } }))}
                   placeholder="Seleccione una opción primero"
-                  className={`w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none ${!section[field]?.valor && "text-gray-800 bg-gray-50"}`}
+                  className={`w-full px-3 py-1.5 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none ${!section[field]?.valor && "text-gray-800 bg-gray-50"}`}
                   disabled={!section[field]?.valor}
                 />
               </td>
@@ -762,7 +781,6 @@ const DescExpTable = memo(({ title, fields, section, setter }: {
   );
 });
 
-// ── DescExpTableDouble: dos secciones lado a lado con descripción + select-all ─
 function DescExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter }: {
   leftTitle: string;
   leftFields: string[];
@@ -779,12 +797,11 @@ function DescExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter }: 
   // const rAllA = rightFields.every((f) => rightSection[f]?.valor === "Anormal");
   const rows = Math.max(leftFields.length);
   return (
-    <div className="border border-gray-300 rounded-lg overflow-hidden mb-4">
+    <div className="overflow-hidden mb-4">
       <table className="w-full text-xs">
         <thead>
-          <tr className="border-b border-gray-300">
-            {/* ── Lado izquierdo ── */}
-            <th className="px-3 py-2 text-left font-medium text-gray-700 bg-gray-50 w-[30%]">
+          <tr className="bg-linear-to-r from-white to-gray-100">
+            <th className="px-6 py-2 text-left font-medium text-gray-700 w-[30%]">
               {leftTitle}
             </th>
             <th
@@ -801,7 +818,7 @@ function DescExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter }: 
             >
               {leftTitle == "Genitales" ? "Ausente" : "Anormal"}
             </th>
-            <th className="px-3 py-2 text-left font-medium text-gray-700 bg-gray-50 w-[50%]">
+            <th className="px-3 py-2 text-left font-medium text-gray-700 w-[50%]">
               Descripción
             </th>
           </tr>
@@ -812,7 +829,7 @@ function DescExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter }: 
             // const rf = rightFields[i];
             return (
               <tr key={i}>
-                <td className="px-3 py-2 font-medium text-gray-700">
+                <td className="px-6 py-2 font-medium text-gray-700">
                   {lf ?? ""}
                 </td>
                 <td className="px-3 py-2 text-center">
@@ -842,7 +859,7 @@ function DescExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter }: 
                       value={leftSection[lf]?.descripcion ?? ""}
                       onChange={(e) => leftSetter((p) => ({ ...p, [lf]: { ...p[lf], descripcion: e.target.value } }))}
                       placeholder="Seleccione una opción primero"
-                      className={`w-full px-2 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none ${!leftSection[lf]?.valor && "text-gray-800 bg-gray-50 border-gray-300"}`}
+                      className={`w-full px-2 py-1.5 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none ${!leftSection[lf]?.valor && "text-gray-800 bg-gray-50 border-gray-100"}`}
                       disabled={!leftSection[lf]?.valor}
                     />
                   )}
@@ -1018,11 +1035,11 @@ const Evaluacion: React.FC = () => {
   const getImcInput = (imc: string) => {
     const v = parseFloat(imc);
     
-    if (!imc || isNaN(v) || v === 0) return "border-gray-300 bg-gray-50 text-gray-700";
-    if (v < 18.5) return "border-yellow-300 bg-yellow-50 text-yellow-500";
-    if (v <= 24.9) return "border-horz-blue bg-blue-50 text-sky-blue";
-    if (v <= 29.9) return "border-yellow-300 bg-yellow-50 text-yellow-500";
-    return "border-red-200 bg-red-50 text-red-500";
+    if (!imc || isNaN(v) || v === 0) return "border-gray-100 bg-gray-50 text-gray-700";
+    if (v < 18.5) return "border-yellow-300/20 bg-yellow-50 text-yellow-500";
+    if (v <= 24.9) return "border-horz-blue/20 bg-blue-50 text-sky-blue";
+    if (v <= 29.9) return "border-yellow-300/20 bg-yellow-50 text-yellow-500";
+    return "border-red-200/20 bg-red-50 text-red-500";
   };
 
   const getImcIcon  = (imc: string) => {
@@ -1116,7 +1133,7 @@ const Evaluacion: React.FC = () => {
                   cancelButtonText: `<i class="mdi mdi-plus-thick mr-1"></i> Nueva`,
                   showCancelButton: true,
                   customClass: {
-                    confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
+                    confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
                     cancelButton: "flex items-center bg-gray-50 hover:bg-gray-100/80 hover:-translate-y-1 text-gray-800 px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-gray-500/30 transition-all cursor-pointer ml-3"
                   },
                 });
@@ -1188,7 +1205,7 @@ const Evaluacion: React.FC = () => {
             cancelButtonText: `<i class="mdi mdi-plus-thick mr-1"></i> Nueva`,
             showCancelButton: true,
             customClass: {
-              confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
+              confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
               cancelButton: "flex items-center bg-gray-50 hover:bg-gray-100/80 hover:-translate-y-1 text-gray-800 px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-gray-500/30 transition-all cursor-pointer ml-3"
             },
           });
@@ -1350,7 +1367,7 @@ const Evaluacion: React.FC = () => {
       didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" }); },
       buttonsStyling: false,
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
-      customClass: { confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer" },
+      customClass: { confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer" },
     });
 
   const errorModal = (title: string, message: string) =>
@@ -1361,7 +1378,7 @@ const Evaluacion: React.FC = () => {
       didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" }); },
       buttonsStyling: false,
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
-      customClass: { confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer" },
+      customClass: { confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer" },
     });
 
   const validateStep = (step: number): string[] => {
@@ -1408,7 +1425,7 @@ const Evaluacion: React.FC = () => {
       didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" }); },
       buttonsStyling: false,
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
-      customClass: { confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer" },
+      customClass: { confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer" },
     });
   };
 
@@ -1487,7 +1504,7 @@ const Evaluacion: React.FC = () => {
       denyButtonText: `<span title="Finalizar evaluación"><i class="mdi mdi-check-decagram mr-1"></i> Finalizar</span>`,
       customClass: {
         confirmButton: "flex items-center bg-gray-50 hover:bg-gray-100/80 hover:-translate-y-1 text-gray-800 px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-gray-500/30 transition-all cursor-pointer",
-        denyButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer ml-3",
+        denyButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer ml-3",
       },
     });
 
@@ -1515,7 +1532,7 @@ const Evaluacion: React.FC = () => {
           buttonsStyling: false,
           confirmButtonText: `<i class="mdi mdi-check" style="margin-right:4px"></i> OK`,
           customClass: {
-            confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
+            confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
           },
         });
       } catch {
@@ -1577,7 +1594,7 @@ const Evaluacion: React.FC = () => {
               confirmButtonText: `<i class="mdi mdi-folder" style="margin-right:4px"></i> Abrir`,
               cancelButtonText: `<i class="mdi mdi-close" style="margin-right:4px"></i> Cerrar`,
               customClass: {
-                confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
+                confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
               cancelButton: "flex items-center bg-gray-50 hover:bg-gray-100/80 hover:-translate-y-1 text-gray-800 px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-gray-500/30 transition-all cursor-pointer ml-3"
               },
             });
@@ -1599,7 +1616,7 @@ const Evaluacion: React.FC = () => {
             buttonsStyling: false,
             confirmButtonText: `<i class="mdi mdi-check" style="margin-right:4px"></i> OK`,
             customClass: {
-              confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
+              confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
             },
           });
         }
@@ -1615,13 +1632,13 @@ const Evaluacion: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const stepPanels = useMemo(() => [
     <div key="ficha">
-      <div className="border border-gray-300 rounded-lg overflow-hidden mb-1">
-        <div className="bg-gray-50 px-3 py-1 border-b border-gray-300">
+      <div className="overflow-hidden mb-1">
+        <div className="bg-linear-to-r from-white to-gray-100 px-6 py-1">
           <span className="text-xs font-medium text-gray-700">
             Ficha de identificación
           </span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
           <div className={`${matriculaNotFound ? "mb-2" : ""}`}>
             <div className="block text-xs font-medium text-gray-700 mb-1">
               Matrícula <b className="text-red-400">*</b>
@@ -1636,7 +1653,7 @@ const Evaluacion: React.FC = () => {
                 placeholder="Matrícula (5 dígitos)"
                 disabled={loadingMat}
                 maxLength={5}
-                className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none transition-colors ${!patientData.matricula ? "border-gray-300 focus:ring-1 focus:ring-sea-blue" : loadingMat ? "border-gray-300 bg-gray-100" : matriculaNotFound ? "border-red-400 bg-red-50 text-red-700" : "border-gray-300 focus:ring-1 focus:ring-sea-blue"}`}
+                className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none shadow-md transition-colors ${!patientData.matricula ? "border-gray-100 focus:ring-1 focus:ring-sea-blue" : loadingMat ? "border-gray-100 bg-gray-100" : matriculaNotFound ? "border-red-400 bg-red-50 text-red-700" : "border-gray-100 focus:ring-1 focus:ring-sea-blue"}`}
                 // matriculaNotRegis ? "border-yellow-400 bg-yellow-50 text-yellow-700"
               />
               {loadingMat &&
@@ -1660,7 +1677,7 @@ const Evaluacion: React.FC = () => {
               value={patientData.nombre} 
               disabled 
               placeholder="Nombre" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-gray-50 text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md bg-gray-50 text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -1673,7 +1690,7 @@ const Evaluacion: React.FC = () => {
                 value={new Date().toISOString().split('T')[0]}
                 disabled
                 placeholder="Fecha"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-gray-50 text-gray-800 font-medium outline-none"
+                className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md bg-gray-50 text-gray-800 font-medium outline-none"
               />
               {/* <i className="mdi mdi-calendar-blank font-medium text-gray-700 text-[15px] absolute right-[15px] top-[9px]"></i> */}
             </div>
@@ -1691,7 +1708,7 @@ const Evaluacion: React.FC = () => {
                 setFicha((f) => ({ ...f, fechaNacimiento: dob, edad: age }));
               }}
               placeholder="Fecha"
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -1703,7 +1720,7 @@ const Evaluacion: React.FC = () => {
               value={`${ficha.edad ? ficha.edad + " años" : ""}`}
               disabled 
               // onChange={(e) => setFicha((f) => ({ ...f, edad: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-gray-50 text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md bg-gray-50 text-gray-800 font-medium outline-none"
               placeholder="Edad"
             />
           </div>
@@ -1725,7 +1742,7 @@ const Evaluacion: React.FC = () => {
                   });
                 }
               }}
-              className="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none" 
+              className="w-full border border-gray-100 rounded-lg p-2 text-xs shadow-md focus:ring-1 focus:ring-sea-blue outline-none" 
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="F">Femenino</option>
@@ -1739,7 +1756,7 @@ const Evaluacion: React.FC = () => {
             <select
               value={ficha.estadoCivil}
               onChange={(e) => setFicha((f) => ({ ...f, estadoCivil: e.target.value }))}
-              className="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none" 
+              className="w-full border border-gray-100 rounded-lg p-2 text-xs shadow-md focus:ring-1 focus:ring-sea-blue outline-none" 
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="S">Soltero</option>
@@ -1755,7 +1772,7 @@ const Evaluacion: React.FC = () => {
             <select
               value={ficha.escolaridad}
               onChange={(e) => setFicha((f) => ({ ...f, escolaridad: e.target.value }))}
-              className="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none" 
+              className="w-full border border-gray-100 rounded-lg p-2 text-xs shadow-md focus:ring-1 focus:ring-sea-blue outline-none" 
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="1">Sin escolaridad</option>
@@ -1778,7 +1795,7 @@ const Evaluacion: React.FC = () => {
               maxLength={11}
               value={ficha.noImss}
               onChange={(e) => setFicha((f) => ({ ...f, noImss: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md focus:ring-1 text-gray-800 font-medium outline-none"
               placeholder="No. IMSS (11 caracteres)"
             />
           </div>
@@ -1791,7 +1808,7 @@ const Evaluacion: React.FC = () => {
               value={patientData.especialidad}
               disabled 
               placeholder="Puesto al que aspira" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-gray-50 text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md bg-gray-50 text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -1803,7 +1820,7 @@ const Evaluacion: React.FC = () => {
               value={ficha.contactoEmergencia}
               onChange={(e) => setFicha((f) => ({ ...f, contactoEmergencia: e.target.value }))}
               placeholder="Nombre de contacto" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md focus:ring-1 text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -1816,34 +1833,35 @@ const Evaluacion: React.FC = () => {
               value={ficha.numeroContacto}
               onChange={(e) => { if (e.target.value.length > 12) return; setFicha((f) => ({ ...f, numeroContacto: e.target.value })); }}
               maxLength={12}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="Número de contacto"
             />
           </div>
         </div>
+        <label className="block text-xs text-right font-medium text-gray-700 mr-6">
+          <b className="text-red-400">*</b> Campo obligatorio
+        </label>
       </div>
-      
-      <label className="block text-xs text-right font-medium text-gray-700 mt-3">
-        <b className="text-red-400">*</b> Campo obligatorio
-      </label>
     </div>,
 
     <div key="laboral">
-      <div className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div>
+        {/* className="space-y-4" */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 hidden">
           <div></div>
-          <div></div>
-          <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1">
+          <div className="pl-1.5 flex items-center">
+            <label className="text-xs font-medium text-gray-700">
               Edad de inicio de actividad laboral <b className="text-red-400">*</b>
             </label>
-            <div className="relative flex items-center">
+          </div>
+          <div>
+            <div className="relative flex items-center mr-6 py-2">
               <input
                 type="text"
                 maxLength={2}
                 value={edadInicioLaboral}
                 onChange={(e) => setEdadInicioLaboral(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                 placeholder="18"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">
@@ -1853,31 +1871,56 @@ const Evaluacion: React.FC = () => {
           </div>
         </div>
 
-        <div className="border border-gray-300 rounded-lg overflow-hidden">
+        <div className="overflow-hidden">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-300">
-                <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/3">
+              <tr className="bg-linear-to-r from-white to-gray-100">
+                <th className="pl-6 py-2 text-left font-medium text-gray-700 w-1/4">
+                  Edad de inicio act. laboral <b className="text-red-400">*</b>
+                </th>
+                <th className="px-6 py-2 text-left font-medium text-gray-700 w-1/4">
                   Empresa
                 </th>
-                <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/3">
+                <th className="px-3 py-2 text-left font-medium text-gray-700 w-1/4">
                   Puesto
                 </th>
-                <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/3">
+                <th className="px-3 py-2 text-left font-medium text-gray-700 w-1/4">
                   Tiempo que trabajo
                 </th>
               </tr>
             </thead>
+
             <tbody>
               {antLaborales.map((row, i) => (
                 <tr key={i}>
-                  {(["empresa", "puesto", "tiempo"] as const).map((col) => (
-                    <td key={col} className="px-3 py-2">
+                  <td className="pl-6 py-2 align-top">
+                    {i === 0 && (
+                      <div className="relative flex items-center">
+                        <input
+                          type="text"
+                          maxLength={2}
+                          value={edadInicioLaboral}
+                          onChange={(e) => setEdadInicioLaboral(e.target.value)}
+                          className="w-full px-3 py-2 border border-gray-100 bg-white shadow-md rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                          placeholder="18"
+                        />
+                        <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">
+                          años
+                        </span>
+                      </div>
+                    )}
+                  </td>
+                  
+                  {(["empresa", "puesto", "tiempo"] as const).map((col, idx, arr) => (
+                    <td
+                      key={col}
+                      className={`py-2 ${idx === 0 ? "pl-6 pr-3" : ""} ${idx > 0 && idx < arr.length - 1 ? "px-3" : ""} ${idx === arr.length - 1 ? "pl-3 pr-6" : ""}`}
+                    >
                       <input
                         type="text"
                         value={row[col]}
-                        onChange={(e) => setAntLaborales((prev) => prev.map((r, idx) => idx === i ? { ...r, [col]: e.target.value } : r))}
-                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                        onChange={(e) => setAntLaborales((prev) => prev.map((r, index) => index === i ? { ...r, [col]: e.target.value } : r ) ) }
+                        className="w-full px-3 py-2 border border-gray-100 bg-white shadow-md rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                         placeholder={col.charAt(0).toUpperCase() + col.slice(1)}
                       />
                     </td>
@@ -1889,20 +1932,20 @@ const Evaluacion: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-skull-crossbones mr-2"></i>
+            <i className="mdi mdi-skull-crossbones mr-4"></i>
             Exposición a Agentes en el Trabajo
           </h2>
         </div>
       </div>
 
-      <div className="border border-gray-300 rounded-lg overflow-hidden">
-        <table className="w-full text-xs">
+      <div className="overflow-hidden">
+        <table className="w-full text-xs mb-4">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-300">
-              <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/3">
+            <tr className="bg-linear-to-r from-white to-gray-100">
+              <th className="px-6 py-2 text-left font-medium text-gray-700 mb-1 w-1/3">
                 Agente
               </th>
               <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/3">
@@ -1915,20 +1958,24 @@ const Evaluacion: React.FC = () => {
           </thead>
           <tbody>
             {Object.entries(agentes).map(([agente, val], i) => (
-              <tr 
+              <tr
                 key={agente}
                 // className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
               >
-                <td className="px-3 py-2 font-medium text-gray-700 mb-1">
+                <td className="pl-6 pr-3 py-2 font-medium text-gray-700 mb-1">
                   {agente}
                 </td>
-                {(["tiempo", "puesto"] as const).map((col) => (
-                  <td key={col} className="px-3 py-2">
-                    <input 
-                      type="text" 
-                      value={val[col]} 
-                      onChange={(e) => setAgentes((prev) => ({ ...prev, [agente]: { ...prev[agente], [col]: e.target.value } }))}
-                      className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+            
+                {(["tiempo", "puesto"] as const).map((col, idx, arr) => (
+                  <td
+                    key={col}
+                    className={`py-2 ${idx === arr.length - 1 ? "pl-3 pr-6" : "px-3"}`}
+                  >
+                    <input
+                      type="text"
+                      value={val[col]}
+                      onChange={(e) => setAgentes((prev) => ({ ...prev, [agente]: { ...prev[agente], [col]: e.target.value, }, })) }
+                      className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                       placeholder={col.charAt(0).toUpperCase() + col.slice(1)}
                     />
                   </td>
@@ -1941,11 +1988,11 @@ const Evaluacion: React.FC = () => {
     </div>,
 
     <div key="familiares">
-      <div className="border border-gray-300 rounded-lg overflow-hidden">
+      <div className="overflow-hidden">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-300">
-              <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1">
+            <tr className="bg-linear-to-r from-white to-gray-100">
+              <th className="px-6 py-2 text-left font-medium text-gray-700 mb-1">
                 Antecedente familiar
               </th>
               {["Abuelos", "Padres", "Hermanos", "Hijos", "Otros"].map((col) => (
@@ -1961,7 +2008,7 @@ const Evaluacion: React.FC = () => {
                 key={ant} 
                 // className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
               >
-                <td className="px-3 py-3 font-medium text-gray-700 mb-1">
+                <td className="px-6 py-3 font-medium text-gray-700 mb-1">
                   {ant}
                 </td>
                 {(["abuelos", "padres", "hermanos", "hijos", "otros"] as const).map((col) => (
@@ -1979,11 +2026,11 @@ const Evaluacion: React.FC = () => {
     </div>,
 
     <div key="patologicos">
-      <div className="border border-gray-300 rounded-lg overflow-hidden mb-4">
+      <div className="overflow-hidden mb-4">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-gray-50 border-b  border-gray-300">
-              <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/5">
+            <tr className="bg-linear-to-r from-white to-gray-100">
+              <th className="px-6 py-2 text-left font-medium text-gray-700 mb-1 w-1/5">
                 Antecedente
               </th>
               <th className="px-3 py-2 text-center font-medium text-gray-700 mb-1 w-1/10">
@@ -1992,7 +2039,7 @@ const Evaluacion: React.FC = () => {
               <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/5">
                 Observación
               </th>
-              <th className="px-3 py-2 text-left font-medium border-l border-gray-300 text-gray-700 mb-1 w-1/5">
+              <th className="px-6 py-2 text-left font-medium text-gray-700 mb-1 w-1/5">
                 Antecedente
               </th>
               <th className="px-3 py-2 text-center font-medium text-gray-700 mb-1 w-1/10">
@@ -2015,7 +2062,7 @@ const Evaluacion: React.FC = () => {
             ].map(([left, right], i) => (
               <tr key={i}>
                 {/* className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"} */}
-                <td className="px-3 py-2 font-medium text-gray-700">
+                <td className="px-6 py-2 font-medium text-gray-700">
                   {left}
                 </td>
                 <td className="px-3 py-2 text-center">
@@ -2026,17 +2073,17 @@ const Evaluacion: React.FC = () => {
                     />
                   </div>
                 </td>
-                <td className="px-3 py-2 text-center">
+                <td className="px-3 pr-6 py-2 text-center">
                   <input
                     type="text"
                     value={antPatologicos[left]?.observacion ?? ""}
                     onChange={(e) => setAntPatologicos((p) => ({ ...p, [left]: { ...p[left], observacion: e.target.value } }))}
                     placeholder="Observación"
                     disabled={!antPatologicos[left]?.si}
-                    className={`w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none transition-colors ${ antPatologicos[left]?.si ? "text-gray-800 bg-white focus:ring-sea-blue" : " bg-gray-50 cursor-not-allowed" }`}
+                    className={`w-full px-3 py-1.5 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none transition-colors ${ antPatologicos[left]?.si ? "text-gray-800 bg-white focus:ring-sea-blue" : " bg-gray-50 cursor-not-allowed" }`}
                   />
                 </td>
-                <td className="px-3 py-2 font-medium text-gray-700 border-l border-gray-300">
+                <td className="px-6 py-2 font-medium text-gray-700">
                   {right}
                 </td>
                 <td className="px-3 py-2 text-center">
@@ -2047,14 +2094,14 @@ const Evaluacion: React.FC = () => {
                     />
                   </div>
                 </td>
-                <td className="px-3 py-2 text-center">
+                <td className="px-3 pr-6 py-2 text-center">
                   <input
                     type="text"
                     value={antPatologicos[right]?.observacion ?? ""}
                     onChange={(e) => setAntPatologicos((p) => ({ ...p, [right]: { ...p[right], observacion: e.target.value } }))}
                     placeholder="Observación"
                     disabled={!antPatologicos[right]?.si}
-                    className={`w-full px-3 py-1.5 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none transition-colors ${ antPatologicos[right]?.si ? "text-gray-800 bg-white focus:ring-sea-blue" : "bg-gray-50 cursor-not-allowed" }`}
+                    className={`w-full px-3 py-1.5 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none transition-colors ${ antPatologicos[right]?.si ? "text-gray-800 bg-white focus:ring-sea-blue" : "bg-gray-50 cursor-not-allowed" }`}
                   />
                 </td>
               </tr>
@@ -2063,20 +2110,20 @@ const Evaluacion: React.FC = () => {
         </table>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4">
-        <div className="mb-4 flex items-center justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-needle mr-2"></i>
+            <i className="mdi mdi-needle mr-4"></i>
             Esquema de Vacunación
           </h2>
         </div>
       </div>
       
-      <div className="border border-gray-300 rounded-lg overflow-hidden mb-4">
+      <div className="overflow-hidden mb-4">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-300">
-              <th className="px-3 py-2 text-left font-medium text-gray-700 w-1/5">
+            <tr className="bg-linear-to-r from-white to-gray-100">
+              <th className="px-6 py-2 text-left font-medium text-gray-700 w-1/5">
                 Vacuna
               </th>
               <th className="px-3 py-2 text-center font-medium text-gray-700 w-1/10">
@@ -2085,7 +2132,7 @@ const Evaluacion: React.FC = () => {
               <th className="px-3 py-2 text-left font-medium text-gray-700 w-1/5">
                 Fecha
               </th>
-              <th className="px-3 py-2 text-left font-medium text-gray-700 border-l border-gray-300 w-1/5">
+              <th className="px-3 py-2 text-left font-medium text-gray-700 w-1/5">
                 Vacuna
               </th>
               <th className="px-3 py-2 text-center font-medium text-gray-700 w-1/10">
@@ -2114,7 +2161,7 @@ const Evaluacion: React.FC = () => {
               
               return (
                 <tr key={v}>
-                  <td className="px-3 py-2 font-medium text-gray-700">
+                  <td className="px-6 py-2 font-medium text-gray-700">
                     {label}
                   </td>
                   <td className="px-3 py-2 text-center">
@@ -2125,17 +2172,17 @@ const Evaluacion: React.FC = () => {
                       />
                     </div>
                   </td>
-                  <td className="px-3 py-2 text-center">
+                  <td className="px-3 pr-6 py-2 text-center">
                     <input
                       type="date"
                       value={vacunas[v]}
                       // new Date().toISOString().split("T")[0]
                       disabled={!checked}
                       onChange={(e) => setVacunas((p) => ({ ...p, [v]: e.target.value })) }
-                      className={`w-32 px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none transition-colors ${ checked ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-sea-blue/50 bg-gray-50 cursor-not-allowed" }`}
+                      className={`w-32 px-3 py-1.5 border border-gray-100 shadow-md rounded-lg text-xs outline-none transition-colors ${ checked ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-sea-blue/50 bg-gray-50 cursor-not-allowed" }`}
                     />
                   </td>
-                  <td className="px-3 py-2 font-medium text-gray-700 border-l border-gray-300">
+                  <td className="px-6 py-2 font-medium text-gray-700">
                     {covid ? `Covid-19 (${covid.label})` : ""}
                   </td>
                   <td className="px-3 py-2 text-center">
@@ -2148,14 +2195,14 @@ const Evaluacion: React.FC = () => {
                       </div>
                     )}
                   </td>
-                  <td className="px-3 py-2 text-center">
+                  <td className="px-3 pr-6 py-2 text-center">
                     {covid && (
                       <input
                         type="date"
                         value={vacunas[covid.fechaKey]}
                         disabled={!vacunas[covid.key]}
                         onChange={(e) => setVacunas((p) => ({ ...p, [covid.fechaKey]: e.target.value, })) }
-                        className={`w-32 px-3 py-1.5 border border-gray-300 rounded-lg text-xs outline-none transition-colors ${ vacunas[covid.key] ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-sea-blue/50 bg-gray-50 cursor-not-allowed" }`}
+                        className={`w-32 px-3 py-1.5 border border-gray-100 shadow-md rounded-lg text-xs outline-none transition-colors ${ vacunas[covid.key] ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-sea-blue/50 bg-gray-50 cursor-not-allowed" }`}
                       />
                     )}
                   </td>
@@ -2168,14 +2215,15 @@ const Evaluacion: React.FC = () => {
     </div>,
 
     <div key="nopatologicos">
-      <div className="border border-gray-300 rounded-lg overflow-hidden mb-4">
-        <div className="bg-gray-50 px-3 py-1 border-b border-gray-300">
+      <div className="overflow-hidden mb-4">
+        {/* <div className="bg-gray-50 px-3 py-1 border-b border-gray-300"> */}
+        <div className="px-6 py-1 bg-linear-to-r from-white to-gray-100">
           <span className="text-xs font-medium text-gray-700">
             Antecedentes personales no patológicos
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-6 p-3">
           <div className="md:col-span-1">
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Toxicomanías
@@ -2187,7 +2235,7 @@ const Evaluacion: React.FC = () => {
                 toxicomanias: e.target.value === "SI",
                 toxicomaniasEsp: e.target.value === "SI" ? p.toxicomaniasEsp : "",
               }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="SI">Sí</option>
@@ -2204,7 +2252,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => setAntNoPatologico((p) => ({ ...p, toxicomaniasEsp: e.target.value }))}
               placeholder="Seleccione una opción primero"
               disabled={!antNoPatologico.toxicomanias}
-              className={`w-full px-3 py-2 border rounded-lg text-xs font-medium outline-none transition-colors ${ antNoPatologico.toxicomanias ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-300" : "text-gray-800 bg-gray-50 border-gray-300" }`}
+              className={`w-full px-3 py-2 border rounded-lg text-xs font-medium outline-none shadow-md transition-colors ${ antNoPatologico.toxicomanias ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-100" : "text-gray-800 bg-gray-50 border-gray-100" }`}
             />
           </div>
           <div className="md:col-span-1">
@@ -2218,7 +2266,7 @@ const Evaluacion: React.FC = () => {
                 alcoholismo: e.target.value === "SI",
                 alcoholismoEsp: e.target.value === "SI" ? p.alcoholismoEsp : "",
               }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="SI">Sí</option>
@@ -2235,7 +2283,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => setAntNoPatologico((p) => ({ ...p, alcoholismoEsp: e.target.value }))}
               placeholder="Seleccione una opción primero"
               disabled={!antNoPatologico.alcoholismo}
-              className={`w-full px-3 py-2 border rounded-lg text-xs font-medium outline-none transition-colors ${ antNoPatologico.alcoholismo ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-300" : "text-gray-800 bg-gray-50 border-gray-300" }`}
+              className={`w-full px-3 py-2 border rounded-lg text-xs font-medium outline-none shadow-md transition-colors ${ antNoPatologico.alcoholismo ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-100" : "text-gray-800 bg-gray-50 border-gray-100" }`}
             />
           </div>
           <div className="md:col-span-1">
@@ -2249,7 +2297,7 @@ const Evaluacion: React.FC = () => {
                 tabaquismo: e.target.value === "SI",
                 tabaquismoEsp: e.target.value === "SI" ? p.tabaquismoEsp : "",
               }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="SI">Sí</option>
@@ -2266,7 +2314,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => setAntNoPatologico((p) => ({ ...p, tabaquismoEsp: e.target.value }))}
               placeholder="Seleccione una opción primero"
               disabled={!antNoPatologico.tabaquismo}
-              className={`w-full px-3 py-2 border rounded-lg text-xs font-medium outline-none transition-colors ${ antNoPatologico.tabaquismo ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-300" : "text-gray-800 bg-gray-50 border-gray-300" }`}
+              className={`w-full px-3 py-2 border rounded-lg text-xs font-medium outline-none shadow-md transition-colors ${ antNoPatologico.tabaquismo ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-100" : "text-gray-800 bg-gray-50 border-gray-100" }`}
             />
           </div>
         </div>
@@ -2274,22 +2322,23 @@ const Evaluacion: React.FC = () => {
     </div>,
 
     <div key="gineco">
-      <div className={`relative border border-gray-300 rounded-lg overflow-hidden mb-4 transition-opacity ${ficha.genero !== "F" ? "opacity-50 pointer-events-none select-none" : ""}`}>
+      <div className={`relative overflow-hidden mb-4 transition-opacity ${ficha.genero !== "F" ? "opacity-50 pointer-events-none select-none" : ""}`}>
         {ficha.genero !== "F" && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 rounded-lg">
-            {/* <span className="text-xs text-gray-600 bg-white border border-gray-300 rounded-full px-4 py-1.5 shadow-sm">
-              <i className="mdi mdi-lock-outline mr-1" />
-              {ficha.genero === "M" ? "Sección no aplica para género Masculino" : "Seleccione género Femenino para habilitar esta sección"}
-            </span> */}
+            <span className="text-xs text-gray-700 font-semibold bg-white border border-gray-100 rounded-lg px-4 py-2 shadow-md">
+              <i className="mdi mdi-lock mr-1" />
+              {ficha.genero !== "F" && "Sección solo disponible para género femenino"}
+            </span>
           </div>
         )}
-        <div className="bg-gray-50 px-3 py-1 border-b border-gray-300">
+
+        <div className="bg-linear-to-r from-white to-gray-100 px-6 py-1">
           <span className="text-xs font-medium text-gray-700">
             Antecedentes gineco-obstétricos
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-3 pt-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 pt-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Menarquia
@@ -2299,7 +2348,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.menarquia}
               onChange={(e) => setGineco((g) => ({ ...g, menarquia: e.target.value }))} 
               placeholder="Menarquia" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2311,7 +2360,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.ritmo} 
               onChange={(e) => setGineco((g) => ({ ...g, ritmo: e.target.value }))} 
               placeholder="Ritmo" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2323,7 +2372,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.papanicolau} 
               onChange={(e) => setGineco((g) => ({ ...g, papanicolau: e.target.value }))} 
               placeholder="Papanicolau" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2334,7 +2383,7 @@ const Evaluacion: React.FC = () => {
               type="date" 
               value={gineco.fum} 
               onChange={(e) => setGineco((g) => ({ ...g, fum: e.target.value }))} 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
             <p className="text-xs text-gray-400 mt-1">Fecha de última menstruación</p>
           </div>
@@ -2347,7 +2396,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.dismenorrea} 
               onChange={(e) => setGineco((g) => ({ ...g, dismenorrea: e.target.value }))} 
               placeholder="Dismenorrea" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2358,7 +2407,7 @@ const Evaluacion: React.FC = () => {
               <select
                 value={gineco.incapacitante} 
                 onChange={(e) => setGineco((g) => ({ ...g, incapacitante: e.target.value, diasDismenorrea: e.target.value !== "SI" ? "" : g.diasDismenorrea }))}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+                className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
               >
                 <option value="" disabled hidden>Seleccionar</option>
                 <option value="SI">Si</option>
@@ -2376,7 +2425,7 @@ const Evaluacion: React.FC = () => {
                   disabled={gineco.incapacitante !== "SI"}
                   onChange={(e) => { if (e.target.value.length > 3) return; setGineco((g) => ({ ...g, diasDismenorrea: e.target.value })); }}
                   placeholder="1" 
-                  className={`w-full px-3 py-2 ${gineco.incapacitante == "SI" ? "" : "bg-gray-50"} border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                  className={`w-full px-3 py-2 ${gineco.incapacitante == "SI" ? "" : "bg-gray-50"} border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                 />
                 <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">día(s)</span>
               </div>
@@ -2384,7 +2433,7 @@ const Evaluacion: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 px-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 px-6">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Gestas
@@ -2394,7 +2443,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.gestas} 
               onChange={(e) => setGineco((g) => ({ ...g, gestas: e.target.value }))} 
               placeholder="Gestas" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2406,7 +2455,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.partos} 
               onChange={(e) => setGineco((g) => ({ ...g, partos: e.target.value }))} 
               placeholder="Partos" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2418,7 +2467,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.cesareas} 
               onChange={(e) => setGineco((g) => ({ ...g, cesareas: e.target.value }))} 
               placeholder="Cesáreas" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2430,11 +2479,11 @@ const Evaluacion: React.FC = () => {
               value={gineco.abortos} 
               onChange={(e) => setGineco((g) => ({ ...g, abortos: e.target.value }))} 
               placeholder="Abortos" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-3 pb-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-6 pb-3">
           <div className="hidden">
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Mamas
@@ -2444,11 +2493,11 @@ const Evaluacion: React.FC = () => {
               value={gineco.mamas}
               onChange={(e) => setGineco((g) => ({ ...g, mamas: e.target.value }))}
               placeholder="Mamas" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 px-3 pb-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 px-6 pb-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               USG
@@ -2458,7 +2507,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.usg}
               onChange={(e) => setGineco((g) => ({ ...g, usg: e.target.value }))}
               placeholder="USG" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
             {/* <p className="text-xs text-gray-400 mt-1">Ultrasonido de mamas</p> */}
           </div>
@@ -2471,7 +2520,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.mastografia} 
               onChange={(e) => setGineco((g) => ({ ...g, mastografia: e.target.value }))}
               placeholder="Mastografía" 
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2481,7 +2530,7 @@ const Evaluacion: React.FC = () => {
             <select
               value={gineco.birads} 
               onChange={(e) => setGineco((g) => ({ ...g, birads: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="B0">Bi-Rads 0</option>
@@ -2501,14 +2550,14 @@ const Evaluacion: React.FC = () => {
     </div>,
 
     <div key="salud">
-      <div className="border border-gray-300 rounded-lg overflow-hidden mb-4">
-        <div className="bg-gray-50 px-3 py-1 border-b border-gray-300">
+      <div className="overflow-hidden mb-4">
+        <div className="px-6 py-1 bg-linear-to-r from-white to-gray-100">
           <span className="text-xs font-medium text-gray-700">
             ¿Ha estado incapacitado?
           </span>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-6 p-3">
           <div className="md:col-span-1">
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Por riesgo de trabajo
@@ -2520,7 +2569,7 @@ const Evaluacion: React.FC = () => {
                 setIncapacidadRiesgo(val);
                 if (val !== "SI") setIncapacidadValuacion("");
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="SI">Sí</option>
@@ -2537,7 +2586,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => setIncapacidadValuacion(e.target.value)}
               placeholder="Seleccione una opción primero"
               disabled={incapacidadRiesgo !== "SI"}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium outline-none transition-colors ${
+              className={`w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs font-medium outline-none transition-colors ${
                 incapacidadRiesgo === "SI" ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-gray-800 bg-gray-50"
               }`}
             />
@@ -2553,7 +2602,7 @@ const Evaluacion: React.FC = () => {
                 setIncapacidadEG(val);
                 if (val !== "SI") setIncapacidadComentario("");
               }}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="SI">Sí</option>
@@ -2570,8 +2619,8 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => setIncapacidadComentario(e.target.value)}
               placeholder="Seleccione una opción primero"
               disabled={incapacidadEG !== "SI"}
-              className={`w-full px-3 py-2 border border-gray-300 rounded-lg text-xs font-medium outline-none transition-colors ${
-                incapacidadEG === "SI" ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-gray-800 bg-gray-50"
+              className={`w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs font-medium outline-none transition-colors ${
+                incapacidadEG === "SI" ? "text-gray-100 shadow-md bg-white focus:ring-1 focus:ring-sea-blue" : "text-gray-800 bg-gray-50"
               }`}
             />
           </div>
@@ -2582,7 +2631,7 @@ const Evaluacion: React.FC = () => {
             <select
               value={manoDominante}
               onChange={(e) => setManoDominante(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="DER">Derecha</option>
@@ -2598,7 +2647,7 @@ const Evaluacion: React.FC = () => {
               rows={1} 
               value={enfermedadActual} 
               onChange={(e) => setEnfermedadActual(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none resize-none"
+              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none resize-none"
               placeholder="Especifique la enfermedad que actualmente padece"
             />
           </div>
@@ -2607,14 +2656,15 @@ const Evaluacion: React.FC = () => {
     </div>,
 
     <div key="exploracion">
-      <div className="border border-gray-300 rounded-lg overflow-hidden mb-4">
-        <div className="bg-gray-50 px-3 py-1 border-b border-gray-300">
+      <div className="overflow-hidden mb-4">
+        <div className="px-6 py-1 bg-linear-to-r from-white to-gray-100">
           <span className="text-xs font-medium text-gray-700">
             Signos vitales
+            {/* Antecedentes personales no patológicos */}
           </span>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-2 gap-x-4 p-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-2 gap-x-4 px-6 p-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Peso (kg) <b className="text-red-400">*</b>
@@ -2626,7 +2676,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={vitalSigns.Peso} 
                 onChange={(e) => { if(e.target.value.length > 6) return;handleMeasureChange("Peso",e.target.value); }} 
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.0"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">kg</span>
@@ -2643,7 +2693,7 @@ const Evaluacion: React.FC = () => {
                 step="0.01" 
                 value={vitalSigns.Talla} 
                 onChange={(e) => { if(e.target.value.length > 4) return;handleMeasureChange("Talla",e.target.value); }} 
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                 placeholder="0.00" 
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">m</span>
@@ -2659,7 +2709,7 @@ const Evaluacion: React.FC = () => {
                 type="text" 
                 value={vitalSigns.IMC} 
                 disabled 
-                className={`w-full p-2 border rounded-lg text-xs outline-none transition-colors ${getImcInput(vitalSigns.IMC)}`} 
+                className={`w-full p-2 border rounded-lg text-xs outline-none shadow-md transition-colors ${getImcInput(vitalSigns.IMC)}`} 
                 placeholder="0.00"
               />
             </div>
@@ -2674,7 +2724,7 @@ const Evaluacion: React.FC = () => {
                 type="text"
                 value={vitalSigns.Abdomen}
                 onChange={(e) => { if (e.target.value.length > 6) return; setVitalSigns((v) => ({ ...v, Abdomen: e.target.value })); }}
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.00"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">cm</span>
@@ -2684,7 +2734,7 @@ const Evaluacion: React.FC = () => {
             <label className="block text-xs font-medium text-gray-700 mb-1">
              T/A (mmHg) <b className="text-red-400">*</b>
             </label>
-            <div className="relative flex items-center border border-gray-300 rounded-lg focus-within:ring-1 focus-within:ring-clinical-blue focus-within:border-clinical-blue bg-white">
+            <div className="relative flex items-center border border-gray-100 shadow-md rounded-lg focus-within:ring-1 focus-within:ring-clinical-blue focus-within:border-clinical-blue bg-white">
               {/* <Activity className="h-3.5 w-3.5 absolute left-3 text-gray-400 pointer-events-none z-10" /> */}
               <div className="flex items-center w-full pl-2 pr-2 py-2">
                 <input 
@@ -2718,7 +2768,7 @@ const Evaluacion: React.FC = () => {
                 type="text" 
                 value={vitalSigns.TA} 
                 disabled 
-                className="w-full p-2 border border-gray-300 rounded-lg text-xs bg-gray-50 text-gray-700 font-medium outline-none" 
+                className="w-full p-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-700 font-medium outline-none" 
                 placeholder="12 / 8"
               />
             </div>
@@ -2736,7 +2786,7 @@ const Evaluacion: React.FC = () => {
                 type="number" 
                 value={vitalSigns.FC} 
                 onChange={(e) => { if (e.target.value.length > 3) return; setVitalSigns((v) => ({ ...v, FC: e.target.value })); }}
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                 placeholder="70"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">lpm</span>
@@ -2756,7 +2806,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={vitalSigns.FR} 
                 onChange={(e) => { if (e.target.value.length > 4) return; setVitalSigns((v) => ({ ...v, FR: e.target.value })); }}
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="18"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">rpm</span>
@@ -2775,7 +2825,7 @@ const Evaluacion: React.FC = () => {
                 type="number" 
                 value={vitalSigns.SpO2} 
                 onChange={(e) => { const r = e.target.value; if (r === "") { setVitalSigns((v) => ({ ...v, SpO2: "" })); return; } if (parseInt(r) > 100 || r.length > 3) return; setVitalSigns((v) => ({ ...v, SpO2: r })); }}
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                 placeholder="98"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">%</span>
@@ -2787,16 +2837,16 @@ const Evaluacion: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4 mb-4">
-        <div>
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
             <i className="mdi mdi-brain mr-4"></i>
             Cabeza
           </h2>
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-ear-hearing mr-4"></i>
+        </div>
+        <div className="my-4 flex items-center justify-between">
+          <h2 className="text-sm font-bold text-gray-800 flex items-center">
+          <i className="mdi mdi-ear-hearing mr-4"></i>
             Oídos
           </h2>
         </div>
@@ -2809,26 +2859,26 @@ const Evaluacion: React.FC = () => {
         rightSection={expOidos} rightSetter={setExpOidos}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4 mb-4">
-        <div>
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
             <i className="mdi mdi-eye mr-4"></i>
             Ojos
           </h2>
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-bullseye-arrow mr-4"></i>
+        </div>
+        <div className="my-4 flex items-center justify-between">
+          <h2 className="text-sm font-bold text-gray-800 flex items-center">
+          <i className="mdi mdi-bullseye-arrow mr-4"></i>
             Agudeza Visual
           </h2>
         </div>
       </div>
       
-      <div className="border border-gray-300 rounded-lg overflow-hidden mb-4">
+      <div className="overflow-hidden mb-4">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-gray-50 border-b border-gray-300">
-              <th className="px-3 py-2 text-left font-medium text-gray-700 w-[30%]">
+            <tr className="bg-linear-to-r from-white to-gray-100">
+              <th className="px-6 py-2 text-left font-medium text-gray-700 w-[30%]">
                 Ojos
               </th>
               <th
@@ -2845,7 +2895,7 @@ const Evaluacion: React.FC = () => {
               >
                 Anormal
               </th>
-              <th className="px-3 py-2 text-left font-medium border-l border-gray-300 text-gray-700 w-[30%]">
+              <th className="px-3 py-2 text-left font-medium text-gray-700 w-[30%]">
                 Agudeza visual
               </th>
               <th className="px-0 py-2 text-center font-medium text-gray-700 w-[10%]">
@@ -2870,7 +2920,7 @@ const Evaluacion: React.FC = () => {
               return (
                 <tr key={field}>
                   {/* Columnas Izquierdas (Ojos) */}
-                  <td className="px-3 py-2 font-medium text-gray-700">
+                  <td className="px-6 py-2 font-medium text-gray-700">
                     {field}
                     {/* <b className="text-red-400">*</b> */}
                   </td>
@@ -2900,9 +2950,7 @@ const Evaluacion: React.FC = () => {
                       />
                     </div>
                   </td>
-                      
-                  {/* Columna Derecha Dinámica (Agudeza Visual) */}
-                  {/* Columna Derecha Dinámica (Agudeza Visual) */}
+                  
                   {(() => {
                     const avRows = [
                       { label: "Ojo derecho", st: agudezaOD, set: setAgudezaOD },
@@ -2912,7 +2960,7 @@ const Evaluacion: React.FC = () => {
                     if (i === 0) {
                       return (
                         <>
-                          <td className="px-3 py-2 font-medium border-l border-gray-300 text-gray-700">
+                          <td className="px-3 py-2 font-medium text-gray-700">
                             ¿Usa lentes?
                           </td>
                           <td colSpan={2} className="px-2 py-1 bg-gray-50/30">
@@ -2929,13 +2977,13 @@ const Evaluacion: React.FC = () => {
                     if (i === 1) {
                       return (
                         <>
-                          <td className="px-3 py-2 font-medium border-l border-t border-b border-gray-300 text-gray-700 bg-gray-50">
+                          <td className="px-3 py-2 font-medium text-gray-700 bg-linear-to-r from-white to-gray-50">
                             {/* ¿Usa lentes? */}
                           </td>
-                          <td className="text-center font-medium border-t border-b border-gray-300 text-gray-700 bg-gray-50">
+                          <td className="text-center font-medium text-gray-700 bg-gray-50">
                             Con lentes
                           </td>
-                          <td className="text-center font-medium border-t border-b border-gray-300 text-gray-700 bg-gray-50">
+                          <td className="text-center font-medium text-gray-700 bg-linear-to-r from-gray-50 to-gray-100">
                             Sin lentes
                           </td>
                         </>
@@ -2947,7 +2995,7 @@ const Evaluacion: React.FC = () => {
                     if (av) {
                       return (
                         <>
-                          <td className="px-3 py-2 font-medium border-l border-gray-300 text-gray-700">
+                          <td className="px-3 py-2 font-medium text-gray-700">
                             {av.label}
                           </td>
                           <td className="px-2 py-1.5">
@@ -2955,7 +3003,7 @@ const Evaluacion: React.FC = () => {
                               type="text"
                               value={av.st.sinLentes}
                               onChange={(e) => av.set((p) => ({ ...p, sinLentes: e.target.value }))}
-                              className="w-full px-2 py-1 border border-gray-300 rounded text-center outline-none focus:ring-1 focus:ring-sea-blue text-xs"
+                              className="w-full px-2 py-1 border border-gray-100 shadow-md rounded text-center outline-none focus:ring-1 focus:ring-sea-blue text-xs"
                               placeholder="20/20"
                             />
                           </td>
@@ -2965,7 +3013,7 @@ const Evaluacion: React.FC = () => {
                               value={av.st.conLentes}
                               onChange={(e) => av.set((p) => ({ ...p, conLentes: e.target.value }))}
                               disabled={!usaLentes}
-                              className={`w-full px-2 py-1 border border-gray-300 rounded text-center outline-none text-xs ${
+                              className={`w-full px-2 py-1 border border-gray-100 shadow-md rounded text-center outline-none text-xs ${
                                 !usaLentes ? "bg-gray-100 cursor-not-allowed" : "focus:ring-1 focus:ring-sea-blue"
                               }`}
                               placeholder="20/20"
@@ -2977,7 +3025,7 @@ const Evaluacion: React.FC = () => {
 
                     return (
                       <>
-                        <td className="border-l border-gray-300" />
+                        <td className="" />
                         <td />
                         <td />
                       </>
@@ -2989,17 +3037,17 @@ const Evaluacion: React.FC = () => {
           </tbody>
         </table>
       </div>
-      
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4 mb-4">
-        <div>
+
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
             <i className="mdi mdi-tooth mr-4"></i>
-            Boca
+            Noca
           </h2>
-          </div>
-          <div>
-            <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-weather-windy mr-4"></i>
+        </div>
+        <div className="my-4 flex items-center justify-between">
+          <h2 className="text-sm font-bold text-gray-800 flex items-center">
+          <i className="mdi mdi-weather-windy mr-4"></i>
             Nariz
           </h2>
         </div>
@@ -3012,11 +3060,10 @@ const Evaluacion: React.FC = () => {
         rightSection={expNariz} rightSetter={setExpNariz}
       />
       
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4 mb-4">
-        <div>
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
             <i className="mdi mdi-account mr-4"></i>
-            {/* <img src="./src/assets/img/neck.png" className="mr-3.5" width="16"></img> */}
             Cuello
           </h2>
         </div>
@@ -3027,8 +3074,8 @@ const Evaluacion: React.FC = () => {
         leftSection={expCuello} leftSetter={setExpCuello}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4 mb-4">
-        <div>
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
             <i className="mdi mdi-lungs mr-4"></i>
             Área Precordial
@@ -3040,9 +3087,9 @@ const Evaluacion: React.FC = () => {
         leftTitle="Área precordial" leftFields={["Forma", "Ruidos Cardiacos", "Mamas", "Campos pulmonares"]}
         leftSection={expPrecordial} leftSetter={setExpPrecordial}
       />
-
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4 mb-4">
-        <div>
+      
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
             <i className="mdi mdi-arm-flex mr-4"></i>
             Miembros Torácicos
@@ -3055,8 +3102,8 @@ const Evaluacion: React.FC = () => {
         leftSection={expMTor} leftSetter={setExpMTor}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4 mb-4">
-        <div>
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
             <i className="mdi mdi-foot-print mr-4"></i>
             Miembros Pélvicos
@@ -3069,8 +3116,8 @@ const Evaluacion: React.FC = () => {
         leftSection={expMPel} leftSetter={setExpMPel}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4 mb-4">
-        <div>
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
             <i className="mdi mdi-dumbbell mr-4"></i>
             Abdomen
@@ -3083,8 +3130,8 @@ const Evaluacion: React.FC = () => {
         leftSection={expAbdomen} leftSetter={setExpAbdomen}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4 mb-4">
-        <div>
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
             <i className="mdi mdi-gender-male-female mr-4"></i>
             Genitales
@@ -3097,8 +3144,8 @@ const Evaluacion: React.FC = () => {
         leftSection={expGenitales} leftSetter={setExpGenitales}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4 mb-4">
-        <div>
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
             <i className="mdi mdi-fingerprint mr-4"></i>
             Piel y Anexos
@@ -3111,8 +3158,8 @@ const Evaluacion: React.FC = () => {
         leftSection={expPiel} leftSetter={setExpPiel}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4 mb-4">
-        <div>
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
             <i className="mdi mdi-bone mdi-rotate-90 mr-4"></i>
             Columna Cervical y Dorsal
@@ -3125,11 +3172,10 @@ const Evaluacion: React.FC = () => {
         leftSection={expColCervical} leftSetter={setExpColCervical}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4 mb-4">
-        <div>
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
             <i className="mdi mdi-bone mr-4"></i>
-            {/* <img src="./src/assets/img/columna-lumbar.png" className="mr-2" width="16"></img> */}
             Columna Lumbar
           </h2>
         </div>
@@ -3142,14 +3188,14 @@ const Evaluacion: React.FC = () => {
     </div>,
 
     <div key="laboratorio">
-      <div className="border border-gray-300 rounded-lg overflow-hidden mb-4">
-        <div className="bg-gray-50 px-3 py-1 border-b border-gray-300">
+      <div className="overflow-hidden mb-4">
+        <div className="px-6 py-1 bg-linear-to-r from-white to-gray-100">
           <span className="text-xs font-medium text-gray-700">
             Laboratorio
           </span>
         </div>
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-2 gap-x-4 p-3">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-2 gap-x-4 px-6 p-3">
           <div className="hidden">
             <label className="block text-xs font-medium text-gray-700 mb-1">
               BH
@@ -3160,7 +3206,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.bh} 
                 onChange={(e) => setLabs((p) => ({ ...p, bh: e.target.value }))}
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.0"
               />
             </div>
@@ -3176,8 +3222,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.hto} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, hto: e.target.value })); } }}
-                // onChange={(e) => setLabs((p) => ({ ...p, hto: e.target.value }))}
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="45"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">%</span>
@@ -3194,8 +3239,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.gr} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, gr: e.target.value })); } }}
-                // onChange={(e) => setLabs((p) => ({ ...p, gr: e.target.value }))}
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="5.0"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mill/µL</span>
@@ -3212,8 +3256,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.gb} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 5) { setLabs((p) => ({ ...p, gb: e.target.value })); } }}
-                // onChange={(e) => setLabs((p) => ({ ...p, gb: e.target.value }))}
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="7000"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">/µL</span>
@@ -3230,8 +3273,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.plaq} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 6) { setLabs((p) => ({ ...p, plaq: e.target.value })); } }}
-                // onChange={(e) => setLabs((p) => ({ ...p, plaq: e.target.value }))}
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="250000"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">/µL</span>
@@ -3239,7 +3281,7 @@ const Evaluacion: React.FC = () => {
             {/* <p className="text-xs text-gray-400 mt-1">Plaquetas</p> */}
           </div>
         </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-y-2 gap-x-4 p-3">
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-y-2 gap-x-4 px-6 p-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Glucosa <b className="text-red-400">*</b>
@@ -3250,8 +3292,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.glucosa} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, glucosa: e.target.value })); } }}
-                // onChange={(e) => setLabs((p) => ({ ...p, glucosa: e.target.value }))}
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="90"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
@@ -3267,8 +3308,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.colesterol} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, colesterol: e.target.value })); } }}
-                // onChange={(e) => setLabs((p) => ({ ...p, colesterol: e.target.value }))}
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="180"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
@@ -3284,8 +3324,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.trigliceridos} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, trigliceridos: e.target.value })); } }}
-                // onChange={(e) => setLabs((p) => ({ ...p, trigliceridos: e.target.value }))}
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="120"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
@@ -3302,8 +3341,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.urea} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 2) { setLabs((p) => ({ ...p, urea: e.target.value })); } }}
-                // onChange={(e) => setLabs((p) => ({ ...p, urea: e.target.value }))}
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="25"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
@@ -3319,8 +3357,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.acUrico} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, acUrico: e.target.value })); } }}
-                // onChange={(e) => setLabs((p) => ({ ...p, acUrico: e.target.value }))}
-                className="w-full p-2 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="5.5"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
@@ -3328,18 +3365,17 @@ const Evaluacion: React.FC = () => {
           </div>
         </div>
       </div>
-      
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 mt-4 mb-4">
-        <div>
+
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
             <i className="mdi mdi-radiology-box mr-4"></i>
-            {/* prescription */}
             Radiografía
           </h2>
         </div>
-        <div>
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-thermometer-low mr-4"></i>
+          <i className="mdi mdi-thermometer-low mr-4"></i>
             Hallazgos y Pruebas
           </h2>
         </div>
@@ -3351,9 +3387,9 @@ const Evaluacion: React.FC = () => {
         rightTitle="Hallazgos y pruebas" rightFields={["Lordosis", "Escoliosis", "Antidoping"]}
         rightSection={expHallazgos} rightSetter={setExpHallazgos}
       />
-      
-      <div className="grid grid-cols-1 gap-4 mt-4 mb-4">
-        <div>
+
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
             <i className="mdi mdi-test-tube mr-4"></i>
             Gabinete
@@ -3365,14 +3401,14 @@ const Evaluacion: React.FC = () => {
     </div>,
 
     <div key="conclusiones">
-      <div className="border border-gray-300 rounded-lg overflow-hidden">
-        <div className="bg-gray-50 px-3 py-1 border-b border-gray-300">
+      <div className="overflow-hidden mb-4">
+        <div className="px-6 py-1 bg-linear-to-r from-white to-gray-100">
           <span className="text-xs font-medium text-gray-700">
             Diagnósticos <b className="text-red-400">*</b>
           </span>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 p-3 mb-4">
           {([1, 2, 3, 4] as const).map((n) => {
             const key = `diagnostico${n}` as keyof Conclusiones;
             const prevKey = `diagnostico${n - 1}` as keyof Conclusiones;
@@ -3387,9 +3423,9 @@ const Evaluacion: React.FC = () => {
                     onChange={(e) => setConclusiones((g) => ({ ...g, [key]: e.target.value }))}
                     placeholder="Diagnóstico"
                     disabled={!isEnabled}
-                    className={`w-full px-3 py-2 pl-9 border rounded-lg text-xs focus:ring-1 focus:ring-sea-blue font-medium outline-none transition-colors ${
+                    className={`w-full px-3 py-2 pl-9 border rounded-lg text-xs focus:ring-1 focus:ring-sea-blue font-medium outline-none transition-colors shadow-md ${
                       isEnabled
-                        ? "border-gray-300 text-gray-800 bg-white" : "border-gray-300 text-gray-800 bg-gray-50"
+                        ? "border-gray-100 text-gray-800 bg-white" : "border-gray-100 text-gray-800 bg-gray-50"
                     }`}
                   />
                   <span className="absolute left-4 text-gray-800 text-xs pointer-events-none">{n}.</span>
@@ -3399,13 +3435,13 @@ const Evaluacion: React.FC = () => {
           })}
         </div>
 
-        <div className="bg-gray-50 px-3 py-1 border-b border-t border-gray-300">
+        <div className="px-6 py-1 bg-linear-to-r from-white to-gray-100">
           <span className="text-xs font-medium text-gray-700">
             Recomendaciones <b className="text-red-400">*</b>
           </span>
         </div>
         
-        <div className="grid grid-cols-1 gap-4 p-3">
+        <div className="grid grid-cols-1 gap-4 px-6 p-3 mb-4">
           {([1, 2, 3] as const).map((n) => {
             const key = `recomendacion${n}` as keyof Conclusiones;
             const prevKey = `recomendacion${n - 1}` as keyof Conclusiones;
@@ -3419,10 +3455,10 @@ const Evaluacion: React.FC = () => {
                   onChange={(e) => setConclusiones((c) => ({ ...c, [key]: e.target.value }))}
                   placeholder={`Recomendación`}
                   disabled={!isEnabled}
-                  className={`w-full px-3 py-2 pl-9 border rounded-lg text-xs focus:ring-1 focus:ring-sea-blue font-medium outline-none transition-colors ${
+                  className={`w-full px-3 py-2 pl-9 border rounded-lg text-xs focus:ring-1 focus:ring-sea-blue font-medium outline-none transition-colors shadow-md ${
                     isEnabled
-                      ? "border-gray-300 text-gray-800 bg-white"
-                      : "border-gray-300 text-gray-800 bg-gray-50"
+                      ? "border-gray-100 text-gray-800 bg-white"
+                      : "border-gray-100 text-gray-800 bg-gray-50"
                   }`}
                 />
                 <span className="absolute left-4 text-gray-800 text-xs pointer-events-none">{n}.</span>
@@ -3434,18 +3470,18 @@ const Evaluacion: React.FC = () => {
         <div>
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-gray-50 border-b border-t border-gray-300">
-                <th className="px-3 py-2 text-left font-medium text-gray-700 w-[50%]">
+              <tr className="bg-linear-to-r from-white to-gray-100">
+                <th className="px-6 py-2 text-left font-medium text-gray-700 w-[50%]">
                   Grado de salud <b className="text-red-400">*</b>
                 </th>
-                <th className="px-3 py-2 text-left font-medium border-l border-gray-300 text-gray-700 w-[50%]">
+                <th className="px-3 py-2 text-left font-medium text-gray-700 w-[50%]">
                   Resultado <b className="text-red-400">*</b>
                 </th>
               </tr>
             </thead>
             <tbody>
               <tr>
-                <td className="px-3 py-2 font-medium text-gray-700 space-y-2 align-top">
+                <td className="px-6 py-2 font-medium text-gray-700 space-y-2 align-top">
                   {(["Sano", "Riesgo moderado", "Riesgo alto"] as const).map((opcion) => (
                     <div key={opcion} className="flex items-center gap-2">
                       <CkCell
@@ -3456,7 +3492,7 @@ const Evaluacion: React.FC = () => {
                     </div>
                   ))}
                 </td>
-                <td className="px-3 py-2 font-medium border-l border-gray-300 text-left text-gray-700 space-y-2 align-top">
+                <td className="px-3 py-2 font-medium text-left text-gray-700 space-y-2 align-top">
                   {(["Optimo", "Bueno", "Regular", "Malo"] as const).map((opcion) => (
                     <div key={opcion} className="flex items-center gap-2">
                       <CkCell
@@ -3500,7 +3536,8 @@ const Evaluacion: React.FC = () => {
     <div className="relative flex w-full overflow-hidden">
       <div className="flex-1 mt-14 transition-all duration-300 ease-in-out">
         <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm gap-4 mb-6">
+          {/* <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm gap-4 mb-6"> */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4">
             <div className="flex items-center gap-3">
               <div>
                 <h1 className="text-2xl font-bold text-sea-blue">
@@ -3515,7 +3552,7 @@ const Evaluacion: React.FC = () => {
               onClick={handleSave}
               // disabled={saving || currentStep < STEPS.length - 1}
               disabled={saving}
-              className="w-35 flex items-center justify-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0"
+              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0"
             >
               {saving
                 ? <><i className="mdi mdi-loading mdi-spin mr-2" />Guardando...</>
@@ -3536,9 +3573,12 @@ const Evaluacion: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm h-155 flex flex-col overflow-y-auto"
+              className="flex-1 bg-white rounded-xl shadow-xl shadow-sm h-154.5 flex flex-col overflow-y-auto"
             >
-              <div className="flex items-center justify-between p-6 border-b border-gray-100">
+              <div 
+                // className="flex items-center justify-between p-6 border-b border-gray-100"
+                className="flex items-center justify-between p-6 bg-linear-to-r from-white to-gray-100 shrink-0 rounded-t-xl"
+              >
                 <h2 className="text-sm font-bold text-gray-800 flex items-center">
                   <i className={`${STEPS[currentStep].icon} mr-2`}></i>
                   <p className="ml-2">{STEPS[currentStep].label}</p>
@@ -3550,7 +3590,7 @@ const Evaluacion: React.FC = () => {
                   onNext={handleNext}
                 />
               </div>
-              <div className="flex-1 p-6 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto">
                 {stepPanels[currentStep]}
               </div>
             </motion.div>

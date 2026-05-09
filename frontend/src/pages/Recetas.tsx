@@ -130,7 +130,7 @@ const Recetas: React.FC = () => {
     <div className="relative flex w-full overflow-hidden">
       <div className="flex-1 mt-14 transition-all duration-300 ease-in-out">
         <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4">
             <div>
               <h1 className="text-2xl font-bold text-sea-blue flex items-center">
                 Recetas Digitales
@@ -152,7 +152,7 @@ const Recetas: React.FC = () => {
                   placeholder="Matrícula (5 dígitos)"
                   maxLength={5}
                   disabled={isSearching}
-                  className={`w-[318px] border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none transition-colors ${notFound ? "border-red-400 bg-red-50 text-red-700" : isSearching ? "border-gray-300 bg-gray-100" : "border-gray-300 focus:border-clinical-blue focus:ring-1"}`}
+                  className={`w-[318px] border rounded-lg pl-9 px-3 py-2 pr-10 text-xs shadow-md outline-none transition-colors ${notFound ? "border-red-400 bg-red-50 text-red-700" : isSearching ? "border-gray-100 bg-white" : "border-gray-100 bg-white focus:border-clinical-blue focus:ring-1"}`}
                   // className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none transition-colors ${editingId ? "bg-gray-50" : ""} ${!formData.matricula ? "border-gray-300" : loadingMat ? "border-gray-300 bg-gray-100" : matriculaNotFound ? "border-red-400 bg-red-50 text-red-700" : matriculaNotRegis ? "border-yellow-400 bg-yellow-50 text-yellow-700" : "border-gray-300 focus:border-clinical-blue focus:ring-1"}`}
                 />
                 {isSearching && (
@@ -162,8 +162,9 @@ const Recetas: React.FC = () => {
                 )}
               </div>
                 <button
+                  type="button"
                   onClick={handlePrint}
-                  className="w-35 flex items-center justify-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0"
+                  className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0"
                   disabled={!selectedRecipe}
                 >
                   <i className="mdi mdi-printer-wireless mr-2" />
@@ -177,17 +178,20 @@ const Recetas: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm h-154.5 flex flex-col"
+                className="flex-1 bg-white rounded-xl shadow-xl h-154.5 flex flex-col"
+                // className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col p-6"
+                // className="flex items-center gap-3 p-6 bg-linear-to-r from-white to-gray-100 shrink-0"
               >
-                <div className="relative flex items-center justify-between p-6 border-b border-gray-100">
-                  <h2 className="text-sm font-bold text-gray-800 flex items-center">
+                <div className="relative flex items-center justify-between bg-linear-to-r from-white to-gray-100 rounded-t-xl p-6">
+                  <h2 className="p-1.5 text-sm font-bold text-gray-800 flex items-center">
                     <i className={`mdi mdi-pill mr-2`}></i>
                     Recetas Médicas
                   </h2>
                   {selectedRecipe && (
                     <button
                       title="Regresar"
-                      className="absolute right-6 p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+                      // className="absolute right-6 p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+                      className="p-1.5 rounded-full bg-linear-to-b hover:from-gray-300 hover:to-gray-50 text-gray-600 hover:text-sea-blue cursor-pointer"
                       onClick={() => setSelectedRecipe(null)}
                     >
                       <ChevronLeft className="h-4 w-4" />
@@ -212,7 +216,7 @@ const Recetas: React.FC = () => {
                             <div
                               key={res.ID}
                               onClick={() => setSelectedRecipe(res)}
-                              className="group px-3 py-2 border rounded-xl transition-all cursor-pointer border-gray-200 hover:border-sea-blue/30 hover:bg-gray-50"
+                              className="group px-3 py-2 rounded-xl transition-all cursor-pointer hover:border-sea-blue/30 hover:bg-gray-50"
                             >
                               <div className="flex items-center justify-between gap-3">
                                 <div className="overflow-hidden">
@@ -242,22 +246,23 @@ const Recetas: React.FC = () => {
                       )}
                     </div>
                   ) : (
-                    <div className="flex-1 overflow-y-auto flex flex-col">
-                      <div className="space-y-4 p-6">
-                        <div className="border border-gray-300 rounded-lg overflow-hidden">
-                          <table className="w-full text-xs">
+                    <div className="flex-1 flex flex-col">
+                      {/* overflow-y-auto */}
+                      <div className="space-y-4">
+                        <div className="overflow-hidden">
+                          <table className="table-fixed w-full text-xs">
                             <thead>
-                              <tr className="bg-gray-50 border-b border-gray-300">
-                                <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-40">
+                              <tr className="bg-linear-to-r from-white to-gray-100">
+                                <th className="px-3 py-2 pl-[30px] text-left font-medium text-gray-700 mb-1 w-2/8">
                                   Medicamento
                                 </th>
-                                <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-20">
+                                <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/8">
                                   Dósis
                                 </th>
-                                <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-20">
+                                <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/8">
                                   Frecuencia
                                 </th>
-                                <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-20">
+                                <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/8">
                                   Duración
                                 </th>
                               </tr>
@@ -269,14 +274,14 @@ const Recetas: React.FC = () => {
                                     key={idx}
                                     // className="border-b border-gray-200 last:border-b-0"
                                   >
-                                    <td className="px-3 py-2 font-medium text-gray-700 mb-1">
+                                    <td className="px-3 py-2 pl-[30px] font-medium text-gray-700 mb-1">
                                       {med.Farmaco}
                                     </td>
                                     <td className="px-3 py-2">
                                       <input
                                         type="text"
                                         value={`${med.Dosis} tab`}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                                        className="w-full py-2 rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                                         disabled
                                       />
                                     </td>
@@ -284,7 +289,7 @@ const Recetas: React.FC = () => {
                                       <input
                                         type="text"
                                         value={`c/ ${med.Frecuencia} hrs`}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                                        className="w-full py-2 rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                                         disabled
                                       />
                                     </td>
@@ -292,7 +297,7 @@ const Recetas: React.FC = () => {
                                       <input
                                         type="text"
                                         value={`${med.Duracion} día(s)`}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                                        className="w-full py-2 rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                                         disabled
                                       />
                                     </td>
@@ -315,15 +320,16 @@ const Recetas: React.FC = () => {
                           <motion.div 
                             initial={{ opacity: 0, scale: 0.95 }} 
                             animate={{ opacity: 1, scale: 1 }} 
-                            className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start shadow-sm"
+                            className="bg-linear-to-r from-yellow-200/40 to-yellow-50 border border-yellow-300/20 shadow-md rounded-xl p-4 flex items-start"
                           >
                             {/* <AlertTriangle className="h-6 w-6 text-yellow-600 flex-shrink-0 mt-0.5 mr-3" /> */}
                             <i className="mdi mdi-alert mt-5 ml-1 mr-5 text-xl text-yellow-600 flex-shrink-0"></i>
+                            {/* border-yellow-300/20 bg-yellow-50 text-yellow-500 */}
                             <div>
                               <h4 className="text-sm font-bold text-yellow-800">
                                 Alerta de Farmacovigilancia
                               </h4>
-                              <p className="text-sm text-yellow-700 mt-1 leading-relaxed">
+                              <p className="text-sm text-justify text-yellow-700 mt-1 leading-relaxed">
                                 El paciente reporta las siguientes alergias a medicamentos en su expediente: <strong>{selectedRecipe.AlergiasMedicamento}</strong>.
                                 Valida la prescripción actual basándote en esta información.
                               </p>
@@ -342,10 +348,10 @@ const Recetas: React.FC = () => {
               animate={{ opacity: 1, x: 0 }}
               className="col-span-1 lg:col-span-3"
             >
-              <div className="bg-gray-100 rounded-lg border border-gray-200 h-full flex flex-col">
+              <div className="h-full flex flex-col">
                 <div
                   ref={componentRef}
-                  className="bg-white rounded-lg shadow-sm flex-1 w-full relative flex flex-col p-6 font-serif print:shadow-none print:p-10 print:w-[210mm] print:mx-auto"
+                  className="bg-white rounded-xl shadow-xl flex-1 w-full relative flex flex-col p-6 font-serif print:shadow-none print:p-10 print:w-[210mm] print:mx-auto"
                 >
                   <div className="border-b-2 border-clinical-blue pb-4 mb-4 flex justify-between">
                     <div>

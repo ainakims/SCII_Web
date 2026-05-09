@@ -363,7 +363,7 @@ const Pacientes: React.FC = () => {
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">${title}</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">${message}</p>`,
       iconHtml: `
-      <i class="mdi mdi-check-decagram-outline success-icon"></i>
+      <i class="mdi mdi-check-circle-outline success-icon"></i>
       <style>
         .success-icon {
           color: #54BBAB;
@@ -382,7 +382,7 @@ const Pacientes: React.FC = () => {
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
       customClass:
       { 
-        confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+        confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
       },
     })
   };
@@ -412,7 +412,7 @@ const Pacientes: React.FC = () => {
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
       customClass:
       {
-        confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+        confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
       },
     });
   };
@@ -440,10 +440,9 @@ const Pacientes: React.FC = () => {
         if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" });
       },
       buttonsStyling: false,
-      showCloseButton: true,
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
       customClass: {
-        confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+        confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
       },
     })
   };
@@ -550,7 +549,7 @@ const Pacientes: React.FC = () => {
       >
         <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
           {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4">
             <div>
               <h1 className="text-2xl font-bold text-sea-blue flex items-center">
                 Expediente de Pacientes
@@ -561,7 +560,7 @@ const Pacientes: React.FC = () => {
             </div>
             <button
               onClick={() => handleOpenModal()}
-              className="w-35 flex items-center justify-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
             >
               <i className="mdi mdi-account-plus mr-2"></i>
               Agregar
@@ -572,16 +571,17 @@ const Pacientes: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden flex flex-col min-h-125"
+            className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col min-h-125"
           >
             {/* Toolbar */}
-            <div className="flex items-center justify-between px-6 py-[21px] border-b border-gray-100">
+            <div className="flex items-center justify-between px-6 py-[21px] bg-linear-to-r from-white to-gray-100 rounded-t-xl">
+              {/* border-b border-gray-100 */}
               <div className="relative w-92">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
                   // className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:border-clinical-blue focus:ring-1 focus:ring-clinical-blue outline-none transition-shadow"
-                  className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none transition-colors border-gray-300 focus:border-clinical-blue focus:ring-1`}
+                  className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none transition-colors border-gray-100 shadow-md focus:border-clinical-blue focus:ring-1`}
                   placeholder="Buscar por nombre o matrícula"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
@@ -592,18 +592,18 @@ const Pacientes: React.FC = () => {
               </span>
             </div>
 
-            <div className="space-y-4 p-6">
-              <div className="border border-gray-300 rounded-lg h-[493px] flex flex-col">
+            <div className="space-y-4">
+              <div className="rounded-lg h-[541px] flex flex-col">
                 <div className="flex-1 overflow-y-auto">
                   <table className="table-fixed w-full text-xs">
-                    <thead className="sticky top-0 bg-gray-50 z-10">
-                      <tr className="bg-gray-50 border-b border-gray-300">
+                    <thead className="sticky top-0 z-10">
+                      <tr className="bg-linear-to-r from-white to-gray-100">
                         {/* <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1">
                           Tipo
                         </th> */}
                         {(["matricula","nombre","especialidad","consulta","perfil"] as SortCol[]).map((col, i) => {
                           const labels: Record<string, string> = { matricula: "Matrícula", nombre: "Paciente", especialidad: "Especialidad", consulta: "Última consulta", perfil: "Perfil"};
-                          const widths: Record<string, string> = { matricula: "w-[110px]", nombre: "w-auto", especialidad: "w-[210px]", consulta: "w-[142px]", perfil: "w-[142px]" };
+                          const widths: Record<string, string> = { matricula: "w-[110px]", nombre: "w-auto", especialidad: "w-[210px]", consulta: "w-[145px]", perfil: "w-[142px]" };
                           const active = sortCol === col && sortDir !== "none";
                           return (
                             <th key={col} onClick={() => cycleSort(col)} className={`px-3 py-2 ${i === 0 ? "pl-6" : ""} text-left font-medium text-gray-700 mb-1 ${widths[col!]} cursor-pointer select-none group`}>
@@ -705,7 +705,7 @@ const Pacientes: React.FC = () => {
                                   <button
                                     onClick={() => { handleOpenModal(p); setEditingId(null); }}
                                     // Edit
-                                    className="w-9 h-9 text-gray-400 hover:text-sky-blue hover:bg-sky-blue/10 rounded-xl transition-all cursor-pointer"
+                                    className="w-9 h-9 text-gray-400 hover:text-sky-blue bg-linear-to-b hover:from-sky-blue/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
                                     title="Registrar"
                                   >
                                     <i className="mdi mdi-account-plus-outline text-lg"></i>
@@ -713,7 +713,7 @@ const Pacientes: React.FC = () => {
                                 ) : (
                                   <button
                                     onClick={() => handleOpenModal(p)}
-                                    className="w-9 h-9 text-gray-400 hover:text-sky-blue hover:bg-sky-blue/10 rounded-xl transition-all cursor-pointer"
+                                    className="w-9 h-9 text-gray-400 hover:text-sky-blue bg-linear-to-b hover:from-sky-blue/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
                                     title="Editar"
                                   >
                                     <i className="mdi mdi-pencil-outline text-lg"></i>
@@ -722,7 +722,7 @@ const Pacientes: React.FC = () => {
                                 {p.Empl_matricula && Number(p.Empl_matricula) === 0 && (
                                   <button 
                                     onClick={() => handleDelete(p.IdPaciente)}
-                                    className="w-9 h-9 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
+                                    className="w-9 h-9 text-gray-400 hover:text-red-500 bg-linear-to-b hover:from-red-100 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
                                     title="Eliminar"
                                   >
                                     <i className="mdi mdi-trash-can-outline text-lg"></i>
@@ -757,7 +757,7 @@ const Pacientes: React.FC = () => {
                     </tbody>
                   </table>
                 </div>
-                <div className="grid grid-cols-2 gap-4 border-t border-gray-300 items-center h-10">
+                <div className="grid grid-cols-2 gap-4 border-t border-gray-100 items-center h-10">
                   <div className="col-span-1 pl-6 flex items-center">
                     <span className="text-xs font-bold text-gray-400">
                       {currentPage} de {totalPages} páginas
@@ -768,7 +768,7 @@ const Pacientes: React.FC = () => {
                       <button
                         onClick={() => setCurrentPage(1)}
                         disabled={currentPage === 1}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+                        className="p-1.5 rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
                         title="Primer página"
                       >
                         <ChevronFirst className="h-4 w-4" />
@@ -779,7 +779,7 @@ const Pacientes: React.FC = () => {
                           setCurrentPage((prev) => Math.max(prev - 1, 1))
                         }
                         disabled={currentPage === 1}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+                        className="p-1.5 rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
                       >
                         <ChevronLeft className="h-4 w-4" />
                       </button>
@@ -793,7 +793,7 @@ const Pacientes: React.FC = () => {
                             title={`Pág. ${page}`}
                             key={page}
                             onClick={() => setCurrentPage(page)}
-                            className={`px-2 py-1 rounded-lg text-xs border cursor-pointer border-gray-200 font-semibold transition-all ${currentPage === page ? "bg-sea-blue text-white" : "hover:bg-gray-100"}`}
+                            className={`px-2 py-1 rounded-lg text-xs border cursor-pointer border-gray-100 shadow-md font-semibold transition-all ${currentPage === page ? "text-white bg-linear-to-b from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80" : "hover:bg-gray-100"}`}
                           >
                             {page}
                           </button>
@@ -808,14 +808,14 @@ const Pacientes: React.FC = () => {
                         title="Siguiente"
                         onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages)) }
                         disabled={currentPage === totalPages}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+                        className="p-1.5 rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 hover:text-sea-blue text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
                       >
                         <ChevronRight className="h-4 w-4" />
                       </button>
                       <button
                         onClick={() => setCurrentPage(totalPages)}
                         disabled={currentPage === totalPages}
-                        className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+                        className="p-1.5 rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 hover:text-sea-blue text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
                         title="Última página"
                       >
                         <ChevronLast className="h-4 w-4" />
@@ -835,22 +835,22 @@ const Pacientes: React.FC = () => {
       >
         <div className="flex h-full w-full">
           <div className="flex flex-col border-r border-gray-100 h-full shrink-0" style={{ width: 420 }}>
-            <div className="px-3 py-4 border-b border-gray-100 shrink-0">
+            <div className="px-3 py-4 shrink-0 bg-linear-to-r from-white to-gray-100">
               <div className="flex items-center gap-2 justify-between">
                 <div className="flex items-center gap-2">
                   <button 
                     title="Regresar"
-                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-sea-blue hover:bg-gray-100 rounded-xl transition-all cursor-pointer"
+                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-sea-blue bg-linear-to-b hover:from-sea-blue/10 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
                     onClick={() => setIsModalOpen(false)}
                   >
                     <i className={`mdi mdi-chevron-right text-2xl`}></i>
                   </button>
                   <div>
-                    <h2 className="text-sm font-bold text-gray-800 upp flex items-center">
-                      <i className="mdi mdi-account-multiple-plus mr-2"></i>
+                    <p className="text-xs font-bold text-gray-800 truncate uppercase max-w-[320px]">
+                      <i className={`mdi mdi-${editingId ? "account-edit" : "account-multiple-plus"} mr-2`}></i>
                       {editingId ? "Editar Paciente" : "Nuevo Paciente"}
-                    </h2>
-                    <p className="text-xs text-gray-500 truncate font-medium">
+                    </p>
+                    <p className="text-xs text-gray-500 uppercase truncate">
                       {editingType === "internal" ? "Paciente interno / empleado." : "Registro de paciente externo."}
                     </p>
                   </div>
@@ -867,7 +867,7 @@ const Pacientes: React.FC = () => {
                 {editingType === "internal" ? (
                   <div>
                     <h3 className="text-xs font-bold text-gray-800 mb-2 flex items-center">
-                      <i className="mdi mdi-account-tie mr-2"></i>
+                      <i className="mdi mdi-help-circle mr-2"></i>
                       Datos del Empleado
                     </h3>
                     <div>
@@ -879,7 +879,7 @@ const Pacientes: React.FC = () => {
                         value={formData.matricula}
                         disabled
                         readOnly
-                        className="w-full border border-gray-200 bg-gray-50 text-gray-400 rounded-lg px-3 py-2 text-xs cursor-not-allowed"
+                        className="w-full border border-gray-100 shadow-md bg-gray-50 text-gray-400 rounded-lg px-3 py-2 text-xs cursor-not-allowed"
                       />
                     </div>
                     <div>
@@ -891,7 +891,7 @@ const Pacientes: React.FC = () => {
                         value={formData.nombre}
                         disabled
                         readOnly
-                        className="w-full border border-gray-200 bg-gray-50 text-gray-400 rounded-lg px-3 py-2 text-xs cursor-not-allowed"
+                        className="w-full border border-gray-100 shadow-md bg-gray-50 text-gray-400 rounded-lg px-3 py-2 text-xs cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -912,10 +912,10 @@ const Pacientes: React.FC = () => {
                         onBlur={() => setTimeout(() => setShowProveedores(false), 150)}
                         onFocus={() => setShowProveedores(true)}
                         placeholder="Seleccionar"
-                        className={`w-full border rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none border-gray-300`}
+                        className={`w-full border rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none border-gray-100 shadow-md`}
                       />
                       {showProveedores && (
-                        <ul className="absolute z-10 w-full bg-white border border-gray-200 rounded-lg mt-1 max-h-40 overflow-y-auto shadow">
+                        <ul className="absolute z-10 w-full bg-white border border-gray-100 rounded-lg mt-1 max-h-40 overflow-y-auto shadow">
                           {proveedor
                             .filter((prov) =>
                               prov.Razon.toLowerCase().includes((formData.proveedorTexto ?? "").toLowerCase())
@@ -944,7 +944,7 @@ const Pacientes: React.FC = () => {
                         value={formData.nombre}
                         onChange={(e) => setFormData({ ...formData, nombre: e.target.value })}
                         placeholder="Nombre"
-                        className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs focus:border-clinical-blue focus:ring-1 focus:ring-clinical-blue outline-none"
+                        className="w-full border border-gray-100 shadow-md rounded-lg px-3 py-2 text-xs focus:border-clinical-blue focus:ring-1 focus:ring-clinical-blue outline-none"
                       />
                     </div>
                   </>
@@ -966,7 +966,7 @@ const Pacientes: React.FC = () => {
                         onChange={(e) => { setFormData({ ...formData, curp: e.target.value }); setCurpDuplicado(false); }}
                         onBlur={(e) => verificarCURP(e.target.value, editingId)}
                         placeholder="CURP / Pasaporte"
-                        className={`w-full border rounded-lg px-3 py-2 text-xs outline-none ${curpDuplicado ? "border-red-200 focus:ring-red-400 bg-red-50 text-red-500" : "border-gray-300 focus:border-clinical-blue focus:ring-1 focus:ring-clinical-blue"}`}
+                        className={`w-full border rounded-lg px-3 py-2 text-xs outline-none shadow-md ${curpDuplicado ? "border-red-100 focus:ring-red-400 bg-red-50 text-red-500" : "border-gray-100 focus:border-clinical-blue focus:ring-1 focus:ring-clinical-blue"}`}
                       />
                       {checkingCurp && (
                         <div className="absolute right-2 top-1/2 -translate-y-1/2">
@@ -1002,7 +1002,7 @@ const Pacientes: React.FC = () => {
                       maxLength={11}
                       onChange={(e) => setFormData({ ...formData, nss: e.target.value, }) }
                       placeholder="No. IMSS"
-                      className="w-full border border-gray-300 rounded-lg px-3 py-2 text-xs outline-none focus:border-clinical-blue focus:ring-1 focus:ring-clinical-blue"
+                      className="w-full border border-gray-100 shadow-md rounded-lg px-3 py-2 text-xs outline-none focus:border-clinical-blue focus:ring-1 focus:ring-clinical-blue"
                     />
                     {/* <p className="text-xs text-gray-400 mt-1">
                       11 caracteres
@@ -1015,7 +1015,7 @@ const Pacientes: React.FC = () => {
                       Sexo
                     </label>
                     <select
-                      className="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
+                      className="w-full border border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
                       value={formData.sexo}
                       onChange={(e) => setFormData({ ...formData, sexo: e.target.value as "M" | "F", })}
                     >
@@ -1031,7 +1031,7 @@ const Pacientes: React.FC = () => {
                     <input
                       type="date"
                       max={new Date().toISOString().split("T")[0]}
-                      className="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
+                      className="w-full border border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
                       value={formData.fechaNacimiento}
                       onChange={(e) => setFormData({ ...formData, fechaNacimiento: e.target.value, }) }
                     />
@@ -1043,7 +1043,7 @@ const Pacientes: React.FC = () => {
                       Riesgo inicial
                     </label>
                     <select
-                      className="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
+                      className="w-full border border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
                       value={formData.riesgo}
                       onChange={(e) => setFormData({ ...formData, riesgo: e.target.value as NivelRiesgo, }) }
                     >
@@ -1057,7 +1057,7 @@ const Pacientes: React.FC = () => {
                       Tipo sanguíneo
                     </label>
                     <select
-                      className="w-full border border-gray-300 rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
+                      className="w-full border border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
                       value={formData.tipoSanguineo}
                       onChange={(e) => setFormData({ ...formData, tipoSanguineo: e.target.value as TipoSanguineo | "", }) }
                     >
@@ -1085,7 +1085,7 @@ const Pacientes: React.FC = () => {
                       value={formData.alergias}
                       onChange={(e) => setFormData({ ...formData, alergias: e.target.value, }) }
                       placeholder="Alergias general"
-                      className="w-full p-2 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none transition-colors resize-none"
+                      className="w-full p-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none transition-colors resize-none"
                     />
                   </div>
                   <div>
@@ -1097,7 +1097,7 @@ const Pacientes: React.FC = () => {
                       value={formData.alergiasMedicamentos}
                       onChange={(e) => setFormData({ ...formData, alergiasMedicamentos: e.target.value, }) }
                       placeholder="Alergias fármacos"
-                      className="w-full p-2 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none transition-colors resize-none"
+                      className="w-full p-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none transition-colors resize-none"
                     />
                   </div>
                 </div>
@@ -1111,7 +1111,7 @@ const Pacientes: React.FC = () => {
                       value={formData.enfermedadesCronicas}
                       onChange={(e) => setFormData({ ...formData, enfermedadesCronicas: e.target.value, }) }
                       placeholder="Enfermedades"
-                      className="w-full p-2 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none transition-colors resize-none"
+                      className="w-full p-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none transition-colors resize-none"
                     />
                   </div>
                   <div>
@@ -1123,7 +1123,7 @@ const Pacientes: React.FC = () => {
                       value={formData.tratamientosActuales}
                       onChange={(e) => setFormData({ ...formData, tratamientosActuales: e.target.value, }) }
                       placeholder="Tratamientos"
-                      className="w-full p-2 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none transition-colors resize-none"
+                      className="w-full p-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none transition-colors resize-none"
                     />
                   </div>
                 </div>
@@ -1137,7 +1137,7 @@ const Pacientes: React.FC = () => {
                       value={formData.cirugias}
                       onChange={(e) => setFormData({ ...formData, cirugias: e.target.value, }) }
                       placeholder="Operaciones"
-                      className="w-full p-2 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none transition-colors resize-none"
+                      className="w-full p-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none transition-colors resize-none"
                     />
                   </div>
                   <div>
@@ -1149,17 +1149,17 @@ const Pacientes: React.FC = () => {
                       value={formData.fracturas}
                       onChange={(e) => setFormData({ ...formData, fracturas: e.target.value, }) }
                       placeholder="Fracturas"
-                      className="w-full p-2 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none transition-colors resize-none"
+                      className="w-full p-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none transition-colors resize-none"
                     />
                   </div>
                 </div>
               </div>
             </form>
-            <div className={`px-5 py-4 border-t border-gray-100 shrink-0 flex justify-between items-center `}>
+            <div className={`px-5 py-4 shrink-0 flex justify-between items-center `}>
               <button
                 // onClick={() => handleSubmit()}
                 form="pacienteForm"
-                className="w-full flex items-center justify-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
+                className="w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
               >
                 <i className="mdi mdi-account-check mr-2"></i>
                 Guardar Paciente

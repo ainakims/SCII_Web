@@ -189,9 +189,11 @@ const getIMC = (imc: string) => {
   
   if (!imc || isNaN(v) || v === 0) return { container: "border-gray-300 bg-gray-200/40", text: "text-gray-600", icon: "text-gray-300 group-hover:text-gray-400/60" };
   if (v <  18.5) return { container: "border-yellow-400 bg-yellow-400/10", text: "text-yellow-600", icon: "text-yellow-600/30 group-hover:text-yellow-600/50" };
-  if (v <= 24.9) return { container: "border-horz-blue bg-horz-blue/15", text: "text-sea-blue", icon: "text-sky-blue/20 group-hover:text-sky-blue/40" };
+  if (v <= 24.9) return { container: "bg-linear-to-r from-horz-blue/15 to-white shadow-horz-blue", text: "text-sea-blue", icon: "text-sky-blue/20 group-hover:text-sky-blue/40" };
   if (v <= 29.9) return { container: "border-yellow-400 bg-yellow-400/10", text: "text-yellow-600", icon: "text-yellow-600/30 group-hover:text-yellow-600/50" };
   return { container: "border-red-200 bg-red-50", text: "text-red-500", icon: "text-red-200 group-hover:text-red-300" };
+
+  // bg-linear-to-r from-horz-blue/15 to-white shadow-horz-blue
 };
 
 const Perfil: React.FC = () => {
@@ -353,7 +355,7 @@ const Perfil: React.FC = () => {
   };
 
   const getInitials = (name: string | undefined): string => {
-    if (!name) return "DR";
+    if (!name) return "";
     const parts = name.trim().split(" ");
     return parts.length >= 2
       ? (parts[0][0] + parts[1][0]).toUpperCase()
@@ -372,9 +374,9 @@ const Perfil: React.FC = () => {
           return (
             <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
               <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
-                <div className="flex flex-col sm:flex-row justify-between items-center bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm gap-4">
+                <div className="flex flex-col sm:flex-row justify-between items-center bg-linear-to-r bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm gap-4">
                   <div className="flex items-center gap-4 w-full sm:w-auto">
-                    <div className="absolute w-16 h-16 text-white bg-sea-blue rounded-full flex items-center justify-center shrink-0">
+                    <div className="absolute w-16 h-16 text-white bg-linear-to-b from-sea-blue to-sky-blue rounded-full flex items-center justify-center shrink-0 shadow-[0_0_20px] shadow-sky-blue/60">
                       <b>{user?.matricula != "0" ? user?.matricula : getInitials(user?.nombre)}</b>
                     </div>
                     <div className="ml-[90px]">
@@ -612,10 +614,9 @@ const Perfil: React.FC = () => {
                       <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="relative overflow-hidden bg-red-50 rounded-xl border border-red-200 text-red-500 shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default"
+                        className="relative overflow-hidden bg-linear-to-r from-red-100/80 to-white rounded-xl text-red-500 shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default shadow-red-300/60"
                       >
                         <i className="mdi mdi-water absolute -bottom-2 right-0 text-[3rem] text-red-200 group-hover:text-red-300 transition-colors duration-300 pointer-events-none select-none" />
-                        {/* <div className="absolute -top-6 -right-6 w-16 h-16 bg-red-300 rounded-full scale-0 group-hover:scale-100 transition-transform duration-300 ease-out" /> */}
                         <div className="flex items-center justify-between relative z-10">
                           <span className="text-[10px] font-semibold uppercase tracking-wide">
                             Tipo de Sangre
@@ -629,7 +630,7 @@ const Perfil: React.FC = () => {
                       <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="relative overflow-hidden bg-horz-blue/15 rounded-xl border border-horz-blue text-sea-blue shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default"
+                        className="relative overflow-hidden bg-linear-to-r from-horz-blue/15 to-white rounded-xl text-sea-blue shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default shadow-horz-blue"
                       >
                         <i className="mdi mdi-weight absolute -bottom-2 right-3 text-[3rem] text-sky-blue/20 group-hover:text-sky-blue/40 transition-colors duration-300 pointer-events-none select-none" />
                         <div className="flex items-center justify-between relative z-10">
@@ -638,14 +639,14 @@ const Perfil: React.FC = () => {
                           </span>
                         </div>
                         <span className="text-xl font-bold text-sea-blue relative z-10">
-                          {p.SignosVitales?.Peso ? `${p.SignosVitales.Peso} KG` : "N/A"}
+                          {p.SignosVitales?.Peso ? `${p.SignosVitales.Peso} kg` : "N/A"}
                         </span>
                       </motion.div>
                         
                       <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className="relative overflow-hidden bg-horz-blue/15 rounded-xl border border-horz-blue text-sea-blue shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default"
+                        className="relative overflow-hidden bg-linear-to-r from-horz-blue/15 to-white rounded-xl text-sea-blue shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default shadow-horz-blue"
                       >
                         <i className="mdi mdi-human-male-height-variant absolute -bottom-2 right-2 text-[3rem] text-sky-blue/20 group-hover:text-sky-blue/40 transition-colors duration-300 pointer-events-none select-none" />
                         <div className="flex items-center justify-between relative z-10">
@@ -654,14 +655,14 @@ const Perfil: React.FC = () => {
                           </span>
                         </div>
                         <span className="text-xl font-bold text-sea-blue relative z-10">
-                          {p.SignosVitales?.Talla ? `${p.SignosVitales.Talla} M` : "N/A"}
+                          {p.SignosVitales?.Talla ? `${p.SignosVitales.Talla} m` : "N/A"}
                         </span>
                       </motion.div>
                       
                       <motion.div
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
-                        className={`relative overflow-hidden rounded-xl border shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default ${imcStyles.container}`}
+                        className={`relative overflow-hidden rounded-xl shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default ${imcStyles.container}`}
                       >
                         <i className={`mdi mdi-scale-balance absolute -bottom-2 right-2 text-[3rem] transition-colors duration-300 pointer-events-none select-none ${imcStyles.icon} transition-colors duration-300`} />
                         <div className="flex items-center justify-between relative z-10">

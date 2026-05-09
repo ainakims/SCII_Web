@@ -51,12 +51,12 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
 
   return (
     <header
-      className={`h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 sm:px-5 lg:px-5 fixed top-0 right-0 z-10 transition-all duration-300 ${isCollapsed ? "left-0 md:left-20" : "left-0 md:left-64"}`}
+      className={`h-16 bg-white border-b border-gray-100 flex items-center justify-between px-4 sm:px-5 lg:px-5 fixed top-0 right-0 z-10 transition-all duration-300 ${isCollapsed ? "left-0 md:left-20" : "left-0 md:left-64"}`}
     >
       <div className="flex items-center flex-1">
         <button
           onClick={toggleSidebar}
-          className="px-2 -ml-2 text-gray-500 hover:bg-gray-100 rounded-md cursor-pointer transition-colors"
+          className="px-2 -ml-2 text-gray-400 hover:text-sea-blue bg-linear-to-b hover:from-sea-blue/10 hover:to-gray-50 rounded-md cursor-pointer transition-colors"
         >
           <i className="mdi mdi-menu text-[25px]"></i>
         </button>
@@ -93,10 +93,10 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
         </button> */}
         <button
           onClick={handleLogout}
-          className="w-10 h-10 ml-1 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl flex items-center justify-center transition-all group cursor-pointer"
+          className="w-10 h-10 ml-1 text-gray-400 hover:text-red-500 bg-linear-to-b hover:from-red-100 hover:to-gray-50 rounded-xl flex items-center justify-center transition-all group cursor-pointer"
           title="Cerrar Sesión"
         >
-          <i className="mdi mdi-logout"></i>
+          <i className="mdi mdi-run-fast"></i>
         </button>
       </div>
     </header>

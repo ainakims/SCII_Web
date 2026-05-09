@@ -84,14 +84,14 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
 
   return (
     <div
-      className={`bg-white border-r border-gray-200 h-screen flex flex-col hidden md:flex fixed top-0 left-0 z-20 shadow-sm transition-all duration-300 ${
+      className={`bg-white h-screen flex flex-col hidden md:flex fixed top-0 left-0 z-20 shadow-lg transition-all duration-300 ${
         isCollapsed ? "w-20" : "w-64"
       }`}
     >
-      <div className="h-16 flex items-center px-6 border-b border-gray-200 overflow-hidden whitespace-nowrap">
+      <div className="h-16 flex items-center px-6 overflow-hidden whitespace-nowrap">
         <i className="fa fa-star-of-life ml-0.5 text-2xl text-aqua-green mr-2 flex-shrink-0"></i>
         {!isCollapsed && (
-          <span className="font-black text-sea-blue italic tracking-tighter text-3xl transition-opacity duration-300">
+          <span className="font-black text-primary italic tracking-tighter text-3xl transition-opacity duration-300">
             SCII
           </span>
         )}
@@ -106,7 +106,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
               className={({ isActive }) =>
                 `group flex items-center px-3 py-1.5 mb-1 text-sm font-medium rounded-lg transition-all duration-200 ${
                   isActive
-                    ? "bg-sea-blue text-white shadow-md shadow-blue-500/20"
+                    ? "bg-linear-to-r from-sea-blue to-sky-blue text-white shadow-md shadow-blue-500/20"
                     : "text-gray-500 hover:text-sea-blue hover:bg-gray-100"
                 }`
               }
@@ -133,12 +133,12 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
       <div className="p-3 overflow-hidden">
         <NavLink
           to="/Perfil"
-          // onClick={(e) => { e.preventDefault(); }}
-          className={({ isActive }) => `group p-3 flex items-center w-full rounded-lg transition-all duration-200 disabled cursor-pointer ${isActive ? "bg-sea-blue shadow-md shadow-blue-500/20" : "hover:bg-gray-100"}` }
+          onClick={(e) => { e.preventDefault(); }}
+          className={({ isActive }) => `group p-3 flex items-center w-full rounded-lg transition-all duration-200 disabled cursor-pointer ${isActive ? "bg-linear-to-r from-sea-blue to-sky-blue shadow-md shadow-blue-500/20" : "hover:bg-gray-100"}` }
         >
           {({ isActive }) => (
             <div className="flex items-center min-w-0 flex-1 overflow-hidden">
-              <div className={`h-7.5 w-7.5 shrink-0 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-all ${isActive ? "text-sea-blue bg-white" : "text-white bg-sea-blue"}`}>
+              <div className={`h-7.5 w-7.5 shrink-0 rounded-full flex items-center justify-center text-xs font-bold shadow-sm transition-all ${isActive ? "text-sea-blue bg-white" : "text-white bg-linear-to-b from-sea-blue to-sky-blue"}`}>
                 {getInitials(user?.nombre)}
               </div>
               <div className={`flex items-center flex-1 min-w-0 transition-all duration-300 ${isCollapsed ? "opacity-0 invisible w-0" : "opacity-100 visible ml-3"}`}>

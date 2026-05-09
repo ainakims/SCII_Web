@@ -528,7 +528,7 @@ const Agenda: React.FC = () => {
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">${title}</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">${message}</p>`,
       iconHtml: `
-      <i class="mdi mdi-check-decagram-outline success-icon"></i>
+      <i class="mdi mdi-check-circle-outline success-icon"></i>
       <style>
         .success-icon {
           color: #54BBAB;
@@ -547,7 +547,7 @@ const Agenda: React.FC = () => {
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
       customClass:
       { 
-        confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+        confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
       },
     })
   };
@@ -577,7 +577,7 @@ const Agenda: React.FC = () => {
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
       customClass:
       {
-        confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+        confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
       },
     });
   };
@@ -605,12 +605,11 @@ const Agenda: React.FC = () => {
         if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" });
       },
       buttonsStyling: false,
-      // showCloseButton: true,
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i>${confirma}`,
       denyButtonText: `<i class="mdi mdi-close-thick mr-1"></i>${cancelar}`,
       showDenyButton: true,
       customClass: {
-        confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
+        confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
         denyButton: "flex items-center bg-gray-50 hover:bg-gray-100/80 hover:-translate-y-1 text-gray-800 px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-gray-500/30 transition-all cursor-pointer ml-3"
       },
     })
@@ -640,12 +639,11 @@ const Agenda: React.FC = () => {
         if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" });
       },
       buttonsStyling: false,
-      // showCloseButton: true,
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> Permitir`,
       cancelButtonText: `<i class="mdi mdi-close-thick mr-1"></i> Cancelar`,
       showCancelButton: true,
       customClass: {
-        confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
+        confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
         cancelButton: "flex items-center bg-gray-50 hover:bg-gray-100/80 hover:-translate-y-1 text-gray-800 px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-gray-500/30 transition-all cursor-pointer ml-3"
       },
     }).then((result) => {
@@ -753,7 +751,7 @@ const Agenda: React.FC = () => {
         // style={{ marginRight: isPanelOpen ? 420 : 0 }}
       >
         <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4">
             <div>
               <h1 className="text-2xl font-bold text-sea-blue flex items-center">
                 Agenda de Citas
@@ -765,7 +763,7 @@ const Agenda: React.FC = () => {
             {esPrivilegiado && (
               <button
                 onClick={() => openPanel()}
-                className="w-35 flex items-center justify-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+                className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
               >
                 <i className="mdi mdi-calendar-search mr-2"></i>
                 Agendar
@@ -776,27 +774,28 @@ const Agenda: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+            // className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
+            className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col "
           >
             <div className="flex flex-1 overflow-hidden transition-all duration-300 ease-in-out">
-              <aside className="w-56 shrink-0 border-r border-gray-200 bg-white flex flex-col mt-0 p-3 gap-4 overflow-y-auto">
+              <aside className="w-56 shrink-0 bg-white flex flex-col mt-0 p-3 gap-4 overflow-y-auto">
                 <div className="select-none">
                   <div className="flex items-center justify-between mb-4 px-1">
                     <button
                       onClick={() => miniView === "days" ? setMiniMonthOffset((o) => o - 1) : setMiniMonthOffset((o) => o - 12)}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-800 cursor-pointer"
+                      className="p-1.5 rounded-full bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-500 hover:text-sea-blue cursor-pointer"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
                     <button
                       onClick={() => setMiniView(v => v === "days" ? "months" : "days")}
-                      className="p-1.5 rounded-md text-xs font-semibold text-gray-700 hover:text-sea-blue hover:bg-gray-100 transition-colors cursor-pointer flex items-center gap-1"
+                      className="p-1.5 rounded-md text-xs font-semibold text-gray-700 bg-linear-to-b hover:from-gray-100 hover:to-gray-50 hover:text-sea-blue transition-colors cursor-pointer flex items-center gap-1"
                     >
                       {miniView === "days" ? `${miniMonthCap} ${miniYear}` : `${miniYear}`}
                     </button>
                     <button
                       onClick={() => miniView === "days" ? setMiniMonthOffset((o) => o + 1) : setMiniMonthOffset((o) => o + 12)}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-500 hover:text-gray-800 cursor-pointer"
+                      className="p-1.5 rounded-full bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-500 hover:text-sea-blue cursor-pointer"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </button>
@@ -816,7 +815,7 @@ const Agenda: React.FC = () => {
                               setMiniView("days");
                             }}
                             className={`py-1.5 rounded-md text-[11px] font-medium transition-colors cursor-pointer
-                              ${isSelectedMonth ? "bg-sea-blue text-white" : isCurrentMonth ? "bg-sky-blue text-white font-bold" : "text-gray-700 hover:bg-gray-100"}`}
+                              ${isSelectedMonth ? "bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 text-white" : isCurrentMonth ? "bg-sky-blue text-white font-bold" : "text-gray-700 hover:bg-gray-100"}`}
                           >
                             {m}
                           </button>
@@ -851,7 +850,7 @@ const Agenda: React.FC = () => {
                               onClick={() => handleMiniDayClick(date)}
                               className={`h-6 w-full text-[11px] font-medium transition-colors flex items-center justify-center cursor-pointer relative
                                 ${isCurrentWeek
-                                  ? `bg-horz-blue/15 border-y border-horz-blue
+                                  ? `bg-linear-to-r from-sky-blue/10 to-horz-blue/5 border-y border-horz-blue/50
                                     ${isWeekStart ? "border-l rounded-l" : ""}
                                     ${isWeekEnd   ? "border-r rounded-r" : ""}`
                                   : isInViewWeek ? "bg-gray-100" : "hover:bg-gray-100/80"
@@ -860,7 +859,7 @@ const Agenda: React.FC = () => {
                             >
                               <span className={`h-6 w-6 flex items-center justify-center rounded-full
                                 ${isToday
-                                  ? "bg-sea-blue text-white font-bold"
+                                  ? "bg-linear-to-b from-sea-blue to-sky-blue text-white font-bold"
                                   : !isCurrentMonth
                                   ? "text-gray-300"
                                   : "text-gray-700"
@@ -878,7 +877,7 @@ const Agenda: React.FC = () => {
               </aside>
               
               <div className="flex-1 flex flex-col overflow-hidden bg-white">
-                <div className="flex items-center gap-3 p-6 border-b border-gray-200 bg-white shrink-0">
+                <div className="flex items-center gap-3 p-6 bg-linear-to-r from-white to-gray-100 shrink-0 rounded-t-xl">
                   <div className="flex items-center gap-1">
                     <h2 className="text-sm font-bold text-gray-800 flex items-center">
                       <i className="mdi mdi-calendar-blank mr-4"></i>
@@ -887,14 +886,16 @@ const Agenda: React.FC = () => {
                   </div>
                   <div className="ml-auto flex items-center gap-2">
                     <button
+                      title="Semana anterior"
                       onClick={() => setWeekOffset((o) => o - 1)}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600 cursor-pointer"
+                      className="p-1.5 rounded-full bg-linear-to-b hover:from-gray-300 hover:to-gray-50 text-gray-600 hover:text-sea-blue cursor-pointer"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
                     <button
+                    title="Semana siguiente"
                       onClick={() => setWeekOffset((o) => o + 1)}
-                      className="p-1.5 rounded hover:bg-gray-100 text-gray-600 cursor-pointer"
+                      className="p-1.5 rounded-full bg-linear-to-b hover:from-gray-300 hover:to-gray-50 text-gray-600 hover:text-sea-blue cursor-pointer"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </button>
@@ -902,11 +903,13 @@ const Agenda: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col overflow-hidden" style={{ height: "calc(100vh - 370px)" }}>
-                  <div className="flex border-b border-gray-200 bg-white shrink-0 relative">
+                  <div className="flex bg-linear-to-r from-white to-gray-100 shrink-0 relative">
+                    {/* border-b border-gray-100 */}
+                    {/* shadow-md */}
                     <div className="w-14 shrink-0 flex items-center justify-center">
                       <button
                         onClick={goToToday}
-                        className="ml-1 px-2 py-1 border border-gray-300 rounded text-xs font-medium text-gray-700 hover:bg-gray-50 cursor-pointer"
+                        className="ml-1 px-2 py-1 border border-gray-100 rounded text-xs font-medium text-gray-700  hover:bg-gray-50 cursor-pointer"
                       >
                         Hoy
                       </button>
@@ -918,14 +921,14 @@ const Agenda: React.FC = () => {
                       return (
                         <div
                           key={i}
-                          className="flex-1 flex flex-col items-center py-2 border-r border-gray-100"
+                          className="flex-1 flex flex-col items-center py-2"
                         >
                           <span className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide">
                             {dayNames[d.getDay()]}
                           </span>
                           <span
                             className={`mt-0.5 text-sm font-bold flex items-center justify-center h-7 w-7 rounded-full transition-colors
-                            ${isToday ? "bg-sea-blue text-white" : "text-gray-800"}`}
+                            ${isToday ? "bg-linear-to-b from-sea-blue to-sky-blue text-white" : "text-gray-800"}`}
                           >
                             {d.getDate()}
                           </span>
@@ -936,7 +939,7 @@ const Agenda: React.FC = () => {
                   
                   <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
                     <div className="flex" style={{ minHeight: `${24 * 64}px` }}>
-                      <div className="w-14 shrink-0 border-r border-gray-200 bg-white sticky left-0">
+                      <div className="w-14 shrink-0 bg-white sticky left-0">
                         {times.map((t, i) => (
                           <div
                             key={i}
@@ -957,7 +960,7 @@ const Agenda: React.FC = () => {
                           return (
                             <div
                               key={colIdx}
-                              className={`flex-1 relative border-r border-gray-100 ${isColToday ? "bg-horz-blue/15 border border-horz-blue" : isPastDay ? "bg-gray-100/30" : isWeekend ? "" : ""}`}
+                              className={`flex-1 relative border border-gray-100 ${isColToday ? "bg-linear-to-r from-sky-blue/10 to-horz-blue/5 border-horz-blue/50" : isPastDay ? "bg-gray-100/30" : isWeekend ? "" : ""}`}
                               style={{ zIndex: 0 }}
                             >
                               {times.map((_, rowIdx) => {
@@ -1042,8 +1045,8 @@ const Agenda: React.FC = () => {
                                   onMouseEnter={() => setHoveredCardId(apt.id)}
                                   onMouseLeave={() => setHoveredCardId(null)}
                                   className={
-                                  `absolute rounded-sm border flex flex-col px-2 ${apt.duracion > 0.5 ? "py-2" : "py-0"} ${!esPrivilegiado && apt.matricula !== user?.matricula ? "cursor-not-allowed" : "cursor-pointer"} overflow-visible group transition-all
-                                    ${apt.status === "A" ? "text-sea-blue border-sea-blue/50 bg-sea-blue/5" : apt.status === "C" ? "text-red-700 border-red-700/50 bg-red-50" : "text-gray-600 border-gray-500 bg-gray-50"}
+                                  `absolute rounded-sm shadow-md flex flex-col px-2 ${apt.duracion > 0.5 ? "py-2" : "py-0"} ${!esPrivilegiado && apt.matricula !== user?.matricula ? "cursor-not-allowed" : "cursor-pointer"} overflow-visible group transition-all bg-linear-to-b
+                                    ${apt.status === "A" ? "text-sea-blue from-sky-blue/20 to-gray-100" : apt.status === "C" ? "text-red-700 from-red-200 to-gray-100" : "text-gray-600 from-gray-300 to-gray-50"}
                                   `}
                                   style={{
                                     top: `${apt.hora * 64 + 1}px`,
@@ -1125,18 +1128,22 @@ const Agenda: React.FC = () => {
         {isLoadingEdit && (
           <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-xs z-[9999] rounded-lg">
             <div className="flex flex-col items-center gap-3">
-              <div className="w-12 h-12 rounded-full border-4 border-gray-200 border-t-sea-blue animate-spin"></div>
+              {/* <div className="w-12 h-12 rounded-full border-4 border-gray-200 border-t-sea-blue border-r-sky-blue border-b-sky-blue/40 animate-spin"></div> */}
+              <div className="w-12 h-12 rounded-full animate-spin bg-linear-to-r from-sea-blue to-sky-blue p-[4px]">
+                <div className="w-full h-full rounded-full bg-white"></div>
+              </div>
             </div>
           </div>
         )}
         <div className="flex h-full w-full">
           <div className="flex flex-col border-r border-gray-100 h-full shrink-0" style={{ width: 420 }}>
-            <div className="px-3 py-4 border-b border-gray-100 shrink-0">
+            <div className="px-3 py-4 shrink-0 bg-linear-to-r from-white to-gray-100">
               <div className="flex items-center gap-2 justify-between">
                 <div className="flex items-center gap-2">
                   <button 
                     title={"Regresar"}
-                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-sea-blue hover:bg-gray-100 rounded-xl transition-all cursor-pointer"
+                    // className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-sea-blue hover:bg-gray-100 rounded-xl transition-all cursor-pointer"
+                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-sea-blue bg-linear-to-b hover:from-sea-blue/10 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
                     onClick={async () => { 
                       if (!isViewMode && editingId) {
                         setIsLoadingEdit(true);
@@ -1151,11 +1158,11 @@ const Agenda: React.FC = () => {
                     <i className={`mdi mdi-chevron-${!isViewMode && editingId ? "left" : "right"} text-2xl`}></i>
                   </button>
                   <div>
-                    <h2 className="text-sm font-bold text-gray-800 upp flex items-center">
+                    <p className="text-xs font-bold text-gray-800 truncate uppercase max-w-[320px]">
                       <i className={`mdi mdi-${isViewMode ? "calendar-blank" : editingId ? "calendar-edit" : "calendar-blank"} mr-1.5`}></i>
                       {isViewMode ? "Info. de Cita" : editingId ? "Edición de Cita" : "Agendar Cita"}
-                    </h2>
-                    <p className="text-xs text-gray-500 truncate font-medium">
+                    </p>
+                    <p className="text-xs text-gray-500 truncate">
                       {(() => {
                         const start = weekDates[0];
                         const end = weekDates[6];
@@ -1210,7 +1217,7 @@ const Agenda: React.FC = () => {
                       placeholder="Matrícula (5 dígitos)"
                       disabled={!!editingId || loadingMat || isViewMode}
                       maxLength={5}
-                      className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none transition-colors ${editingId ? "bg-gray-50" : ""} ${!formData.matricula ? "border-gray-300" : loadingMat ? "border-gray-300 bg-gray-100" : matriculaNotFound ? "border-red-200 bg-red-50 text-red-500" : matriculaNotRegis ? "border-yellow-300 bg-yellow-50 text-yellow-500" : "border-gray-300 focus:border-clinical-blue focus:ring-1"}`}
+                      className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none shadow-md transition-colors ${editingId ? "bg-gray-50" : ""} ${!formData.matricula ? "border-gray-100" : loadingMat ? "border-gray-100 bg-gray-100" : matriculaNotFound ? "border-red-200 bg-red-50 text-red-500" : matriculaNotRegis ? "border-yellow-300 bg-yellow-50 text-yellow-500" : "border-gray-100 focus:border-clinical-blue focus:ring-1"}`}
                     />
                     {loadingMat && !editingId &&
                       <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -1234,7 +1241,7 @@ const Agenda: React.FC = () => {
                     disabled
                     onChange={(e) => { setFormData(f => ({ ...f, patientName: e.target.value }));}}
                     placeholder="Nombre"
-                    className={`w-full border rounded-lg px-3 py-2 text-xs outline-none transition-colors border-gray-300 bg-gray-50 focus:border-clinical-blue focus:ring-1`}
+                    className={`w-full border rounded-lg px-3 py-2 text-xs outline-none transition-colors border-gray-100 shadow-md bg-gray-50 focus:border-clinical-blue focus:ring-1`}
                   />
                 </div>
                 <h3 className="text-xs font-bold text-gray-800 mt-6 mb-2 flex items-center">
@@ -1246,7 +1253,7 @@ const Agenda: React.FC = () => {
                     Motivo
                   </label>
                   <select 
-                    className={`w-full border border-gray-300 rounded-lg px-2 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`} 
+                    className={`w-full border border-gray-100 shadow-md rounded-lg px-2 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`} 
                     value={formData.motivo}
                     onChange={(e) => { setFormData(f => ({ ...f, motivo: e.target.value }));}}
                     disabled={isViewMode}
@@ -1263,7 +1270,7 @@ const Agenda: React.FC = () => {
                       Día
                     </label>
                     <select
-                      className={`w-full border border-gray-300 rounded-lg px-2 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
+                      className={`w-full border border-gray-100 shadow-md rounded-lg px-2 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
                       value={formData.dia}
                       onChange={(e) => {
                         const newDia = e.target.value;
@@ -1304,7 +1311,7 @@ const Agenda: React.FC = () => {
                     </label>
                     <div className="flex space-x-3">
                       <select
-                        className={`w-1/2 border border-gray-300 rounded-lg px-1.5 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
+                        className={`w-1/2 border border-gray-100 shadow-md rounded-lg px-1.5 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
                         value={formData.hora}
                         onChange={(e) => { setFormData(f => ({ ...f, hora: e.target.value }));}}
                         disabled={isViewMode}
@@ -1322,7 +1329,7 @@ const Agenda: React.FC = () => {
                         })}
                       </select>
                       <select
-                        className={`w-1/2 border border-gray-300 rounded-lg px-1.5 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
+                        className={`w-1/2 border border-gray-100 shadow-md rounded-lg px-1.5 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
                         value={formData.periodo}
                         onChange={(e) => {
                           const newPeriodo = e.target.value;
@@ -1360,7 +1367,7 @@ const Agenda: React.FC = () => {
                     Duración
                   </label>
                   <select
-                    className={`w-full border border-gray-300 rounded-lg px-1 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
+                    className={`w-full border border-gray-100 shadow-md rounded-lg px-1 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
                     // value={formData.duracion}
                     value={Number(formData.duracion).toFixed(2)}
                     onChange={(e) => { setFormData(f => ({ ...f, duracion: Number(e.target.value) })); }}
@@ -1379,7 +1386,7 @@ const Agenda: React.FC = () => {
                   </label>
                   <textarea
                     rows={2}
-                    className={`w-full border rounded-lg px-3 py-2 text-xs outline-none transition-colors border-gray-300 focus:border-clinical-blue focus:ring-1" ${isViewMode ? "bg-gray-50" : ""} resize-none`}
+                    className={`w-full border rounded-lg px-3 py-2 text-xs outline-none transition-colors border-gray-100 shadow-md focus:border-clinical-blue focus:ring-1" ${isViewMode ? "bg-gray-50" : ""} resize-none`}
                     value={formData.notas}
                     onChange={(e) => { setFormData(f => ({ ...f, notas: e.target.value })); }}
                     disabled={!!isViewMode}
@@ -1390,13 +1397,13 @@ const Agenda: React.FC = () => {
             </div>
                   
             {esPrivilegiado && (!editingId || !isDiaPasado) && (
-              <div className={`px-5 py-4 border-t border-gray-100 shrink-0 flex justify-between items-center ${(editingId || isViewMode) && "gap-3"}`}>
+              <div className={`px-5 py-4 shrink-0 flex justify-between items-center ${(editingId || isViewMode) && "gap-3"}`}>
                 {isViewMode ? (
                   <>
                     <button
                       type="button"
                       onClick={() => handleConfirmCita()}
-                      className="w-full flex items-center justify-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
+                      className="w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
                     >
                       <i className="mdi mdi-account-check mr-2"></i>
                       Asistencia
@@ -1418,7 +1425,7 @@ const Agenda: React.FC = () => {
                   <>
                     <button
                       onClick={() => handleUpdateCita()}
-                      className="w-full flex items-center justify-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
+                      className="w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
                     >
                       <i className="mdi mdi-content-save mr-2"></i>
                       Guardar
@@ -1435,7 +1442,7 @@ const Agenda: React.FC = () => {
                 ) : (
                   <button
                     onClick={() => handleSaveCita()}
-                    className="w-full flex items-center justify-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
+                    className="w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
                   >
                     <i className="mdi mdi-calendar-clock mr-2"></i>
                     Guardar Cita

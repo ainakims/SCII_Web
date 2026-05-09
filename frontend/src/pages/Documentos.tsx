@@ -65,8 +65,8 @@ const VisorPDFInline = ({ pdfId, pdfName, pdfDate, pdfUrl, onClose, onDelete }: 
   if (!pdfUrl) return null;
 
   return (
-    <div className="flex flex-col h-full bg-white border-l border-gray-100 animate-in slide-in-from-right duration-200">
-      <div className="py-4 px-5 border-b border-gray-100 flex justify-between items-center shrink-0">
+    <div className="flex flex-col h-full bg-white animate-in slide-in-from-right duration-200">
+      <div className="py-4 px-5 bg-linear-to-r from-gray-50 to-gray-100 flex justify-between items-center shrink-0">
         <div className="flex items-center justify-between gap-3 overflow-hidden w-full">
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
@@ -82,7 +82,7 @@ const VisorPDFInline = ({ pdfId, pdfName, pdfDate, pdfUrl, onClose, onDelete }: 
               title="Eliminar"
               // onClick={onClose} 
               onClick={(e) => { e.stopPropagation(); onDelete(pdfId); }}
-              className="w-10 h-10 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl flex items-center justify-center transition-all group cursor-pointer"
+              className="w-10 h-10 text-gray-400 hover:text-red-500 bg-linear-to-b hover:from-red-100 hover:to-red-50 rounded-xl flex items-center justify-center transition-all group cursor-pointer"
             >
               <i className="mdi mdi-trash-can-outline"></i>
             </button>
@@ -364,7 +364,7 @@ const Documentos: React.FC = () => {
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
       customClass:
       { 
-        confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+        confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
       },
     })
   };
@@ -394,7 +394,7 @@ const Documentos: React.FC = () => {
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
       customClass:
       {
-        confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+        confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
       },
     });
   };
@@ -422,10 +422,9 @@ const Documentos: React.FC = () => {
         if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" });
       },
       buttonsStyling: false,
-      // showCloseButton: true,
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
       customClass: {
-        confirmButton: "flex items-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+        confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
       },
     })
   };
@@ -496,7 +495,7 @@ const Documentos: React.FC = () => {
         // style={{ marginRight: isAsideOpen ? 300 : 0 }}
       >
         <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4">
             <div>
               <h1 className="text-2xl font-bold text-sea-blue flex items-center">
                 Gestión de Documentos
@@ -520,7 +519,7 @@ const Documentos: React.FC = () => {
                   maxLength={5}
                   disabled={loading}
                   readOnly={!esPrivilegiado}
-                  className={`w-[318px] border rounded-lg pl-9 px-3 py-2 text-xs outline-none transition-colors ${notFound  ? "border-red-200 bg-red-50 text-red-500" : !esPrivilegiado ? "border-gray-200 bg-gray-50 text-gray-400 cursor-not-allowed" : loading ? "border-gray-300 bg-gray-100 cursor-not-allowed" : "border-gray-300 focus:border-clinical-blue focus:ring-1" }`}
+                  className={`w-[318px] border rounded-lg pl-9 px-3 py-2 text-xs shadow-md outline-none transition-colors ${notFound  ? "border-red-200 bg-red-50 text-red-500" : !esPrivilegiado ? "border-gray-100 bg-white text-gray-400 cursor-not-allowed" : loading ? "border-gray-100 bg-white cursor-not-allowed" : "border-gray-100 bg-white focus:border-clinical-blue focus:ring-1" }`}
                 />
                 {loading && (
                   <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -538,11 +537,7 @@ const Documentos: React.FC = () => {
                   type="submit"
                   // disabled={loading || !esPrivilegiado}
                   disabled
-                  className="w-35 flex items-center justify-center bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0"
-                  // ${esPrivilegiado
-                  //   ? "bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 shadow-blue-500/30 cursor-pointer"
-                  //   : "bg-gray-300 shadow-gray-300/30 cursor-not-allowed"
-                  // }
+                  className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0"
                 >
                   {/* <i className={`mdi ${loading ? "mdi-loading mdi-spin" : "mdi-magnify"} mr-2`}></i> */}
                   <i className={`mdi mdi-magnify mr-2`}></i>
@@ -557,7 +552,7 @@ const Documentos: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className={`bg-white rounded-xl border h-auto border-gray-200 shadow-sm p-6`}
+                className={`bg-white rounded-xl h-auto shadow-xl p-6`}
               >
                 <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
                   <i className="mdi mdi-account-box mr-4"></i>
@@ -569,7 +564,7 @@ const Documentos: React.FC = () => {
                       <label className="block text-xs font-medium text-gray-700 mb-1">
                         Paciente
                       </label>
-                      <div className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+                      <div className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
                         {patient.Nombres} {patient.Apellidos}
                       </div>
                     </div>
@@ -578,7 +573,7 @@ const Documentos: React.FC = () => {
                         <label className="block text-xs font-medium text-gray-700 mb-1 mt-1.5">
                           CURP
                         </label>
-                        <div className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+                        <div className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
                           {patient.CURP || "N-A"}
                         </div>
                       </div>
@@ -586,7 +581,7 @@ const Documentos: React.FC = () => {
                         <label className="block text-xs font-medium text-gray-700 mb-1 mt-1.5">
                           No. IMSS
                         </label>
-                        <div className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+                        <div className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
                           {patient.NSS || "N-A"}
                         </div>
                       </div>
@@ -596,7 +591,7 @@ const Documentos: React.FC = () => {
                         <label className="block text-xs font-medium text-gray-700 mb-1 mt-1.5">
                           Género
                         </label>
-                        <div className="flex justify-between w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-gray-50 text-gray-400 font-semibold outline-none">
+                        <div className="flex justify-between w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-semibold outline-none">
                           <i className={`mdi mdi-${patient.Sexo === "M" ? "gender-male" : "gender-female"} mr-1`}></i>
                           {patient.Sexo || "-"}
                         </div>
@@ -605,7 +600,7 @@ const Documentos: React.FC = () => {
                         <label className="block text-xs font-medium text-gray-700 mb-1 mt-1">
                           Tipo sanguíneo
                         </label>
-                        <div className="flex justify-between w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-gray-50 text-red-600 font-semibold outline-none">
+                        <div className="flex justify-between w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-red-600 font-semibold outline-none">
                           <i className="mdi mdi-water mr-1 text-red-600"></i>
                           {patient.TipoSanguineo ?? "N/A"}
                         </div>
@@ -629,7 +624,7 @@ const Documentos: React.FC = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
+                  className="bg-white rounded-xl shadow-xl p-6"
                 >
                   <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
                     <i className="mdi mdi-cloud-upload mr-4"></i>
@@ -641,7 +636,7 @@ const Documentos: React.FC = () => {
                         Clasificación
                       </label>
                       <select
-                        className={`w-full border rounded-lg p-2 text-xs outline-none transition-colors ${selectError ? "border-red-200 bg-red-50 text-red-500" : "border-gray-300 focus:border-clinical-blue focus:ring-1" } ${!patient ? "bg-gray-50" : ""}`}
+                        className={`w-full border rounded-lg p-2 text-xs shadow-md outline-none transition-colors ${selectError ? "border-red-200 bg-red-50 text-red-500" : "border-gray-100 focus:border-clinical-blue focus:ring-1" } ${!patient ? "bg-gray-50" : ""}`}
                         value={selectDoc}
                         disabled={!patient}
                         onChange={(e) => { setSelectDoc(Number(e.target.value)); setSelectError(false); }}
@@ -653,8 +648,8 @@ const Documentos: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className={`relative border-2 border-dashed rounded-xl p-3 mb-4.5 mt-4.5 transition-colors group text-center ${
-                      file        ? "border-sea-blue/40 bg-sea-blue/5" :
+                    <div className={`relative border-2 border-dashed rounded-xl p-3 mb-4.5 mt-4.5 transition-colors group text-center shadow-md ${
+                      file        ? "border-sea-blue/40 bg-linear-to-b from-sea-blue/10 to-gray-50" :
                       fileError   ? "border-red-200 bg-red-50" :
                       patient     ? "border-gray-200 hover:border-sea-blue/40" :
                                     "border-gray-200"
@@ -702,7 +697,7 @@ const Documentos: React.FC = () => {
                     <button
                       type="submit"
                       disabled={uploading}
-                      className={`w-full items-center ${patient ? "bg-sea-blue hover:bg-sea-blue/80 hover:-translate-y-1 text-white cursor-pointer" : "bg-sea-blue/80 text-white"} px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all`}
+                      className={`w-full items-center ${patient ? "bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white cursor-pointer" : "bg-linear-to-r from-sea-blue/80 to-sky-blue/80 text-white"} px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all`}
                     >
                       {uploading ? <><i className="mdi mdi-loading mdi-spin mr-2"></i>Cargando...</> : "Cargar Documento"}
                     </button>
@@ -715,9 +710,9 @@ const Documentos: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className="flex-1 bg-white rounded-xl border border-gray-200 shadow-sm h-full flex flex-col"
+                className="flex-1 bg-white rounded-xl h-full flex flex-col shadow-xl"
               >
-                <div className="flex items-center justify-between px-6 py-7 border-b border-gray-100">
+                <div className="flex items-center justify-between px-6 py-7 bg-linear-to-r from-white to-gray-100 rounded-t-xl">
                   <h2 className="text-sm font-bold text-gray-800 flex items-center">
                     <i className="mdi mdi-folder-open mr-4"></i>
                     Expediente Digital
@@ -742,16 +737,16 @@ const Documentos: React.FC = () => {
                         onClick={() => handleOpenCategory(cat.id)}
                         disabled={isEmpty}
                         className={` 
-                          relative flex flex-col items-center justify-center gap-2 p-4 rounded-xl border transition-all text-center 
-                          ${isEmpty || !patient ? "border-gray-100 bg-gray-50 cursor-not-allowed opacity-50" 
-                          : isActive  ? "border-sea-blue/40 bg-sea-blue/5 cursor-pointer" 
+                          relative flex flex-col items-center justify-center gap-2 p-4 rounded-xl transition-all text-center shadow-md
+                          ${isEmpty || !patient ? "border border-gray-100 bg-gray-50 cursor-not-allowed opacity-50" 
+                          : isActive  ? "bg-linear-to-b from-sea-blue/10 to-gray-50 cursor-pointer" 
                           : "border-gray-100 bg-white hover:border-sea-blue/30 hover:bg-gray-50/50 hover:shadow-sm hover:-translate-y-0.5 cursor-pointer"}  
                         `}
                       >
                         {!isEmpty && (
                           <span className={`
                             absolute top-2.5 right-2.5 text-[10px] font-bold px-1.5 py-0.5 rounded-full
-                            ${isActive ? "bg-sea-blue text-white" : "bg-gray-100 text-gray-500"}
+                            ${isActive ? "bg-linear-to-b from-sea-blue to-sky-blue text-white" : "bg-linear-to-b from-sky-blue/20 to-gray-50 text-gray-500"}
                           `}>
                             {count}
                           </span>
@@ -759,9 +754,9 @@ const Documentos: React.FC = () => {
                         
                         <div className={`
                           w-12 h-12 rounded-xl flex items-center justify-center text-2xl
-                            ${isEmpty ? "bg-gray-100 text-gray-300"
-                            : isActive ? "bg-sea-blue text-white"
-                            : "bg-blue-50 text-sea-blue"
+                            ${isEmpty ? "bg-linear-to-b from-sea-blue/5 to-gray-50 text-gray-300"
+                            : isActive ? "bg-linear-to-b from-sea-blue to-sky-blue text-white"
+                            : "bg-linear-to-b from-sky-blue/20 to-gray-50 text-sea-blue"
                           }
                         `}>
                           <i className={`mdi ${cat.icon}`}></i>
@@ -785,22 +780,22 @@ const Documentos: React.FC = () => {
         style={{ width: isAsideOpen ? (isPdfOpen ? 300 + 650 : 300) : 300 }}
       >
         <div className="flex h-full w-full">
-          <div className="flex flex-col border-r border-gray-100 h-full shrink-0" style={{ width: 300 }}>
-            <div className="px-3 py-4 border-b border-gray-100 shrink-0">
+          <div className="flex flex-col bh-full shrink-0" style={{ width: 300 }}>
+            <div className="px-3 py-4 shrink-0 bg-linear-to-r from-white to-gray-50">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <button
                     title="Regresar"
-                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-sea-blue hover:bg-gray-100 rounded-xl transition-all cursor-pointer"
+                    className="w-10 h-10 flex items-center justify-center text-gray-400 bg-linear-to-b hover:text-sea-blue hover:from-sea-blue/10 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
                     onClick={handleCloseAside}
                   >
                     <i className={`mdi ${isPdfOpen ? "mdi-chevron-left" : "mdi-chevron-right"} text-2xl`}></i>
                   </button>
                   <div>
-                    <h2 className="text-sm font-bold text-gray-800 upp flex items-center">
+                    <p className="text-xs font-bold text-gray-800 truncate uppercase max-w-[320px]">
                       <i className={`mdi ${activeCategory ? getCategoriaIcon(activeCategory) : "mdi-folder-outline"} mr-1.5`}></i>
                       {activeCategory ? getCategoriaLabel(activeCategory) : ""}
-                    </h2>
+                    </p>
                     <p className="text-xs text-gray-500 truncate max-w-[200px]">
                       {activeCategory ? `${docsForCategory(activeCategory).length} archivo(s)` : ""}
                     </p>
@@ -818,7 +813,7 @@ const Documentos: React.FC = () => {
                   <div
                     key={idx}
                     onClick={() => handleOpenPdf(doc)}
-                    className={`group px-3 py-2 border rounded-xl transition-all cursor-pointer ${isSelected ? "border-sea-blue/40 bg-sea-blue/5" : "border-gray-200 hover:border-sea-blue/30 hover:bg-gray-50"}`}
+                    className={`group px-3 py-2 rounded-xl bg-linear-to-r transition-all cursor-pointer ${isSelected ? "border-sea-blue/40 from-sea-blue/10 to-gray-50" : "hover:bg-gray-50"}`}
                   >
                     <div className="flex items-center gap-3">
                       <div className={`px-1 rounded flex items-center justify-center transition-colors ${isSelected ? "text-red-500" : "text-gray-400 group-hover:text-sea-blue/60"}`}>
