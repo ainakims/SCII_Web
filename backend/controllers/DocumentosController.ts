@@ -163,10 +163,10 @@ export function DocumentosController(db: DB) {
     try {
       const { idDocumento, idModifica } = req.body;
       const params: Parametros[] = [
-        { Nombre: "@Case",        Valor: "2"                             },
-        { Nombre: "@Matricula",   Valor: ""                              },
-        { Nombre: "@IdDocumento", Valor: String(idDocumento ?? 0)        },
-        { Nombre: "@IdModifica",  Valor: String(idModifica  ?? 0)        },
+        { Nombre: "@Case",        Valor: "2" },
+        { Nombre: "@Matricula",   Valor: "" },
+        { Nombre: "@IdDocumento", Valor: String(idDocumento ?? 0) },
+        { Nombre: "@IdModifica",  Valor: String(idModifica  ?? 0) },
       ];
 
       const sql = "[TNGCORE].[dbo].[SCII_Control_Documentos]";

@@ -81,7 +81,6 @@ export async function validationMicrosoftAccountAD<T>(params: ParamsWebServiceAD
 
     const result = extractValidaUsuarioAD(parsed);
 
-
     if (!result) {
         return {
         isSuccess: false,

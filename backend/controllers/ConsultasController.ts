@@ -122,6 +122,7 @@ export function ConsultasController(db: DB) {
         { Nombre: "@Peso",          Valor: String(parseFloat(expediente.ExploracionFisica?.Peso) || 0) },
         { Nombre: "@Talla",         Valor: String(parseFloat(expediente.ExploracionFisica?.Talla) || 0) },
         { Nombre: "@Abdomen",       Valor: String(parseFloat(expediente.ExploracionFisica?.Abdomen) || 0) },
+        { Nombre: "@ICT",           Valor: String(parseFloat(expediente.ExploracionFisica?.ICT) || 0) },
         { Nombre: "@IMC",           Valor: String(parseFloat(expediente.ExploracionFisica?.IMC) || 0) },
         { Nombre: "@SpO2",          Valor: String(parseFloat(expediente.ExploracionFisica?.SpO2) || 0) },
         { Nombre: "@PA",            Valor: expediente.ExploracionFisica?.PA ?? "" },
@@ -135,6 +136,10 @@ export function ConsultasController(db: DB) {
       const paramsCon: Parametros[] = [
         { Nombre: "@Case",          Valor: "0" },
         ...params,
+        { Nombre: "@NombreExt",     Valor: expediente.NombreExt?.trim() ?? "" },
+        { Nombre: "@Barco",         Valor: expediente.Barco?.trim() ?? "" },
+        { Nombre: "@PrimerosAux",   Valor: expediente.PrimerosAux?.trim() ?? "" },
+        { Nombre: "@Procedimiento", Valor: expediente.Procedimiento?.trim() ?? "" },
         { Nombre: "@ConsultaID",    Valor: "0" },
         { Nombre: "@Farmaco",       Valor: "" },
         { Nombre: "@Dosis",         Valor: "" },

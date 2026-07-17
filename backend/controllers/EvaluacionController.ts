@@ -14,16 +14,19 @@ export function EvaluacionController(db: DB) {
 
   const InformacionPerfil = async (req: Request, res: Response): Promise<Response> => {
     try {
-      const { matricula } = req.body;
+      const { matricula, nombre } = req.body;
       const params: Parametros[] = [
         { Nombre: "@Case",       Valor: "0" },
-        // { Nombre: "@PacienteId", Valor: "" },
+        { Nombre: "@Nombre",     Valor: nombre },
         { Nombre: "@Matricula",  Valor: String(matricula ?? "") },
       ];
 
       const sql = "[TNGCORE].[dbo].[SCII_Obtener_Evaluacion_Historial]";
       const result = await executeConnection<any>(sql, TipoConsulta.ProcedimientoAlmacenado, params);
-      
+
+      // console.log("INFO PERFIL - params:", JSON.stringify(params));
+      // console.log("INFO PERFIL - resultado:", JSON.stringify(result));
+
       return res.json({
         ok: true,
         data: result
@@ -38,17 +41,18 @@ export function EvaluacionController(db: DB) {
 
   const AgregarEvaluacion = async (req: Request, res: Response): Promise<Response> => {
     try {
-      const { medico, paciente, matricula, ficha, edadInicioLaboral, antLaborales, agentes, antFamiliares, antPatologicos, vacunas, antNoPatologico, gineco, incapacidadRiesgo, incapacidadValuacion, incapacidadEG, incapacidadComentario, enfermedadActual, manoDominante, vitalSigns, expCabeza, expOidos, expOjos, agudezaOD, agudezaOI, usaLentes, expBoca, expNariz, expCuello, expPrecordial, expMTor, expMPel, expAbdomen, expGenitales, expPiel, expColCervical, expColLumbar, labs, expRadiografia, expHallazgos, expGabinete, conclusiones } = req.body;
+      const { medico, paciente, matricula, nombre, ficha, edadInicioLaboral, antLaborales, agentes, antFamiliares, antPatologicos, vacunas, antNoPatologico, gineco, incapacidadRiesgo, incapacidadValuacion, incapacidadEG, incapacidadComentario, enfermedadActual, manoDominante, vitalSigns, expCabeza, expOidos, expOjos, agudezaOD, agudezaOI, usaLentes, miopia, astigmatismo, presbicia, expBoca, expNariz, expCuello, expPrecordial, expMTor, expMPel, expAbdomen, expGenitales, expPiel, expColCervical, expColLumbar, labs, expRadiografia, expHallazgos, expGabinete, conclusiones } = req.body;
       const sql = "[TNGCORE].[dbo].[SCII_Agregar_Evaluacion]";
 
       const paramsFicha: Parametros[] = [
         { Nombre: "@Case",            Valor: "0" },
-        { Nombre: "@Matricula",       Valor: String(matricula.trim() ?? null) },
-        { Nombre: "@FechaNacimiento", Valor: String(ficha?.fechaNacimiento.trim() ?? null) },
-        { Nombre: "@Genero",          Valor: String(ficha?.genero.trim() ?? null).trim() },
-        { Nombre: "@EstadoCivil",     Valor: String(ficha?.estadoCivil.trim() ?? null) },
-        { Nombre: "@Escolaridad",     Valor: String(ficha?.escolaridad.trim() ?? null).trim() },
-        { Nombre: "@NoIMSS",          Valor: String(ficha?.noImss.trim() ?? null) },
+        { Nombre: "@Matricula",       Valor: matricula ? String(matricula?.trim()) : '' },
+        { Nombre: "@Nombre",          Valor: nombre ? String(nombre?.trim()) : null },
+        { Nombre: "@FechaNacimiento", Valor: String(ficha?.fechaNacimiento?.trim() ?? null) },
+        { Nombre: "@Genero",          Valor: String(ficha?.genero?.trim() ?? null).trim() },
+        { Nombre: "@EstadoCivil",     Valor: String(ficha?.estadoCivil?.trim() ?? null) },
+        { Nombre: "@Escolaridad",     Valor: String(ficha?.escolaridad?.trim() ?? null).trim() },
+        { Nombre: "@NoIMSS",          Valor: String(ficha?.noImss?.trim() ?? null) },
         { Nombre: "@Contacto",        Valor: String(ficha?.contactoEmergencia ?? null) },
         { Nombre: "@NumContacto",     Valor: String(ficha?.numeroContacto ?? null) },
       ];
@@ -58,7 +62,7 @@ export function EvaluacionController(db: DB) {
 
       const paramsLaboral: Parametros[] = [
         { Nombre: "@Case",               Valor: "1" },
-        { Nombre: "@EdadInicio",         Valor: String(edadInicioLaboral ?? null) },
+        { Nombre: "@EdadInicio",         Valor: edadInicioLaboral ? String(edadInicioLaboral) : "" },
         { Nombre: "@AntecedenteLaboral", Valor: JSON.stringify(antLaborales || []) },
         { Nombre: "@ExposicionAgentes",  Valor: JSON.stringify(agentes || {}) },
       ]
@@ -136,21 +140,21 @@ export function EvaluacionController(db: DB) {
       if (!esMasculino) {
         const paramsGineco: Parametros[] = [
           { Nombre: "@Case",          Valor: "5" },
-          { Nombre: "@Menarquia",     Valor: String(gineco?.menarquia) },
-          { Nombre: "@Ritmo",         Valor: String(gineco?.ritmo) },
-          { Nombre: "@Papanicolau",   Valor: String(gineco?.papanicolau) },
-          { Nombre: "@FUM",           Valor: String(gineco?.fum) },
-          { Nombre: "@Dismenorrea",   Valor: String(gineco?.dismenorrea) },
-          { Nombre: "@Incapacitante", Valor: String(gineco?.incapacitante) },
-          { Nombre: "@Dias",          Valor: String(gineco?.diasDismenorrea) },
-          { Nombre: "@Gestas",        Valor: String(gineco?.gestas) },
-          { Nombre: "@Partos",        Valor: String(gineco?.partos) },
-          { Nombre: "@Cesareas",      Valor: String(gineco?.cesareas) },
-          { Nombre: "@Abortos",       Valor: String(gineco?.abortos) },
-          { Nombre: "@Mamas",         Valor: String(gineco?.mamas) },
-          { Nombre: "@USG",           Valor: String(gineco?.usg) },
-          { Nombre: "@Mastografia",   Valor: String(gineco?.mastografia) },
-          { Nombre: "@BiRads",        Valor: String(gineco?.birads) },
+          { Nombre: "@Menarquia",     Valor: gineco?.menarquia ?? "" },
+          { Nombre: "@Ritmo",         Valor: gineco?.ritmo ?? "" },
+          { Nombre: "@Papanicolau",   Valor: gineco?.papanicolau ?? "" },
+          { Nombre: "@FUM",           Valor: gineco?.fum ?? "" },
+          { Nombre: "@Dismenorrea",   Valor: gineco?.dismenorrea ?? "" },
+          { Nombre: "@Incapacitante", Valor: gineco?.incapacitante ?? "" },
+          { Nombre: "@Dias",          Valor: gineco?.diasDismenorrea ?? "" },
+          { Nombre: "@Gestas",        Valor: gineco?.gestas ?? "" },
+          { Nombre: "@Partos",        Valor: gineco?.partos ?? "" },
+          { Nombre: "@Cesareas",      Valor: gineco?.cesareas ?? "" },
+          { Nombre: "@Abortos",       Valor: gineco?.abortos ?? "" },
+          { Nombre: "@Mamas",         Valor: gineco?.mamas ?? "" },
+          { Nombre: "@USG",           Valor: gineco?.usg ?? "" },
+          { Nombre: "@Mastografia",   Valor: gineco?.mastografia ?? "" },
+          { Nombre: "@BiRads",        Valor: gineco?.birads ?? "" },
         ];
 
         const resultGineco = await executeConnection<{ IdGineco: number }>(sql, TipoConsulta.ProcedimientoAlmacenado, paramsGineco);
@@ -159,12 +163,12 @@ export function EvaluacionController(db: DB) {
 
       const paramsIncapacidad: Parametros[] = [
         { Nombre: "@Case",             Valor: "6" },
-        { Nombre: "@RiesgoTrabajo",    Valor: String(incapacidadRiesgo) },
-        { Nombre: "@EnfermedadGral",   Valor: String(incapacidadEG).trim() },
+        { Nombre: "@RiesgoTrabajo",    Valor: incapacidadRiesgo ?? "" },
+        { Nombre: "@EnfermedadGral",   Valor: (incapacidadEG ?? "").trim() },
         { Nombre: "@ManoDominante",    Valor: (typeof manoDominante === "string" ? manoDominante : "").trim() },
-        { Nombre: "@Valuacion",        Valor: String(incapacidadValuacion) },
-        { Nombre: "@Comentario",       Valor: String(incapacidadComentario) },
-        { Nombre: "@PadeceEnfermedad", Valor: String(enfermedadActual) },
+        { Nombre: "@Valuacion",        Valor: incapacidadValuacion ?? "" },
+        { Nombre: "@Comentario",       Valor: incapacidadComentario ?? "" },
+        { Nombre: "@PadeceEnfermedad", Valor: enfermedadActual ?? "" },
       ]
 
       var idIncapacidad = 0;
@@ -175,6 +179,9 @@ export function EvaluacionController(db: DB) {
         OD: agudezaOD || {},
         OI: agudezaOI || {},
         usaLentes: usaLentes ?? null,
+        miopia: miopia ?? false,
+        astigmatismo: astigmatismo ?? false,
+        presbicia: presbicia ?? false,
       };
 
       const paramsExploracion: Parametros[] = [
@@ -230,8 +237,9 @@ export function EvaluacionController(db: DB) {
         { Nombre: "@Case",            Valor: "9" },
         { Nombre: "@Diagnosticos",    Valor: JSON.stringify(diagnosticos) },
         { Nombre: "@Recomendaciones", Valor: JSON.stringify(recomendaciones) },
-        { Nombre: "@GradoSalud",      Valor: String(conclusiones?.resultado ?? null) },
-        { Nombre: "@Observaciones",   Valor: String(conclusiones?.observaciones ?? null) },
+        { Nombre: "@Resultado",       Valor: conclusiones?.resultado ?? "" },
+        { Nombre: "@GradoSalud",      Valor: conclusiones?.gradoSalud ?? "" },
+        { Nombre: "@Observaciones",   Valor: conclusiones?.observaciones ?? "" },
       ]
 
       var idConclusion = 0;
@@ -312,7 +320,7 @@ export function EvaluacionController(db: DB) {
   const ObtenerBorrador = async (req: Request, res: Response): Promise<Response> => {
     try {
       const { matricula } = req.body;
-      if (!matricula) return res.status(400).json({ ok: false, message: "Matrícula requerida" });
+      // if (!matricula) return res.status(400).json({ ok: false, message: "Matrícula requerida" });
 
       const mat = String(matricula).trim().replace(/[^a-zA-Z0-9]/g, "");
       const filePath = path.join(BORRADORES_DIR, `${mat}.json`);
@@ -331,7 +339,7 @@ export function EvaluacionController(db: DB) {
   const EliminarBorrador = async (req: Request, res: Response): Promise<Response> => {
     try {
       const { matricula } = req.body;
-      if (!matricula) return res.status(400).json({ ok: false, message: "Matrícula requerida" });
+      // if (!matricula) return res.status(400).json({ ok: false, message: "Matrícula requerida" });
 
       const mat = String(matricula).trim().replace(/[^a-zA-Z0-9]/g, "");
       const filePath = path.join(BORRADORES_DIR, `${mat}.json`);
@@ -343,19 +351,23 @@ export function EvaluacionController(db: DB) {
       return res.status(500).json({ ok: false, message: error.message });
     }
   };
-  // ─────────────────────────────────────────────────────────────────────────────
 
   const ObtenerEvaluacion = async (req: Request, res: Response): Promise<Response> => {
     try {
-      const { matricula, pacienteId } = req.params;
+      const { matricula, pacienteId, nombre } = req.body;
       const params: Parametros[] = [
         { Nombre: "@Case",       Valor: "1" },
         { Nombre: "@Matricula",  Valor: String(matricula ?? '') },
         { Nombre: "@PacienteId", Valor: String(pacienteId ?? '') },
+        { Nombre: "@Nombre",     Valor: String(nombre ?? '') },
       ];
+
+      console.log(params);
 
       const sql = "[TNGCORE].[dbo].[SCII_Obtener_Evaluacion_Historial]";
       const result = await executeConnection<any>(sql, TipoConsulta.ProcedimientoAlmacenado, params);
+
+      console.log(result);
 
       if (!result || result.length === 0) {
         return res.status(404).json({ message: "Sin evaluación previa." });
@@ -382,6 +394,8 @@ export function EvaluacionController(db: DB) {
 
       const sql = "[TNGCORE].[dbo].[SCII_Obtener_Evaluacion_Historial]";
       const result = await executeConnection<any>(sql, TipoConsulta.ProcedimientoAlmacenado, params);
+
+      // console.dir(result);
       
       if (!result || result.length === 0) {
         return res.status(404).json({
@@ -423,7 +437,6 @@ export function EvaluacionController(db: DB) {
         edadInicioLaboral: row.EdadInicio,
         antLaborales: jp(row.AntecedenteLaboral) || [],
         agentes: jp(row.ExposicionAgentes)  || {},
-
         antFamiliares: (() => {
           const af = jp(row.AntecedenteFamiliar) || {};
           const siNo = (val: any) => val === true ? 'SI' : '';
@@ -475,6 +488,9 @@ export function EvaluacionController(db: DB) {
         agudezaOD: av.OD || {},
         agudezaOI: av.OI || {},
         usaLentes: av.usaLentes ?? null,
+        miopia: av.miopia ?? false,
+        astigmatismo: av.astigmatismo ?? false,
+        presbicia: av.presbicia ?? false,
         expBoca: jp(row.Boca) || {},
         expNariz: jp(row.Nariz) || {},
         expCuello: jp(row.Cuello) || {},
@@ -500,7 +516,7 @@ export function EvaluacionController(db: DB) {
           recomendacion1: recoms[0] || '',
           recomendacion2: recoms[1] || '',
           recomendacion3: recoms[2] || '',
-          resultado: row.GradoSalud || '',
+          resultado: row.Resultado || '',
           gradoSalud: row.GradoSalud || '',
           observaciones: row.Observaciones || '',
         },
@@ -508,13 +524,26 @@ export function EvaluacionController(db: DB) {
 
       const docxBuffer = await generarHistoriaClinicaDocx(data);
 
+      // console.log(docxBuffer);
+
       const mat = String(row.MatriculaPac || row.PacienteId).trim();
       const ahora = new Date();
       const fechaHora = ahora.toLocaleString("es-MX", { timeZone: "America/Mexico_City", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit", hour12: false })
         .replace(/\//g, "-").replace(", ", "_").replace(/:/g, "-");
       const baseName = `Historia_Clinica_${mat}_${fechaHora}`;
 
-      // Convertir DOCX a PDF via servicio interno y guardar en documentos
+      // --- DEBUG temporal: verificar baseName y validez del DOCX generado ---
+      // console.log("[GenerarHistoriaClinica] mat:", JSON.stringify(mat), "| baseName:", baseName, "| docxBytes:", docxBuffer?.length);
+      try {
+        const debugDir = path.join(__dirname, "..", "uploads", "_debug");
+        if (!fs.existsSync(debugDir)) fs.mkdirSync(debugDir, { recursive: true });
+        fs.writeFileSync(path.join(debugDir, `${baseName}.docx`), docxBuffer);
+        // console.log("[GenerarHistoriaClinica] DOCX guardado para revisión en uploads/_debug");
+      } catch (e: any) {
+        // console.log("[GenerarHistoriaClinica] no se pudo guardar el DOCX debug:", e?.message);
+      }
+      // --- fin DEBUG ---
+
       try {
         const axios = require("axios");
         const FormData = require("form-data");
@@ -548,6 +577,7 @@ export function EvaluacionController(db: DB) {
           { Nombre: "@IdDocumento", Valor: "" },
           { Nombre: "@IdModifica", Valor: "" },
         ];
+
         const paciente = await executeConnection<{ IdPaciente: number }>(
           "[TNGCORE].[dbo].[SCII_Control_Documentos]",
           TipoConsulta.ProcedimientoAlmacenado,
@@ -558,7 +588,6 @@ export function EvaluacionController(db: DB) {
           return res.status(404).json({ ok: false, message: "Paciente no encontrado al guardar el documento." });
         }
 
-        // Registrar en BD
         const fileBase64  = pdfBuffer.toString("base64");
         const paramsSubir: Parametros[] = [
           { Nombre: "@PacienteId", Valor: String(paciente[0].IdPaciente) ?? '' },
@@ -569,18 +598,26 @@ export function EvaluacionController(db: DB) {
           { Nombre: "@FileBytes", Valor: fileBase64 },
           { Nombre: "@Estado", Valor: "1" },
         ];
-        await executeConnection<boolean>(
-          "[TNGCORE].[dbo].[SCII_Subir_Documentos]",
-          TipoConsulta.ProcedimientoAlmacenado,
-          paramsSubir
-        );
+
+        await executeConnection<boolean>("[TNGCORE].[dbo].[SCII_Subir_Documentos]", TipoConsulta.ProcedimientoAlmacenado, paramsSubir);
 
         return res.json({ ok: true, matricula: mat, archivo: pdfName });
 
       } catch (pdfError: any) {
+        // console.log(pdfError);
+
         return res.status(502).json({ ok: false, message: "Error al generar o guardar el PDF.", detail: pdfError?.message });
       }
     } catch (error: any) {
+      // console.log(error);
+      // console.log("STATUS:", error.response?.status);
+
+      // if (error.response?.data) {
+      //     console.log(
+      //         Buffer.from(error.response.data).toString("utf8")
+      //     );
+      // }
+
       return res.status(500).json({
         ok: false,
         error: "Error interno",

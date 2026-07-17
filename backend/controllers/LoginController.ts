@@ -235,10 +235,10 @@ export function LoginController(db: DB) {
        * Comentar para omitir authenticator
        */
 
-      // if (!verified) {
-      //   res.json(false);
-      //   return false;
-      // }
+      if (!verified) {
+        res.json(false);
+        return false;
+      }
 
       /**
        * Construir payload
