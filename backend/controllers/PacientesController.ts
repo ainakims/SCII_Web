@@ -8,8 +8,11 @@ export function PacientesController(db: DB) {
 
   const ObtenerPacientes = async (req: Request, res: Response): Promise<Response> => {
     try {
+      const { esActivo } = req.body;
+
       const params: Parametros[] = [
-        { Nombre: "@Case",      Valor: "0" }
+        { Nombre: "@Case",       Valor: "0" },
+        { Nombre: "@Activo",  Valor: esActivo === false || esActivo === "0" ? "0" : "1" }
       ];
 
       const sql = "[TNGCORE].[dbo].[SCII_Obtener_Pacientes]";
@@ -59,21 +62,21 @@ export function PacientesController(db: DB) {
       const params: Parametros[] = [
         { Nombre: "@Case",                Valor: "0" },
         { Nombre: "@IdPaciente",          Valor: "" },
-        { Nombre: "@Matricula",           Valor: String(Matricula ?? "0") },
-        { Nombre: "@Proveedor",           Valor: String(Proveedor ?? "") },
-        { Nombre: "@CURP",                Valor: String(CURP ?? "") },
-        { Nombre: "@NSS",                 Valor: String(NSS ?? "") },
-        { Nombre: "@Nombre",              Valor: String(Nombre ?? "") },
-        { Nombre: "@FechaNacimiento",     Valor: String(FechaNacimiento ?? "") },
-        { Nombre: "@Sexo",                Valor: String(Sexo ?? "") },
-        { Nombre: "@TipoSanguineo",       Valor: String(TipoSanguineo ?? "") },
-        { Nombre: "@Alergias",            Valor: String(Alergias ?? "") },
-        { Nombre: "@Enfermedades",        Valor: String(EnfermedadesCronicas ?? "") },
-        { Nombre: "@Tratamientos",        Valor: String(TratamientosActuales ?? "") },
-        { Nombre: "@AlergiasMedicamento", Valor: String(AlergiasMedicamentos ?? "") },
-        { Nombre: "@Cirugias",            Valor: String(Cirugias ?? "") },
-        { Nombre: "@Fracturas",           Valor: String(Fracturas ?? "") },
-        { Nombre: "@Riesgo",              Valor: String(Riesgo ?? "") },
+        { Nombre: "@Matricula",           Valor: String(Matricula ?? "0").trim() },
+        { Nombre: "@Proveedor",           Valor: String(Proveedor ?? "").trim() },
+        { Nombre: "@CURP",                Valor: String(CURP ?? "").trim() },
+        { Nombre: "@NSS",                 Valor: String(NSS ?? "").trim() },
+        { Nombre: "@Nombre",              Valor: String(Nombre ?? "").trim() },
+        { Nombre: "@FechaNacimiento",     Valor: String(FechaNacimiento ?? "").trim() },
+        { Nombre: "@Sexo",                Valor: String(Sexo ?? "").trim() },
+        { Nombre: "@TipoSanguineo",       Valor: String(TipoSanguineo ?? "").trim() },
+        { Nombre: "@Alergias",            Valor: String(Alergias ?? "").trim() },
+        { Nombre: "@Enfermedades",        Valor: String(EnfermedadesCronicas ?? "").trim() },
+        { Nombre: "@Tratamientos",        Valor: String(TratamientosActuales ?? "").trim() },
+        { Nombre: "@AlergiasMedicamento", Valor: String(AlergiasMedicamentos ?? "").trim() },
+        { Nombre: "@Cirugias",            Valor: String(Cirugias ?? "").trim() },
+        { Nombre: "@Fracturas",           Valor: String(Fracturas ?? "").trim() },
+        { Nombre: "@Riesgo",              Valor: String(Riesgo ?? "").trim() },
         { Nombre: "@Tipo",                Valor: String(Matricula ? Matricula == "0" ? "E" : "I" : "") },
       ];
 
@@ -101,22 +104,22 @@ export function PacientesController(db: DB) {
 
       const params: Parametros[] = [
         { Nombre: "@Case",                Valor: "1" },
-        { Nombre: "@IdPaciente",          Valor: String(id ?? "") },
-        { Nombre: "@Matricula",           Valor: String(Matricula ?? "0") },
-        { Nombre: "@Proveedor",           Valor: String(Proveedor ?? "") },
-        { Nombre: "@CURP",                Valor: String(CURP ?? "") },
-        { Nombre: "@NSS",                 Valor: String(NSS ?? "") },
-        { Nombre: "@Nombre",              Valor: String(Nombre ?? "") },
-        { Nombre: "@FechaNacimiento",     Valor: String(FechaNacimiento ?? "") },
-        { Nombre: "@Sexo",                Valor: String(Sexo ?? "") },
-        { Nombre: "@TipoSanguineo",       Valor: String(TipoSanguineo ?? "") },
-        { Nombre: "@Alergias",            Valor: String(Alergias ?? "") },
-        { Nombre: "@Enfermedades",        Valor: String(EnfermedadesCronicas ?? "") },
-        { Nombre: "@Tratamientos",        Valor: String(TratamientosActuales ?? "") },
-        { Nombre: "@AlergiasMedicamento", Valor: String(AlergiasMedicamentos ?? "") },
-        { Nombre: "@Cirugias",            Valor: String(Cirugias ?? "") },
-        { Nombre: "@Fracturas",           Valor: String(Fracturas ?? "") },
-        { Nombre: "@Riesgo",              Valor: String(Riesgo ?? "") },
+        { Nombre: "@IdPaciente",          Valor: String(id ?? "").trim() },
+        { Nombre: "@Matricula",           Valor: String(Matricula ?? "0").trim() },
+        { Nombre: "@Proveedor",           Valor: String(Proveedor ?? "").trim() },
+        { Nombre: "@CURP",                Valor: String(CURP ?? "").trim() },
+        { Nombre: "@NSS",                 Valor: String(NSS ?? "").trim() },
+        { Nombre: "@Nombre",              Valor: String(Nombre ?? "").trim() },
+        { Nombre: "@FechaNacimiento",     Valor: String(FechaNacimiento ?? "").trim() },
+        { Nombre: "@Sexo",                Valor: String(Sexo ?? "").trim() },
+        { Nombre: "@TipoSanguineo",       Valor: String(TipoSanguineo ?? "").trim() },
+        { Nombre: "@Alergias",            Valor: String(Alergias ?? "").trim() },
+        { Nombre: "@Enfermedades",        Valor: String(EnfermedadesCronicas ?? "").trim() },
+        { Nombre: "@Tratamientos",        Valor: String(TratamientosActuales ?? "").trim() },
+        { Nombre: "@AlergiasMedicamento", Valor: String(AlergiasMedicamentos ?? "").trim() },
+        { Nombre: "@Cirugias",            Valor: String(Cirugias ?? "").trim() },
+        { Nombre: "@Fracturas",           Valor: String(Fracturas ?? "").trim() },
+        { Nombre: "@Riesgo",              Valor: String(Riesgo ?? "").trim() },
         { Nombre: "@Tipo",                Valor: "" },
       ];
       

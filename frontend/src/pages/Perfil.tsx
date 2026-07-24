@@ -351,7 +351,7 @@ const Perfil: React.FC = () => {
   
     if (cleaned.length !== 10) return phone;
   
-    return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6)}`;
+    return `+52 ${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6)}`;
   };
 
   const getInitials = (name: string | undefined): string => {
@@ -373,361 +373,365 @@ const Perfil: React.FC = () => {
         
           return (
             <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
-              <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
-                <div className="flex flex-col sm:flex-row justify-between items-center bg-linear-to-r bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm gap-4">
-                  <div className="flex items-center gap-4 w-full sm:w-auto">
-                    <div className="absolute w-16 h-16 text-white bg-linear-to-b from-sea-blue to-sky-blue rounded-full flex items-center justify-center shrink-0 shadow-[0_0_20px] shadow-sky-blue/60">
-                      <b>{user?.matricula != "0" ? user?.matricula : getInitials(user?.nombre)}</b>
-                    </div>
-                    <div className="ml-[90px]">
-                      <h1 className="text-2xl font-bold text-sea-blue">
-                        {user?.nombre}
-                      </h1>
-                      <p className="text-sm text-gray-500 mt-1">
-                        <span className="mr-2">
-                          <i className={`mdi mdi-${p.Sexo ? p.Sexo == "M" ? "gender-male" : "gender-female" : "gender-female"} mr-2`}></i>
-                          {p?.Sexo}
-                        </span>
-                        •
-                        <span className="mx-2">
-                          <i className="mdi mdi-calendar-blank mr-2"></i>
-                          {getAge(p.FechaNacimiento)} años
-                        </span>
-                        •
-                        <span className="mx-2">
-                          <i className="mdi mdi-cake-variant mr-2"></i>
-                          {formatDate(p?.FechaNacimiento)}
-                          {/* {p?.FechaNacimiento} */}
-                        </span>
-                      </p>
-                    </div>
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4">
+                <div className="flex items-center gap-4 w-full sm:w-auto">
+                  <div className="absolute w-16 h-16 text-white bg-linear-to-b from-sea-blue to-sky-blue rounded-full flex items-center justify-center shrink-0">
+                    {/* shadow-[0_0_20px] shadow-sky-blue/60 */}
+                    <b>{user?.matricula != "0" ? user?.matricula : getInitials(user?.nombre)}</b>
                   </div>
-                  <div className="w-full sm:w-auto text-right">
-                    a
+                  <div className="ml-22">
+                    <h1 className="text-2xl font-bold text-sea-blue">
+                      {user?.nombre}
+                    </h1>
+                    <p className="text-sm text-gray-500 mt-1">
+                      <span className="mr-2">
+                        <i className={`mdi mdi-${p.Sexo ? p.Sexo == "M" ? "gender-male" : "gender-female" : "gender-female"} mr-2`}></i>
+                        {p?.Sexo}
+                      </span>
+                      •
+                      <span className="mx-2">
+                        <i className="mdi mdi-calendar-blank mr-2"></i>
+                        {getAge(p.FechaNacimiento)} años
+                      </span>
+                      •
+                      <span className="mx-2">
+                        <i className="mdi mdi-cake-variant mr-2"></i>
+                        {formatDate(p?.FechaNacimiento)}
+                        {/* {p?.FechaNacimiento} */}
+                      </span>
+                    </p>
                   </div>
                 </div>
-          
-                <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
-                  <div className={"lg:col-span-2"}>
-                    <motion.div
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className={`bg-white rounded-xl border border-gray-200 shadow-sm p-6 pb-0 mb-[-10px]`}
-                      style={{ overflow: "visible" }}
-                    >
-                      <h2 className="text-sm font-bold text-gray-800 flex items-center">
+                <div className="w-full sm:w-auto text-right">
+                  a
+                </div>
+              </div>
+        
+              <div className="grid grid-cols-1 lg:grid-cols-6 gap-6">
+                <div className={"lg:col-span-2"}>
+                  <motion.div
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    // className={`bg-white rounded-xl border border-gray-200 shadow-sm p-6 pb-0 mb-[-10px]`}
+                    className="flex-1 bg-white rounded-xl shadow-xl h-154.5 flex flex-col"
+                    style={{ overflow: "visible" }}
+                  >
+                    <div className="items-center justify-between bg-linear-to-r from-white to-gray-100 rounded-t-xl p-6">
+                      <h2 className="p-1.5 text-sm font-bold text-gray-800 flex items-center">
                         <i className="mdi mdi-human mr-4"></i>
                         Exploración Física
                       </h2>
-                      <div className="body-component" style={{ position: "relative", overflow: "visible" }}>
-                        <div onClickCapture={handleBodyClick}>
-                          <BodyComponent
-                            key={bodyKey}
-                            partsInput={buildPartsInput(selected)}
-                          />
-                        </div>
-                        <AnimatePresence>
-                          {selected && (() => {
-                            const pos = PART_POSITIONS[selected] ?? { top: 200, side: "right" as const };
-                            const isRight = pos.side === "right";
-                          
-                            return (
-                              <motion.div
-                                key={selected}
-                                initial={{ opacity: 0, x: isRight ? -8 : 8, scale: 0.94 }}
-                                animate={{ opacity: 1, x: 0, scale: 1 }}
-                                exit={{ opacity: 0, scale: 0.94 }}
-                                transition={{ duration: 0.16, ease: "easeOut" }}
-                                style={{
-                                  position: "absolute",
-                                  top: pos.top - 20,
-                                  zIndex: 90000,
-                                  width: 330, ...(isRight ? { left: "calc(50% + 14px)" } : { right: "calc(50% + 14px)" } ),
-                                }}
-                              >
-                                <div style={{
-                                  position: "absolute",
-                                  top: 20,
-                                  width: 10,
-                                  height: 10,
-                                  background: "white",
-                                  transform: "rotate(45deg)",
-                                  ...(isRight ? { left: -5, borderLeft: "1px solid rgba(59,130,246,0.25)", borderBottom: "1px solid rgba(59,130,246,0.25)" } : { right: -5, borderRight: "1px solid rgba(59,130,246,0.25)", borderTop: "1px solid rgba(59,130,246,0.25)" } ),
-                                }} />
-                                <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
-                                  {/* Header */}
-                                  <div className="flex items-center justify-between gap-2 mb-2">
-                                    <span className="text-[10px] font-semibold text-sea-blue uppercase tracking-wide truncate">
-                                      {PART_NAMES_ES[selected]}
-                                    </span>
-                                    <button
-                                      onClick={() => { setSelected(null); setBodyKey(k => k + 1); }}
-                                      className="shrink-0 text-gray-300 hover:text-gray-500 transition-colors cursor-pointer"
-                                      title="Cerrar"
-                                    >
-                                      <i className="mdi mdi-close text-xs" />
-                                    </button>
-                                  </div>
-                              
-                                  {PART_NAMES_ES[selected] === "Detalles de Cabeza" && (() => {
-                                    const secciones = [
-                                      {
-                                        key: "Cabeza", icon: "mdi-head", rows: [
-                                          { label: "Forma",  icon: "mdi-head",     val: p.Cabeza?.Forma?.valor },
-                                          { label: "Tamaño", icon: "mdi-head",     val: p.Cabeza?.Tamaño?.valor },
-                                          { label: "Pelo",   icon: "mdi-head",     val: p.Cabeza?.Pelo?.valor },
-                                          { label: "Cara",   icon: "mdi-face-man", val: p.Cabeza?.Cara?.valor },
-                                        ]
-                                      },
-                                      {
-                                        key: "Oídos", icon: "mdi-ear-hearing", rows: [
-                                          { label: "C.A.E",    icon: "mdi-ear-hearing",  val: p.Oidos?.["C.A.E"]?.valor },
-                                          { label: "Pabellón", icon: "mdi-ear-hearing",  val: p.Oidos?.Pabellón?.valor },
-                                          { label: "Tímpanos", icon: "mdi-circle-double", val: p.Oidos?.Tímpanos?.valor },
-                                        ]
-                                      },
-                                      {
-                                        key: "Ojos", icon: "mdi-eye", rows: [
-                                          { label: "Reflejos",    icon: "mdi-eye", val: p.Ojos?.Reflejos?.valor },
-                                          { label: "Párpados",    icon: "mdi-eye", val: p.Ojos?.Párpados?.valor },
-                                          { label: "Conjuntivas", icon: "mdi-eye", val: p.Ojos?.Conjuntivas?.valor },
-                                          { label: "Fondo de ojo",icon: "mdi-eye", val: p.Ojos?.["Fondo de ojo"]?.valor },
-                                          { label: "Lentes",      icon: "mdi-glasses", val: p.AgudezaVisual?.usaLentes ? "Sí" : "No", neutral: true },
-                                        ]
-                                      },
-                                      {
-                                        key: "Boca", icon: "mdi-tooth", rows: [
-                                          { label: "Mucosas",   icon: "mdi-tooth", val: p.Boca?.Mucosas?.valor },
-                                          { label: "Dentadura", icon: "mdi-tooth", val: p.Boca?.Dentadura?.valor },
-                                          { label: "Lengua",    icon: "mdi-tooth", val: p.Boca?.Lengua?.valor },
-                                          { label: "Encías",    icon: "mdi-tooth", val: p.Boca?.Encías?.valor },
-                                          { label: "Faringe",   icon: "mdi-tooth", val: p.Boca?.Faringe?.valor },
-                                          { label: "Amígdalas", icon: "mdi-tooth", val: p.Boca?.Amígdalas?.valor },
-                                        ]
-                                      },
-                                      {
-                                        key: "Nariz", icon: "mdi-emoticon-neutral-outline", rows: [
-                                          { label: "Mucosas", icon: "mdi-emoticon-neutral-outline", val: p.Nariz?.Mucosas?.valor },
-                                          { label: "Tabique", icon: "mdi-emoticon-neutral-outline", val: p.Nariz?.Tabique?.valor },
-                                        ]
-                                      },
-                                    ];
-                                  
-                                    return (
-                                      <div className="space-y-1 overflow-y-auto pr-0.5">
-                                        {secciones.map(sec => (
-                                          <div key={sec.key} className="border border-gray-300 rounded-lg overflow-hidden">
-                                            <button
-                                              onClick={() => toggleSection(sec.key)}
-                                              className="w-full flex items-center justify-between border-b border-gray-300 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
-                                            >
-                                              <span className="px-3 py-2 text-xs text-left font-medium text-gray-700 ">
-                                                <i className={`mdi ${sec.icon} mr-1`} />
-                                                {sec.key}
-                                              </span>
-                                              <i className={`mdi text-gray-400 text-sm transition-transform mr-2 ${openSection === sec.key ? "mdi-chevron-up" : "mdi-chevron-down"}`} />
-                                            </button>
-                                        
-                                            {/* Contenido */}
-                                            <AnimatePresence initial={false}>
-                                            {openSection === sec.key && (
-                                              <motion.div
-                                                key={sec.key}
-                                                initial={{ height: 0, opacity: 0 }}
-                                                animate={{ height: "auto", opacity: 1 }}
-                                                exit={{ height: 0, opacity: 0 }}
-                                                transition={{ duration: 0.2, ease: "easeInOut" }}
-                                                style={{ overflow: "hidden" }}
-                                              >
-                                              <div className="grid grid-cols-2 gap-1 p-1.5">
-                                                {sec.rows.map(row => (
-                                                  <div
-                                                    key={row.label}
-                                                    className={`px-2 py-1 rounded-md flex items-center justify-between text-xs ${
-                                                      (row as any).neutral
-                                                        ? "bg-gray-100 text-gray-700 border border-gray-200"
-                                                        : row.val === "Normal"
-                                                          ? "bg-aqua-green/20 text-green-950 border border-aqua-green/30"
-                                                          : "bg-red-100 text-red-950 border border-red-200"
-                                                    }`}
-                                                  >
-                                                    <span className="truncate mr-1 font-medium">{row.label}</span>
-                                                    <span className="shrink-0 text-[10px]">{row.val ?? "—"}</span>
-                                                  </div>
-                                                ))}
-                                              </div>
-                                              </motion.div>
-                                            )}
-                                            </AnimatePresence>
-                                          </div>
-                                        ))}
-                                      </div>
-                                    );
-                                  })()}
-  
-                                  {PART_NAMES_ES[selected] === "Región Lumbar" && (
-                                    <>
-                                      b
-                                    </>
-                                  )}
-  
-                                  {PART_NAMES_ES[selected] === "Área Precordial" && (
-                                    <>
-                                      c
-                                    </>
-                                  )}
-  
-                                  {PART_NAMES_ES[selected] === "Miembros Torácicos" && (
-                                    <>
-                                      
-                                      {/* {p.Cabeza?.Cara?.valor?.toUpperCase() ?? "N/A"} */}
-                                  
-                                    </>
-                                  )}
-  
-                                  {PART_NAMES_ES[selected] === "Abdomen" && (
-                                    <>
-                                      e
-                                    </>
-                                  )}
-  
-                                  {PART_NAMES_ES[selected] === "Miembros Pélvicos" && (
-                                    <>
-                                      f
-                                    </>
-                                  )}
-                                  
-                                
-                                  
-                                
-                                </div>
-                              </motion.div>
-                            );
-                          })()}
-                        </AnimatePresence>
-                      </div>
-                    </motion.div>
-                  </div>
-                          
-                  <div className="lg:col-span-4 space-y-6">
-                    <div className="grid grid-cols-4 gap-6">
-                      <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="relative overflow-hidden bg-linear-to-r from-red-100/80 to-white rounded-xl text-red-500 shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default shadow-red-300/60"
-                      >
-                        <i className="mdi mdi-water absolute -bottom-2 right-0 text-[3rem] text-red-200 group-hover:text-red-300 transition-colors duration-300 pointer-events-none select-none" />
-                        <div className="flex items-center justify-between relative z-10">
-                          <span className="text-[10px] font-semibold uppercase tracking-wide">
-                            Tipo de Sangre
-                          </span>
-                        </div>
-                        <span className="text-xl font-bold relative z-10">
-                          {p.TipoSanguineo ? p.TipoSanguineo : "N/A"}
-                        </span>
-                      </motion.div>
-                        
-                      <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="relative overflow-hidden bg-linear-to-r from-horz-blue/15 to-white rounded-xl text-sea-blue shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default shadow-horz-blue"
-                      >
-                        <i className="mdi mdi-weight absolute -bottom-2 right-3 text-[3rem] text-sky-blue/20 group-hover:text-sky-blue/40 transition-colors duration-300 pointer-events-none select-none" />
-                        <div className="flex items-center justify-between relative z-10">
-                          <span className="text-[10px] font-semibold uppercase tracking-wide">
-                            Peso
-                          </span>
-                        </div>
-                        <span className="text-xl font-bold text-sea-blue relative z-10">
-                          {p.SignosVitales?.Peso ? `${p.SignosVitales.Peso} kg` : "N/A"}
-                        </span>
-                      </motion.div>
-                        
-                      <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className="relative overflow-hidden bg-linear-to-r from-horz-blue/15 to-white rounded-xl text-sea-blue shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default shadow-horz-blue"
-                      >
-                        <i className="mdi mdi-human-male-height-variant absolute -bottom-2 right-2 text-[3rem] text-sky-blue/20 group-hover:text-sky-blue/40 transition-colors duration-300 pointer-events-none select-none" />
-                        <div className="flex items-center justify-between relative z-10">
-                          <span className="text-[10px] font-semibold uppercase tracking-wide">
-                            Estatura
-                          </span>
-                        </div>
-                        <span className="text-xl font-bold text-sea-blue relative z-10">
-                          {p.SignosVitales?.Talla ? `${p.SignosVitales.Talla} m` : "N/A"}
-                        </span>
-                      </motion.div>
-                      
-                      <motion.div
-                        initial={{ opacity: 0, x: -20 }}
-                        animate={{ opacity: 1, x: 0 }}
-                        className={`relative overflow-hidden rounded-xl shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default ${imcStyles.container}`}
-                      >
-                        <i className={`mdi mdi-scale-balance absolute -bottom-2 right-2 text-[3rem] transition-colors duration-300 pointer-events-none select-none ${imcStyles.icon} transition-colors duration-300`} />
-                        <div className="flex items-center justify-between relative z-10">
-                          <span className={`text-[10px] font-semibold uppercase tracking-wide ${imcStyles.text}`}>
-                            IMC
-                          </span>
-                        </div>
-                        <span className={`text-xl font-bold relative z-10 ${imcStyles.text}`}>
-                          {p.SignosVitales?.IMC ? `${p.SignosVitales.IMC}` : "N/A"}
-                        </span>
-                      </motion.div>
                     </div>
                     
-                    <div className="grid grid-cols-2 gap-6 items-start">
-                      <div className="space-y-6">
-                        <motion.div
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.1 }}
-                          className="bg-white rounded-xl border border-sea-blue shadow-sm p-6"
-                        >
-                          <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
-                            <i className="mdi mdi-account-voice mr-4"></i>
-                            Contacto de Emergencia
+                    <div className="body-component" style={{ position: "relative", overflow: "visible" }}>
+                      <div onClickCapture={handleBodyClick}>
+                        <BodyComponent
+                          key={bodyKey}
+                          partsInput={buildPartsInput(selected)}
+                        />
+                      </div>
+                      <AnimatePresence>
+                        {selected && (() => {
+                          const pos = PART_POSITIONS[selected] ?? { top: 200, side: "right" as const };
+                          const isRight = pos.side === "right";
+                        
+                          return (
+                            <motion.div
+                              key={selected}
+                              initial={{ opacity: 0, x: isRight ? -8 : 8, scale: 0.94 }}
+                              animate={{ opacity: 1, x: 0, scale: 1 }}
+                              exit={{ opacity: 0, scale: 0.94 }}
+                              transition={{ duration: 0.16, ease: "easeOut" }}
+                              style={{
+                                position: "absolute",
+                                top: pos.top - 20,
+                                zIndex: 90000,
+                                width: 330, ...(isRight ? { left: "calc(50% + 14px)" } : { right: "calc(50% + 14px)" } ),
+                              }}
+                            >
+                              <div style={{
+                                position: "absolute",
+                                top: 20,
+                                width: 10,
+                                height: 10,
+                                background: "white",
+                                transform: "rotate(45deg)",
+                                ...(isRight ? { left: -5, borderLeft: "1px solid rgba(59,130,246,0.25)", borderBottom: "1px solid rgba(59,130,246,0.25)" } : { right: -5, borderRight: "1px solid rgba(59,130,246,0.25)", borderTop: "1px solid rgba(59,130,246,0.25)" } ),
+                              }} />
+                              <div className="bg-white border border-gray-200 rounded-lg p-3 shadow-lg">
+                                <div className="flex items-center justify-between gap-2 mb-2">
+                                  <span className="text-[10px] font-semibold text-sea-blue uppercase tracking-wide truncate">
+                                    {PART_NAMES_ES[selected]}
+                                  </span>
+                                  <button
+                                    onClick={() => { setSelected(null); setBodyKey(k => k + 1); }}
+                                    className="shrink-0 text-gray-300 hover:text-gray-500 transition-colors cursor-pointer"
+                                    title="Cerrar"
+                                  >
+                                    <i className="mdi mdi-close text-xs" />
+                                  </button>
+                                </div>
+                            
+                                {PART_NAMES_ES[selected] === "Detalles de Cabeza" && (() => {
+                                  const secciones = [
+                                    {
+                                      key: "Cabeza", icon: "mdi-head", rows: [
+                                        { label: "Forma",  icon: "mdi-head",     val: p.Cabeza?.Forma?.valor },
+                                        { label: "Tamaño", icon: "mdi-head",     val: p.Cabeza?.Tamaño?.valor },
+                                        { label: "Pelo",   icon: "mdi-head",     val: p.Cabeza?.Pelo?.valor },
+                                        { label: "Cara",   icon: "mdi-face-man", val: p.Cabeza?.Cara?.valor },
+                                      ]
+                                    },
+                                    {
+                                      key: "Oídos", icon: "mdi-ear-hearing", rows: [
+                                        { label: "C.A.E",    icon: "mdi-ear-hearing",  val: p.Oidos?.["C.A.E"]?.valor },
+                                        { label: "Pabellón", icon: "mdi-ear-hearing",  val: p.Oidos?.Pabellón?.valor },
+                                        { label: "Tímpanos", icon: "mdi-circle-double", val: p.Oidos?.Tímpanos?.valor },
+                                      ]
+                                    },
+                                    {
+                                      key: "Ojos", icon: "mdi-eye", rows: [
+                                        { label: "Reflejos",    icon: "mdi-eye", val: p.Ojos?.Reflejos?.valor },
+                                        { label: "Párpados",    icon: "mdi-eye", val: p.Ojos?.Párpados?.valor },
+                                        { label: "Conjuntivas", icon: "mdi-eye", val: p.Ojos?.Conjuntivas?.valor },
+                                        { label: "Fondo de ojo",icon: "mdi-eye", val: p.Ojos?.["Fondo de ojo"]?.valor },
+                                        { label: "Lentes",      icon: "mdi-glasses", val: p.AgudezaVisual?.usaLentes ? "Sí" : "No", neutral: true },
+                                      ]
+                                    },
+                                    {
+                                      key: "Boca", icon: "mdi-tooth", rows: [
+                                        { label: "Mucosas",   icon: "mdi-tooth", val: p.Boca?.Mucosas?.valor },
+                                        { label: "Dentadura", icon: "mdi-tooth", val: p.Boca?.Dentadura?.valor },
+                                        { label: "Lengua",    icon: "mdi-tooth", val: p.Boca?.Lengua?.valor },
+                                        { label: "Encías",    icon: "mdi-tooth", val: p.Boca?.Encías?.valor },
+                                        { label: "Faringe",   icon: "mdi-tooth", val: p.Boca?.Faringe?.valor },
+                                        { label: "Amígdalas", icon: "mdi-tooth", val: p.Boca?.Amígdalas?.valor },
+                                      ]
+                                    },
+                                    {
+                                      key: "Nariz", icon: "mdi-emoticon-neutral-outline", rows: [
+                                        { label: "Mucosas", icon: "mdi-emoticon-neutral-outline", val: p.Nariz?.Mucosas?.valor },
+                                        { label: "Tabique", icon: "mdi-emoticon-neutral-outline", val: p.Nariz?.Tabique?.valor },
+                                      ]
+                                    },
+                                  ];
+                                
+                                  return (
+                                    <div className="space-y-1 overflow-y-auto pr-0.5">
+                                      {secciones.map(sec => (
+                                        <div key={sec.key} className="border border-gray-300 rounded-lg overflow-hidden">
+                                          <button
+                                            onClick={() => toggleSection(sec.key)}
+                                            className="w-full flex items-center justify-between border-b border-gray-300 bg-gray-50 hover:bg-gray-100 transition-colors cursor-pointer"
+                                          >
+                                            <span className="px-3 py-2 text-xs text-left font-medium text-gray-700 ">
+                                              <i className={`mdi ${sec.icon} mr-1`} />
+                                              {sec.key}
+                                            </span>
+                                            <i className={`mdi text-gray-400 text-sm transition-transform mr-2 ${openSection === sec.key ? "mdi-chevron-up" : "mdi-chevron-down"}`} />
+                                          </button>
+                                      
+                                          {/* Contenido */}
+                                          <AnimatePresence initial={false}>
+                                          {openSection === sec.key && (
+                                            <motion.div
+                                              key={sec.key}
+                                              initial={{ height: 0, opacity: 0 }}
+                                              animate={{ height: "auto", opacity: 1 }}
+                                              exit={{ height: 0, opacity: 0 }}
+                                              transition={{ duration: 0.2, ease: "easeInOut" }}
+                                              style={{ overflow: "hidden" }}
+                                            >
+                                            <div className="grid grid-cols-2 gap-1 p-1.5">
+                                              {sec.rows.map(row => (
+                                                <div
+                                                  key={row.label}
+                                                  className={`px-2 py-1 rounded-md flex items-center justify-between text-xs ${
+                                                    (row as any).neutral
+                                                      ? "bg-gray-100 text-gray-700 border border-gray-200"
+                                                      : row.val === "Normal"
+                                                        ? "bg-aqua-green/20 text-green-950 border border-aqua-green/30"
+                                                        : "bg-red-100 text-red-950 border border-red-200"
+                                                  }`}
+                                                >
+                                                  <span className="truncate mr-1 font-medium">{row.label}</span>
+                                                  <span className="shrink-0 text-[10px]">{row.val ?? "—"}</span>
+                                                </div>
+                                              ))}
+                                            </div>
+                                            </motion.div>
+                                          )}
+                                          </AnimatePresence>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  );
+                                })()}
+
+                                {PART_NAMES_ES[selected] === "Región Lumbar" && (
+                                  <>
+                                    b
+                                  </>
+                                )}
+
+                                {PART_NAMES_ES[selected] === "Área Precordial" && (
+                                  <>
+                                    c
+                                  </>
+                                )}
+
+                                {PART_NAMES_ES[selected] === "Miembros Torácicos" && (
+                                  <>
+                                    
+                                    {/* {p.Cabeza?.Cara?.valor?.toUpperCase() ?? "N/A"} */}
+                                
+                                  </>
+                                )}
+
+                                {PART_NAMES_ES[selected] === "Abdomen" && (
+                                  <>
+                                    e
+                                  </>
+                                )}
+
+                                {PART_NAMES_ES[selected] === "Miembros Pélvicos" && (
+                                  <>
+                                    f
+                                  </>
+                                )}
+                                
+                              
+                                
+                              
+                              </div>
+                            </motion.div>
+                          );
+                        })()}
+                      </AnimatePresence>
+                    </div>
+                  </motion.div>
+                </div>
+                        
+                <div className="lg:col-span-4 space-y-6">
+                  <div className="grid grid-cols-4 gap-6">
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="relative overflow-hidden bg-linear-to-r from-red-100/80 to-white rounded-xl text-red-500 shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default shadow-red-300/60"
+                    >
+                      <i className="mdi mdi-water absolute -bottom-2 right-0 text-[3rem] text-red-200 group-hover:text-red-300 transition-colors duration-300 pointer-events-none select-none" />
+                      <div className="flex items-center justify-between relative z-10">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide">
+                          Tipo de Sangre
+                        </span>
+                      </div>
+                      <span className="text-xl font-bold relative z-10">
+                        {p.TipoSanguineo ? p.TipoSanguineo : "N/A"}
+                      </span>
+                    </motion.div>
+                      
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="relative overflow-hidden bg-linear-to-r from-horz-blue/15 to-white rounded-xl text-sea-blue shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default shadow-horz-blue"
+                    >
+                      <i className="mdi mdi-weight absolute -bottom-2 right-3 text-[3rem] text-sky-blue/20 group-hover:text-sky-blue/40 transition-colors duration-300 pointer-events-none select-none" />
+                      <div className="flex items-center justify-between relative z-10">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide">
+                          Peso
+                        </span>
+                      </div>
+                      <span className="text-xl font-bold text-sea-blue relative z-10">
+                        {p.SignosVitales?.Peso ? `${p.SignosVitales.Peso} kg` : "N/A"}
+                      </span>
+                    </motion.div>
+                      
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className="relative overflow-hidden bg-linear-to-r from-horz-blue/15 to-white rounded-xl text-sea-blue shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default shadow-horz-blue"
+                    >
+                      <i className="mdi mdi-human-male-height-variant absolute -bottom-2 right-2 text-[3rem] text-sky-blue/20 group-hover:text-sky-blue/40 transition-colors duration-300 pointer-events-none select-none" />
+                      <div className="flex items-center justify-between relative z-10">
+                        <span className="text-[10px] font-semibold uppercase tracking-wide">
+                          Estatura
+                        </span>
+                      </div>
+                      <span className="text-xl font-bold text-sea-blue relative z-10">
+                        {p.SignosVitales?.Talla ? `${p.SignosVitales.Talla} m` : "N/A"}
+                      </span>
+                    </motion.div>
+                    
+                    <motion.div
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      className={`relative overflow-hidden rounded-xl shadow-sm px-4 py-2 flex flex-col justify-between group cursor-default ${imcStyles.container}`}
+                    >
+                      <i className={`mdi mdi-scale-balance absolute -bottom-2 right-2 text-[3rem] transition-colors duration-300 pointer-events-none select-none ${imcStyles.icon} transition-colors duration-300`} />
+                      <div className="flex items-center justify-between relative z-10">
+                        <span className={`text-[10px] font-semibold uppercase tracking-wide ${imcStyles.text}`}>
+                          IMC
+                        </span>
+                      </div>
+                      <span className={`text-xl font-bold relative z-10 ${imcStyles.text}`}>
+                        {p.SignosVitales?.IMC ? `${p.SignosVitales.IMC}` : "N/A"}
+                      </span>
+                    </motion.div>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 gap-6 items-start">
+                    <div className="space-y-6">
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.1 }}
+                        className="bg-white rounded-xl shadow-xl p-6"
+                        // className="flex-1 bg-white rounded-xl shadow-xl flex flex-col"
+                      >
+                        <h2 className="p-1.5 text-sm font-bold text-gray-800 flex items-center">
+                          <i className="mdi mdi-account-voice mr-4"></i>
+                          Contacto de Emergencia
+                        </h2>
+                        <div className="grid grid-cols-1">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Nombre
+                          </label>
+                          <div className="w-full py-2 border border-none rounded-lg text-xs font-small outline-none">
+                            <b>{p?.Contacto ? p.Contacto : "N/A"}</b>
+                          </div>
+                        </div>
+                        <div className="grid grid-cols-1 mt-4">
+                          <label className="block text-xs font-medium text-gray-700 mb-1">
+                            Teléfono
+                          </label>
+                          <div className="w-full py-2 border border-none rounded-lg text-xs font-small outline-none">
+                            <b>{p.NumContacto ? formatPhone(p.NumContacto) : ""}</b>
+                          </div>
+                        </div>
+                      </motion.div>
+                    </div>
+                    <div>
+                      <motion.div
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col"
+                      >
+                        <div className="flex items-center justify-between px-6 py-7 border-b border-gray-100">
+                          <h2 className="text-sm font-bold text-gray-800 flex items-center">
+                            <i className="mdi mdi-information mr-4"></i>
+                            Alergias
                           </h2>
-                          <div className="grid grid-cols-1">
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Nombre
-                            </label>
-                            <div className="w-full py-2 border border-none rounded-lg text-xs font-small outline-none">
-                              <b>{p?.Contacto ? p.Contacto : "N/A"}</b>
-                            </div>
-                          </div>
-                          <div className="grid grid-cols-1 mt-4">
-                            <label className="block text-xs font-medium text-gray-700 mb-1">
-                              Teléfono
-                            </label>
-                            <div className="w-full py-2 border border-none rounded-lg text-xs font-small outline-none">
-                              <b>{p.NumContacto ? formatPhone(p.NumContacto) : "+XX XXX XXX XXXX"}</b>
-                            </div>
-                          </div>
-                        </motion.div>
-                      </div>
-                      <div>
-                        <motion.div
-                          initial={{ opacity: 0, x: -20 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          className="bg-white rounded-xl border border-gray-200 shadow-sm flex flex-col"
-                        >
-                          <div className="flex items-center justify-between px-6 py-7 border-b border-gray-100">
-                            <h2 className="text-sm font-bold text-gray-800 flex items-center">
-                              <i className="mdi mdi-information mr-4"></i>
-                              Alergias
-                            </h2>
-                          </div>
-                          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-6">
-                            {p.Alergias}
-                          </div>
-                        </motion.div>
-                      </div>
+                        </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 p-6">
+                          {p.Alergias}
+                        </div>
+                      </motion.div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
+          
           )
         })}
 

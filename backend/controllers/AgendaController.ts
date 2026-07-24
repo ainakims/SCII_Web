@@ -4,7 +4,7 @@ import { Request, Response } from "express";
 import { Parametros, TipoConsulta } from "../interfaces/params_web_service";
 
 export function AgendaController(db: DB) {
-  const { executeConnection } = db;
+  const { executeConnection, safeExecute } = db;
 
   const ObtenerCitas = async (req: Request, res: Response): Promise<Response> => {
     try {
@@ -160,5 +160,31 @@ export function AgendaController(db: DB) {
     }
   };
 
-  return { ObtenerCitas, AgregarCitas, EdicionCitas, ConfirmaCita, EliminaCitas };
+  const ObtenerFestivos = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const sql = "SELECT HolDate, Description FROM [10.133.8.77].[TASTD].[dbo].[CatHolidays]";
+      const result = await safeExecute(sql);
+
+      const festivos = result.map((row: any) => {
+        const fecha = new Date(row.HolDate);
+        return {
+          dia:    fecha.getUTCDate(),
+          mes:    fecha.getUTCMonth() + 1,
+          anio:   fecha.getUTCFullYear(),
+          nombre: String(row.Description ?? "").trim(),
+        };
+      });
+
+      return res.json({ ok: true, data: festivos });
+    } catch (error: any) {
+      return res.status(500).json({
+        ok: false,
+        error: "Error interno",
+        message: error.message,
+        stack: error.stack
+      });
+    }
+  };
+
+  return { ObtenerCitas, AgregarCitas, EdicionCitas, ConfirmaCita, EliminaCitas, ObtenerFestivos };
 }

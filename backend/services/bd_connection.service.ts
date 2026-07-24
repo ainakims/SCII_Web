@@ -22,10 +22,22 @@ export async function executeQuery<T>(params: ParamsWebService): Promise<Respons
       return Array.isArray(data) ? data : [data];
     }
 
+    function normalizeValue(value: any): any {
+      if (value !== null && typeof value === "object") {
+        if ("_" in value) return value._;
+        if ("$" in value) return "";
+      }
+      return value;
+    }
+
     function cleanRows(rows: any[]) {
       return rows.map(row => {
         const { $, ...clean } = row;
-        return clean;
+        const normalized: any = {};
+        for (const key in clean) {
+          normalized[key] = normalizeValue(clean[key]);
+        }
+        return normalized;
       });
     }
 

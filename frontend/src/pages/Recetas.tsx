@@ -1,7 +1,7 @@
 import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
 import React, { useState, useRef, useEffect } from 'react';
-import { Pill, Printer, AlertTriangle, ShieldCheck, Download, Plus, Search, FileText, User, ChevronLeft } from 'lucide-react';
+import { Pill, Printer, AlertTriangle, ShieldCheck, Download, Plus, Search, FileText, User, ChevronLeft, UserSearch, ScanSearch } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useReactToPrint } from 'react-to-print';
 import { useAuth } from "../context/AuthToken";
@@ -164,7 +164,7 @@ const Recetas: React.FC = () => {
                 <button
                   type="button"
                   onClick={handlePrint}
-                  className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0"
+                  className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0"
                   disabled={!selectedRecipe}
                 >
                   <i className="mdi mdi-printer-wireless mr-2" />
@@ -184,7 +184,7 @@ const Recetas: React.FC = () => {
               >
                 <div className="relative flex items-center justify-between bg-linear-to-r from-white to-gray-100 rounded-t-xl p-6">
                   <h2 className="p-1.5 text-sm font-bold text-gray-800 flex items-center">
-                    <i className={`mdi mdi-pill mr-2`}></i>
+                    <i className="mdi mdi-pill mr-4"></i>
                     Recetas Médicas
                   </h2>
                   {selectedRecipe && (
@@ -204,9 +204,15 @@ const Recetas: React.FC = () => {
                       {results.length === 0 ? (
                         <div className="space-y-2">
                           <div className="flex flex-col items-center justify-center py-30 text-gray-500 mt-7.5">
-                            <FileText className={`h-8 w-8 mb-4 opacity-40 ${notFound ? "text-red-400" : ""}`} />
-                            <p className="text-xs">
-                              {notFound ? "No se encontraron recetas para esa matrícula." : "Realiza una búsqueda para ver las recetas disponibles."}
+                            <div className="bg-linear-to-b from-gray-200/50 to-gray-50 shadow-md w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                              {/* <FileText className={`h-8 w-8 mb-4 opacity-40 ${notFound ? "text-red-400" : ""}`} /> */}
+                              <ScanSearch className="h-8 w-8 text-gray-400/50" />
+                            </div>
+                            {/* <h2 className="text-sm font-bold text-gray-800">
+                              {notFound ? "Sin resultados" : "Realice una búsqueda"}
+                            </h2> */}
+                            <p className="text-gray-500 text-xs">
+                              {notFound ? "No se encontraron recetas para esta matrícula." : "Realice la búsqueda de una matrícula primero."}
                             </p>
                           </div>
                         </div>

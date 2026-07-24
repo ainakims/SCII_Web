@@ -12,6 +12,7 @@ import {
   FileText,
 } from "lucide-react";
 import { motion } from "framer-motion";
+import tngsano from "../../assets/img/logo-tngsano.svg";
 import { useAuth } from "../../context/AuthToken";
 
 type Rol = "admin" | "médico" | "usuario";
@@ -40,15 +41,16 @@ const ROLES_PRIVILEGIADOS = ["admin", "médico", "medico"];
 
 const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
   const menuItems: MenuItem[] = [
-    // { name: "Dashboard", icon: "view-dashboard-outline", path: "/Dashboard", rol: "privileged" },
-    { name: "Pacientes",     icon: "account-multiple",         path: "/Pacientes",      roles: ["admin", "médico"] },
-    { name: "Agenda",        icon: "calendar-clock",           path: "/Agenda",         roles: ["admin", "médico", "usuario"] },
-    { name: "Consultas",     icon: "clipboard-pulse-outline",  path: "/Consultas",      roles: ["admin", "médico"] },
-    { name: "Evaluación",    icon: "clipboard-check-outline",  path: "/Evaluacion",     roles: ["admin", "médico"] },
-    { name: "Recetas",       icon: "pill",                     path: "/Recetas",        roles: ["admin", "médico"] },
-    // { name: "Inventario", icon: "package-variant-closed",   path: "/Inventario",     roles: "privileged" },
-    { name: "Documentos",    icon: "file-outline",             path: "/Documentos",     roles: ["admin", "médico", "usuario"] },
-    { name: "Configuración", icon: "cog",                      path: "/Configuracion",  roles: ["admin"] },
+    // { name: "Dashboard",     icon: "view-dashboard",          path: "/Dashboard",     roles: ["admin", "médico"] }, //compass
+    { name: "Pacientes",     icon: "account-multiple",        path: "/Pacientes",     roles: ["admin", "médico"] },
+    { name: "Agenda",        icon: "calendar-clock",          path: "/Agenda",        roles: ["admin", "médico", "usuario"] },
+    { name: "Consultas",     icon: "clipboard-pulse-outline", path: "/Consultas",     roles: ["admin", "médico"] },
+    { name: "Indicadores",   icon: "heart-pulse",             path: "/Indicadores",   roles: ["admin", "médico"] },
+    { name: "Evaluación",    icon: "clipboard-check-outline", path: "/Evaluacion",    roles: ["admin", "médico"] },
+    { name: "Recetas",       icon: "pill",                    path: "/Recetas",       roles: ["admin", "médico"] },
+    // { name: "Inventario",    icon: "package-variant-closed",  path: "/Inventario",    roles: ["admin", "médico"] },
+    { name: "Documentos",    icon: "file-outline",            path: "/Documentos",    roles: ["admin", "médico", "usuario"] },
+    { name: "Configuración", icon: "cog",                     path: "/Configuracion", roles: ["admin"] },
   ];
 
   const { user, logout } = useAuth() as { user: User; logout: () => void };
@@ -84,17 +86,24 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
 
   return (
     <div
-      className={`bg-white h-screen flex flex-col hidden md:flex fixed top-0 left-0 z-20 shadow-lg transition-all duration-300 ${
+      className={`bg-white/70 backdrop-blur-md border-r border-white/20 h-screen flex flex-col hidden md:flex fixed top-0 left-0 z-20 shadow-lg transition-all duration-300 ${
         isCollapsed ? "w-20" : "w-64"
       }`}
     >
       <div className="h-16 flex items-center px-6 overflow-hidden whitespace-nowrap">
-        <i className="fa fa-star-of-life ml-0.5 text-2xl text-aqua-green mr-2 flex-shrink-0"></i>
-        {!isCollapsed && (
-          <span className="font-black text-primary italic tracking-tighter text-3xl transition-opacity duration-300">
-            SCII
+
+        {/* <i className="fa fa-star-of-life ml-0.5 text-2xl text-aqua-green mr-2 flex-shrink-0"></i> */}
+        
+        <img
+          src={tngsano}
+          draggable={false}
+          className="w-full h-auto ml-0 max-w-20 mx-auto drop-shadow-2xl rounded-2xl mb-1"
+        />
+        {/* {!isCollapsed && (
+          <span className="font-black text-primary italic tracking-tighter text-xl transition-opacity duration-300">
+            Integrapp
           </span>
-        )}
+        )} */}
       </div>
 
       <div className="flex-1 overflow-y-auto py-4">
@@ -133,7 +142,12 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
       <div className="p-3 overflow-hidden">
         <NavLink
           to="/Perfil"
-          onClick={(e) => { e.preventDefault(); }}
+          onClick={(e) => {
+            e.preventDefault();
+          }}
+          onAuxClick={(e) => {
+            e.preventDefault();
+          }}
           className={({ isActive }) => `group p-3 flex items-center w-full rounded-lg transition-all duration-200 disabled cursor-pointer ${isActive ? "bg-linear-to-r from-sea-blue to-sky-blue shadow-md shadow-blue-500/20" : "hover:bg-gray-100"}` }
         >
           {({ isActive }) => (

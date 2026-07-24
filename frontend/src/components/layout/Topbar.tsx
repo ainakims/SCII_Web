@@ -51,7 +51,9 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
 
   return (
     <header
-      className={`h-16 bg-white border-b border-gray-100 flex items-center justify-between px-4 sm:px-5 lg:px-5 fixed top-0 right-0 z-10 transition-all duration-300 ${isCollapsed ? "left-0 md:left-20" : "left-0 md:left-64"}`}
+      className={`h-16 bg-white/70 backdrop-blur-md border-b border-white/20 flex items-center justify-between px-4 sm:px-5 lg:px-5 fixed top-0 right-0 z-10 transition-all duration-300 ${
+        isCollapsed ? "left-0 md:left-20" : "left-0 md:left-64"
+      }`}
     >
       <div className="flex items-center flex-1">
         <button

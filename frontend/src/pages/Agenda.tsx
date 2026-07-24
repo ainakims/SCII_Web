@@ -1,6 +1,6 @@
 import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useAuth } from "../context/AuthToken";
 import {
   Calendar as CalendarIcon,
@@ -13,9 +13,16 @@ import {
   CheckCircle2,
   Trash2,
   LibraryBig,
+  Grip,
+  Aperture,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
+import vacuna from "../assets/img/vacuna.jpg";
+import indicador from "../assets/img/indicador.png";
+import imss from "../assets/img/imss.jpg";
+
+import imss_logo from "../assets/img/logo-imss.png"
 
 interface MockPatient {
   matricula: string;
@@ -31,6 +38,7 @@ interface FormData {
   motivo: string;
   dia: number | string;
   hora: number | string;
+  minutos: number;
   periodo: string;
   duracion: number;
   notas: string;
@@ -45,8 +53,10 @@ interface Appointment {
   status: string;
   dia: number;
   hora: number;
+  minutos: number;
   duracion: number;
   notas: string;
+  pacientes?: Array<{ matricula: string; nombre: string }>;
 }
 
 interface StoredPatient {
@@ -55,6 +65,16 @@ interface StoredPatient {
   apellidoPaterno?: string;
   apellidoMaterno?: string;
 }
+
+interface SelectedPatient {
+  matricula: string;
+  nombre: string;
+  id: string;
+  estatus: string;
+}
+
+interface SavedGroup { id: number; name: string; patients: SelectedPatient[]; }
+
 
 const ROLES_PRIVILEGIADOS_AGENDA = ["admin", "médico", "medico"];
 
@@ -75,6 +95,7 @@ const Agenda: React.FC = () => {
   };
 
   const [weekOffset, setWeekOffset] = useState<number>(0);
+  const gridScrollRef = useRef<HTMLDivElement>(null);
   const [selectedDate, setSelectedDate] = useState<Date>(now);
   const [miniMonthOffset, setMiniMonthOffset] = useState<number>(0);
   const [miniView, setMiniView] = useState<"days" | "months">("days");
@@ -84,8 +105,87 @@ const Agenda: React.FC = () => {
 
   const [appointments, setAppointments] = useState<Appointment[]>([]);
   const [hoveredCardId, setHoveredCardId] = useState<number | null>(null);
-  // const [loadingCitas, setLoadingCitas] = useState(false);
+  const [diasFestivos, setDiasFestivos] = useState<{ dia: number; mes: number; anio: number; nombre: string }[]>([]);
   const [isLoadingEdit, setIsLoadingEdit] = useState<boolean>(false);
+
+  // Multi-patient autocomplete
+  const [matInput, setMatInput] = useState("");
+  const [matSuggestions, setMatSuggestions] = useState<SelectedPatient[]>([]);
+  const [matLoadingAuto, setMatLoadingAuto] = useState(false);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedPatients, setSelectedPatients] = useState<SelectedPatient[]>([]);
+
+  // Grupos guardados en BD
+  const [savedGroups, setSavedGroups] = useState<SavedGroup[]>([]);
+  const [showGroups, setShowGroups] = useState(false);
+  const [groupNameInput, setGroupNameInput] = useState("");
+  const [savingGroup, setSavingGroup] = useState(false);
+  const [loadingGroups, setLoadingGroups] = useState(false);
+
+  // Modal independiente de grupos
+  const [gruposModalOpen, setGruposModalOpen] = useState(false);
+  const [mgNombre, setMgNombre] = useState("");
+  const [mgPacientes, setMgPacientes] = useState<SelectedPatient[]>([]);
+  const [mgInput, setMgInput] = useState("");
+  const [mgSuggestions, setMgSuggestions] = useState<SelectedPatient[]>([]);
+  const [mgLoading, setMgLoading] = useState(false);
+  const [mgShowSug, setMgShowSug] = useState(false);
+  const [mgSaving, setMgSaving] = useState(false);
+
+  const fetchGrupos = async () => {
+    try {
+      setLoadingGroups(true);
+      const res = await fetchWithAuth(`${API_BASE_URL}/Grupos/ObtenerGrupos`, {
+        method: "POST",
+        body: JSON.stringify({ medico: user?.matricula ?? "" })
+      });
+      const data = await res.json();
+      if (data.ok && data.data) {
+        setSavedGroups(data.data.map((g: any) => ({
+          id: g.ID,
+          name: g.Nombre,
+          patients: (() => { try { return JSON.parse(g.Pacientes ?? "[]"); } catch { return []; } })()
+        })));
+      }
+    } catch (err) {
+      console.error("Error cargando grupos:", err);
+    } finally {
+      setLoadingGroups(false);
+    }
+  };
+
+  const handleSaveGroup = async () => {
+    const name = groupNameInput.trim();
+    if (!name || selectedPatients.length === 0) return;
+    try {
+      await fetchWithAuth(`${API_BASE_URL}/Grupos/GuardarGrupo`, {
+        method: "POST",
+        body: JSON.stringify({ medico: user?.matricula ?? "", nombre: name, pacientes: selectedPatients })
+      });
+      setGroupNameInput("");
+      setSavingGroup(false);
+      await fetchGrupos();
+    } catch (err) {
+      console.error("Error guardando grupo:", err);
+    }
+  };
+
+  const handleLoadGroup = (g: SavedGroup) => {
+    setSelectedPatients(g.patients);
+    setShowGroups(false);
+  };
+
+  const handleDeleteGroup = async (id: number) => {
+    try {
+      await fetchWithAuth(`${API_BASE_URL}/Grupos/EliminarGrupo`, {
+        method: "POST",
+        body: JSON.stringify({ id })
+      });
+      setSavedGroups(prev => prev.filter(g => g.id !== id));
+    } catch (err) {
+      console.error("Error eliminando grupo:", err);
+    }
+  };
 
   const monday = new Date(getMonday(now));
   monday.setDate(monday.getDate() + weekOffset * 7);
@@ -104,12 +204,21 @@ const Agenda: React.FC = () => {
   // const capitalizedMonth = monthName.charAt(0).toUpperCase() + monthName.slice(1);
   // const headerDate = `${capitalizedMonth} ${monday.getFullYear()}`;
 
+  const HOUR_START = 0;  // hora de inicio del grid (12 AM - día completo)
+  const HOUR_END   = 23; // hora de fin del grid (11 PM)
   const times: string[] = Array.from({ length: 24 }, (_, i) => {
-    if (i === 0) return "12 A.M.";
-    if (i < 12) return `${i} A.M.`;
-    if (i === 12) return "12 P.M.";
-    return `${i - 12} P.M.`;
+    const h = i;
+    if (h === 0)  return "12 A.M.";
+    if (h === 12) return "12 P.M.";
+    if (h < 12)   return `${h} A.M.`;
+    return `${h - 12} P.M.`;
   });
+  useEffect(() => {
+    fetchWithAuth(`${API_BASE_URL}/Agenda/ObtenerFestivos`, { method: "GET" })
+      .then(r => r.json())
+      .then(json => { if (json.ok) setDiasFestivos(json.data ?? []); })
+      .catch(() => {});
+  }, []);
 
   const miniMonthBase = new Date(now.getFullYear(), now.getMonth() + miniMonthOffset, 1);
   const miniYear = miniMonthBase.getFullYear();
@@ -140,7 +249,7 @@ const Agenda: React.FC = () => {
       setWeekOffset(diffWeeks);
     }
   };
-  
+
   const goToToday = (): void => {
     setWeekOffset(0);
     setMiniMonthOffset(0);
@@ -160,47 +269,114 @@ const Agenda: React.FC = () => {
     motivo: "",
     dia: "0",
     hora: "1",
+    minutos: 0,
     periodo: "AM",
     duracion: 0.00,
     notas: "",
   });
 
   useEffect(() => {
-    if (!formData.matricula) return;
-    if (editingId) return;
+    if (editingId && formData.motivo !== "IND") return;
+    if (!matInput || matInput.length < 2) {
+      setMatSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    const delay = setTimeout(async () => {
+      try {
+        setMatLoadingAuto(true);
+        const cons = await fetchWithAuth(`${API_BASE_URL}/Consultas/BuscarMatricula`, {
+          method: "POST",
+          body: JSON.stringify({ matricula: matInput })
+        });
+        const res = await cons.json();
+        if (res?.data?.length > 0) {
+          console.dir(res.data);
 
-    const delay = setTimeout(() => {
-      (async () => {
-        try {
-          setLoadingMat(true);
-          await new Promise(r => setTimeout(r, 2000));
+          const yaSeleccionados = new Set(selectedPatients.map(s => String(s.matricula)));
+          const filtrados = res.data
+            .map((p: any) => {
+              // Empl_matricula puede venir como string, number, objeto xml2js null o undefined
+              // Intentar varios campos posibles y garantizar string puro
+              const rawMat = p.Empl_matricula ?? p.Matricula ?? p.matricula;
+              const mat = (rawMat != null && typeof rawMat !== "object")
+                ? String(rawMat)
+                : matInput; // último recurso: lo que el usuario escribió
+              return {
+                matricula: mat,
+                nombre: p.Nombre ?? p.nombre ?? "",
+                id: mat,
+                estatus: p.Empl_status ?? p.estatus ?? "A"
+              };
+            })
+            .filter((p: SelectedPatient) => p.matricula.length >= 3 && !yaSeleccionados.has(p.matricula));
 
-          const cons = await fetchWithAuth(`${API_BASE_URL}/Consultas/BuscarMatricula`, {
-            method: "POST",
-            body: JSON.stringify({ matricula: formData.matricula })
-          });
-
-          const res = await cons.json();
-
-          if (res && res.data.length > 0) {
-            setMatriculaNotFound(false);
-            setFormData(prev => ({ ...prev, id: res.data![0].IdPaciente ?? "", patientName: res.data![0].Nombre ?? "", estatus: res.data![0].Empl_status ?? "" }));
-            setMatriculaNotRegis(res.data[0].IdPaciente == null);
-          } else {
-            setMatriculaNotFound(true);
-            setMatriculaNotRegis(false);
-            setFormData(prev => ({ ...prev, patientName: "" }));
-          }
-        } catch (err) {
-          console.error("Error cargando citas:", err);
+          setMatSuggestions(filtrados);
+          setShowSuggestions(filtrados.length > 0);
+        } else {
+          setMatSuggestions([]);
+          setShowSuggestions(false);
         }
-         finally {
-          setLoadingMat(false);
-        }
-      })();
-    }, 1000);
+      } catch (err) {
+        console.error("Error buscando matrícula:", err);
+        setMatSuggestions([]);
+      } finally {
+        setMatLoadingAuto(false);
+      }
+    }, 200);
     return () => clearTimeout(delay);
-  }, [formData.matricula]);
+  }, [matInput, editingId]);
+
+  // Búsqueda autocomplete del modal de grupos
+  useEffect(() => {
+    if (!mgInput || mgInput.length < 2) { setMgSuggestions([]); setMgShowSug(false); return; }
+    const t = setTimeout(async () => {
+      try {
+        setMgLoading(true);
+        const res = await fetchWithAuth(`${API_BASE_URL}/Consultas/BuscarMatricula`, {
+          method: "POST", body: JSON.stringify({ matricula: mgInput })
+        });
+        const data = await res.json();
+        if (data?.data?.length > 0) {
+          const yaEstan = new Set(mgPacientes.map(p => p.matricula));
+          const filtrados = data.data
+            .map((p: any) => ({ matricula: p.Empl_matricula ?? "", nombre: p.Nombre ?? "", id: String(p.Empl_matricula ?? ""), estatus: p.Empl_status ?? "" }))
+            .filter((p: SelectedPatient) => !yaEstan.has(p.matricula));
+          setMgSuggestions(filtrados);
+          setMgShowSug(filtrados.length > 0);
+        } else { setMgSuggestions([]); setMgShowSug(false); }
+      } catch { setMgSuggestions([]); } finally { setMgLoading(false); }
+    }, 200);
+    return () => clearTimeout(t);
+  }, [mgInput, mgPacientes]);
+
+  const handleSaveNewGroup = async () => {
+    const name = mgNombre.trim();
+    if (!name || mgPacientes.length === 0) return;
+    setMgSaving(true);
+    try {
+      await fetchWithAuth(`${API_BASE_URL}/Grupos/GuardarGrupo`, {
+        method: "POST",
+        body: JSON.stringify({ medico: user?.matricula ?? "", nombre: name, pacientes: mgPacientes })
+      });
+      setMgNombre(""); setMgPacientes([]); setMgInput("");
+      await fetchGrupos();
+    } catch (err) { console.error(err); } finally { setMgSaving(false); }
+  };
+
+  // Cita múltiple: forzar motivo IND y bloquearlo
+  useEffect(() => {
+    if (selectedPatients.length > 1) {
+      setFormData(f => ({ ...f, motivo: "IND" }));
+    }
+  }, [selectedPatients.length]);
+
+  // Auto-scroll al horario laboral (7 AM) al montar el calendario
+  useEffect(() => {
+    if (gridScrollRef.current) {
+      gridScrollRef.current.scrollTop = 7 * 64;
+    }
+  }, []);
 
   useEffect(() => {
     const fetchCitas = async () => {
@@ -220,20 +396,50 @@ const Agenda: React.FC = () => {
         const inicio = localWeekDates[0].toISOString().split("T")[0];
         const final = localWeekDates[6].toISOString().split("T")[0];
 
-        const matricula = esPrivilegiado ?  "0" : user?.matricula;
+        const matricula = esPrivilegiado ? "0" : user?.matricula;
 
-        const cons = await fetchWithAuth(`${API_BASE_URL}/Agenda/ObtenerCitas`, {
+        const consUser = await fetchWithAuth(`${API_BASE_URL}/Agenda/ObtenerCitas`, {
           method: "POST",
           body: JSON.stringify({ matricula, inicio, final })
         });
+        const resUser = await consUser.json();
+        let allData: any[] = resUser.data ?? [];
 
-        const res = await cons.json();
+        if (!esPrivilegiado) {
+          const consJor = await fetchWithAuth(`${API_BASE_URL}/Agenda/ObtenerCitas`, {
+            method: "POST",
+            body: JSON.stringify({ matricula: "0", inicio, final })
+          });
+          const resJor = await consJor.json();
+          const allItems = resJor.data ?? [];
+          const existingIds = new Set(allData.map((c: any) => c.IdAgenda));
+          // VAC e IMSS: visible para todos
+          const jorItems = allItems.filter((c: any) => c.Motivo === "VAC" || c.Motivo === "IMSS");
+          // IND: solo si la matrícula del usuario está en el CSV de matriculas
+          const userMat = String(user?.matricula ?? "").trim();
+          const indItems = allItems.filter((c: any) =>
+            c.Motivo === "IND" &&
+            String(c.Matricula ?? "").split(",").map((m: string) => m.trim()).includes(userMat)
+          );
+          const extras = [...jorItems, ...indItems].filter((c: any) => !existingIds.has(c.IdAgenda));
+          allData = [...allData, ...extras];
+        }
+
+        const res = { data: allData };
 
         const mapped: Appointment[] = res.data.map((c: any) => {
           const horaOriginal = parseInt(c.Hora);
+          const minutos = parseInt(c.Minutos ?? "0") || 0;
           let hora24 = horaOriginal;
-          if (c.Periodo === "PM" && horaOriginal !== 12) hora24 = horaOriginal + 12;
-          if (c.Periodo === "AM" && horaOriginal === 12) hora24 = 0;
+          if (c.Periodo === "PM") {
+            // Si hora < 12: formato 12h correcto → sumar 12 (ej. 2 PM → 14)
+            // Si hora === 12: mediodía → queda en 12
+            // Si hora > 12: registro antiguo guardado en 24h → ya está bien
+            if (horaOriginal < 12) hora24 = horaOriginal + 12;
+          } else { // AM
+            if (horaOriginal === 12) hora24 = 0; // medianoche
+          }
+          const hora24decimal = hora24 + minutos / 60; // ej. 9.5 para 9:30
 
           const [year, month, day] = (c.FechaCompleta as string).split("T")[0].split("-").map(Number);
 
@@ -243,17 +449,42 @@ const Agenda: React.FC = () => {
             d.getDate() === day
           );
 
+          const str = (v: any, fallback = ""): string => typeof v === "string" ? v : fallback;
+          const matriculaRaw = str(c.Matricula);
+
+          let pacientes: Array<{ matricula: string; nombre: string }> | undefined;
+          if (str(c.Motivo) === "IND" && matriculaRaw) {
+            if (matriculaRaw.startsWith("[")) {
+              try {
+                const parsed = JSON.parse(matriculaRaw);
+                if (Array.isArray(parsed)) {
+                  pacientes = parsed.map((item: any) =>
+                    typeof item === "string"
+                      ? { matricula: item, nombre: item }
+                      : { matricula: str(item?.matricula), nombre: str(item?.nombre || item?.matricula) }
+                  );
+                }
+              } catch {}
+            } else {
+              pacientes = matriculaRaw.split(",").map(m => m.trim()).filter(m => m.length > 0).map(m => ({ matricula: m, nombre: m }));
+            }
+          }
+
           return {
             id: c.IdAgenda,
-            matricula: c.Matricula ?? "",
-            time: `${horaOriginal} ${c.Periodo}`,
-            nombre: c.Nombres ?? `Paciente ${c.IdPaciente}`,
-            type: c.Motivo,
-            status: c.Estado,
+            matricula: matriculaRaw,
+            time: `${horaOriginal}:${String(minutos).padStart(2,"0")} ${str(c.Periodo)}`,
+            nombre: pacientes && pacientes.length > 0
+              ? "Indicadores TNG sano"
+              : str(c.Nombres, `Paciente ${c.IdPaciente ?? "?"}`),
+            type: str(c.Motivo),
+            status: str(c.Estado),
             dia: diaIndex === -1 ? -1 : diaIndex,
-            hora: hora24,
-            duracion: parseFloat(c.Duracion),
-            notas: c.Notas,
+            hora: hora24decimal,
+            minutos,
+            duracion: parseFloat(c.Duracion) || 0,
+            notas: str(c.Notas),
+            pacientes,
           };
         }).filter((c: Appointment) => c.dia >= 0);
 
@@ -282,21 +513,31 @@ const Agenda: React.FC = () => {
     setMatriculaNotRegis(false);
   };
 
-  const handleSaveCita = async (overrideOverlap: boolean = false) => {
-    console.table(formData);
+  const handleAddPatient = (patient: SelectedPatient) => {
+    if (selectedPatients.some(p => p.matricula === patient.matricula)) return;
+    setSelectedPatients(prev => [...prev, patient]);
+    setMatInput("");
+    setMatSuggestions([]);
+    setShowSuggestions(false);
+  };
 
+  const handleRemovePatient = (matricula: string) => {
+    setSelectedPatients(prev => prev.filter(p => p.matricula !== matricula));
+  };
+
+  const handleSaveCita = async (overrideOverlap: boolean = false) => {
     const validations = [
-      // {
-      //   condition: !editingId && (matriculaNotRegis || !formData.id),
-      //   message: "Debe realizar el registro del <b>paciente</b> en sistema antes de levantar una consulta."
-      // },
       {
-        condition: !editingId && (matriculaNotFound),
-        message: "Debe ingresar una <b>matrícula</b> que se encuentre actualmente activa."
+        condition: !editingId && formData.motivo !== "VAC" && formData.motivo !== "IMSS" && selectedPatients.length === 0,
+        message: "Debe agregar al menos una <b>matrícula</b> a la cita."
       },
       {
-        condition: !editingId && String(formData.estatus).trim() !== "A",
-        message: "Debe ingresar una <b>matrícula</b> que se encuentre actualmente activa."
+        condition: formData.motivo === "IND" && selectedPatients.length < 2,
+        message: "El tipo de cita requiere al menos <b>2 matrículas</b>."
+      },
+      {
+        condition: !editingId && formData.motivo !== "VAC" && formData.motivo !== "IMSS" && selectedPatients.some(p => String(p.estatus).trim() !== "A"),
+        message: "Todos los pacientes deben tener una <b>matrícula activa</b>."
       },
       {
         condition: !formData.motivo,
@@ -312,11 +553,11 @@ const Agenda: React.FC = () => {
       },
       {
         condition: !formData.periodo,
-        message: "Debe seleccionar el <b>periodo</b> (AM/PM) de la cita."
+        message: "Debe seleccionar el <b>periodo (AM/PM)</b> de la cita."
       },
       {
-        condition: Number(formData.duracion) <= 0,
-        message: "Debe seleccionar la <b>duración</b> de la cita."
+        condition: Number(formData.duracion) < 0.5,
+        message: "La duración mínima de una cita es <b>30 minutos</b>."
       },
       {
         condition: (() => {
@@ -329,9 +570,9 @@ const Agenda: React.FC = () => {
         condition: (() => {
           const diaDate = weekDates[parseInt(String(formData.dia))];
           const esHoy = diaDate?.getDate() === now.getDate() && diaDate?.getMonth() === now.getMonth() && diaDate?.getFullYear() === now.getFullYear();
-          const hora24 = toHora24(formData.hora, formData.periodo);
-          const horaLimite = now.getHours() + (now.getMinutes() > 0 ? 1 : 0);
-          return esHoy && hora24 < horaLimite;
+          const hora24 = toHora24(formData.hora, formData.periodo) + formData.minutos / 60;
+          const horaActual = now.getHours() + now.getMinutes() / 60;
+          return esHoy && hora24 < horaActual;
         })(),
         message: "No puede agendar una cita en una <b>hora pasada</b>."
       }
@@ -340,7 +581,7 @@ const Agenda: React.FC = () => {
     const error = validations.find(v => v.condition);
 
     if (error) {
-      errorModal("Error al guardar", error.message);
+      errorModal("Campos requeridos", error.message);
       return;
     }
 
@@ -348,12 +589,13 @@ const Agenda: React.FC = () => {
     const selectedDate = weekDates[diaIndex];
     const formatDate = selectedDate.toISOString().split("T")[0];
 
-    // Verificar empalme de citas
-    const selectedHora24 = toHora24(formData.hora, formData.periodo);
+    const selectedHora24 = toHora24(formData.hora, formData.periodo) + formData.minutos / 60;
     const hasOverlap = appointments.find(apt =>
+      apt.type !== "VAC" && apt.type !== "IMSS" && apt.type !== "IND" &&
+      apt.duracion < 3 &&
       apt.dia === diaIndex &&
       apt.id !== editingId &&
-      apt.hora < selectedHora24 + formData.duracion &&
+      apt.hora < selectedHora24 + Number(formData.duracion) &&
       apt.hora + apt.duracion > selectedHora24
     );
 
@@ -362,34 +604,81 @@ const Agenda: React.FC = () => {
       return;
     }
 
-    console.table(formData);
-
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/Agenda/AgregarCitas`, {
+      const hora24decimal = toHora24(formData.hora, formData.periodo) + formData.minutos / 60;
+
+      if (formData.motivo === "VAC" || formData.motivo === "IMSS") {
+        await fetchWithAuth(`${API_BASE_URL}/Agenda/AgregarCitas`, {
           method: "POST",
           body: JSON.stringify({
             agenda: {
-              id: formData.id,
-              matricula: formData.matricula,
+              id: "0",
+              matricula: "0",
               motivo: formData.motivo,
               fecha: formatDate,
               dia: formData.dia,
-              hora: formData.hora,
+              hora: hora24decimal,
               periodo: formData.periodo,
+              minutos: formData.minutos,
               duracion: Number(formData.duracion).toFixed(2),
               notas: formData.notas,
             }
           })
         });
+        const msgExito = formData.motivo === "IMSS"
+          ? "La jornada PrevenIMSS ha sido agendada correctamente."
+          : "La campaña de vacunación ha sido agendada correctamente.";
+        exitoModal("Éxito al guardar", msgExito);
+      } else if (formData.motivo === "IND") {
+        const matriculaJson = selectedPatients.map(p => p.matricula).join(",");
+        await fetchWithAuth(`${API_BASE_URL}/Agenda/AgregarCitas`, {
+          method: "POST",
+          body: JSON.stringify({
+            agenda: {
+              id: "0",
+              matricula: matriculaJson,
+              motivo: formData.motivo,
+              fecha: formatDate,
+              dia: formData.dia,
+              hora: hora24decimal,
+              periodo: formData.periodo,
+              minutos: formData.minutos,
+              duracion: Number(formData.duracion).toFixed(2),
+              notas: formData.notas,
+            }
+          })
+        });
+        exitoModal("Éxito al guardar", `Indicadores agendados para ${selectedPatients.length} paciente${selectedPatients.length !== 1 ? "s" : ""}.`);
+      } else {
+        for (const patient of selectedPatients) {
+          await fetchWithAuth(`${API_BASE_URL}/Agenda/AgregarCitas`, {
+            method: "POST",
+            body: JSON.stringify({
+              agenda: {
+                id: patient.id,
+                matricula: patient.matricula,
+                motivo: formData.motivo,
+                fecha: formatDate,
+                dia: formData.dia,
+                hora: hora24decimal,
+                periodo: formData.periodo,
+                minutos: formData.minutos,
+                duracion: Number(formData.duracion).toFixed(2),
+                notas: formData.notas,
+              }
+            })
+          });
+        }
+        exitoModal("Éxito al guardar", `Se ${selectedPatients.length === 1 ? "registró la cita" : `registraron ${selectedPatients.length} citas`} correctamente.`);
+      }
 
-      let data: any = null;
+      setFetchTrigger(t => t + 1);
+      closePanel();
 
-      try { data = await res.json(); } catch { data = null; }
-
-      if (data) {
-        exitoModal("Éxito al guardar", "Se han registrado los datos de la cita correctamente.");
-        setFetchTrigger(t => t + 1);
-        closePanel();
+      if (gridScrollRef.current) {
+        const hora24 = toHora24(formData.hora, formData.periodo) + formData.minutos / 60;
+        const targetScroll = Math.max(0, hora24 * 64 - 100);
+        gridScrollRef.current.scrollTop = targetScroll;
       }
     } catch (err) {
       console.error("Error: ", err);
@@ -399,15 +688,30 @@ const Agenda: React.FC = () => {
   const handleUpdateCita = async (overrideOverlap: boolean = false) => {
     if (!editingId) return;
 
+    if (formData.motivo === "IND" && selectedPatients.length < 2) {
+      errorModal("Campos requeridos", "El tipo de cita requiere al menos <b>2 matrículas</b>.");
+      return;
+    }
+
     const diaIndex = parseInt(String(formData.dia));
     const selectedDate = weekDates[diaIndex];
     const formatDate = selectedDate.toISOString().split("T")[0];
+    const esHoy = selectedDate?.getDate() === now.getDate() && selectedDate?.getMonth() === now.getMonth() && selectedDate?.getFullYear() === now.getFullYear();
+    const hora24Edit = toHora24(formData.hora, formData.periodo) + formData.minutos / 60;
+    const horaActualEdit = now.getHours() + now.getMinutes() / 60;
 
-    const selectedHora24 = toHora24(formData.hora, formData.periodo);
+    if (esHoy && hora24Edit < horaActualEdit) {
+      errorModal("Conflicto de horario", "No puede agendar una cita en una <b>hora pasada</b>.");
+      return;
+    }
+
+    const selectedHora24 = toHora24(formData.hora, formData.periodo) + formData.minutos / 60;
     const hasOverlap = appointments.find(apt =>
+      apt.type !== "VAC" && apt.type !== "IMSS" && apt.type !== "IND" &&
+      apt.duracion < 3 &&
       apt.dia === diaIndex &&
       apt.id !== editingId &&
-      apt.hora < selectedHora24 + formData.duracion &&
+      apt.hora < selectedHora24 + Number(formData.duracion) &&
       apt.hora + apt.duracion > selectedHora24
     );
 
@@ -417,16 +721,51 @@ const Agenda: React.FC = () => {
     }
 
     try {
+      const hora24decimal = toHora24(formData.hora, formData.periodo) + formData.minutos / 60;
+
+      if (formData.motivo === "IND") {
+        await fetchWithAuth(`${API_BASE_URL}/Agenda/EliminaCitas`, {
+          method: "POST",
+          body: JSON.stringify({ idAgenda: editingId }),
+        });
+
+        const matriculaCSV = selectedPatients.map(p => p.matricula).join(",");
+        await fetchWithAuth(`${API_BASE_URL}/Agenda/AgregarCitas`, {
+          method: "POST",
+          body: JSON.stringify({
+            agenda: {
+              id: "0",
+              matricula: matriculaCSV,
+              motivo: formData.motivo,
+              fecha: formatDate,
+              dia: formData.dia,
+              hora: hora24decimal,
+              periodo: formData.periodo,
+              minutos: formData.minutos,
+              duracion: Number(formData.duracion).toFixed(2),
+              notas: formData.notas,
+            }
+          }),
+        });
+
+        exitoModal("Éxito al editar", "Se han actualizado los datos de la cita correctamente.");
+        setFetchTrigger(t => t + 1);
+        closePanel();
+        return;
+      }
+
       const res = await fetchWithAuth(`${API_BASE_URL}/Agenda/EdicionCitas`, {
           method: "POST",
           body: JSON.stringify({
             agenda: {
               idAgenda: editingId,
+              matricula: formData.matricula,
               motivo: formData.motivo,
               fecha: formatDate,
               dia: formData.dia,
-              hora: formData.hora,
+              hora: hora24decimal,
               periodo: formData.periodo,
+              minutos: formData.minutos,
               duracion: formData.duracion,
               notas: formData.notas,
             }
@@ -466,11 +805,11 @@ const Agenda: React.FC = () => {
           esActivo: result.isConfirmed ? "A" : result.isDenied ? "C" : null
         })
       });
-      
+
       let data: any = null;
-      
+
       try { data = await res.json(); } catch { data = null; }
-      
+
       if (data) {
         exitoModal("Cita confirmada", "Se han confirmado la asistencia del paciente a la cita.");
         setFetchTrigger(t => t + 1);
@@ -527,26 +866,12 @@ const Agenda: React.FC = () => {
     Swal.fire({
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">${title}</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">${message}</p>`,
-      iconHtml: `
-      <i class="mdi mdi-check-circle-outline success-icon"></i>
-      <style>
-        .success-icon {
-          color: #54BBAB;
-          font-size: 90px;
-          animation: pop 0.4s ease-out forwards;
-        }
-        @keyframes pop {
-          0% { transform: scale(0.5); opacity: 0; }
-          70% { transform: scale(1.15); opacity: 1; }
-          100% { transform: scale(1); }
-        }
-      </style>
-      `,
+      iconHtml: `<i class="mdi mdi-check-circle-outline success-icon"></i><style> .success-icon { color: #54BBAB; font-size: 90px; animation: pop 0.4s ease-out forwards; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } </style>`,
       didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" }); },
-      buttonsStyling: false, 
+      buttonsStyling: false,
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
       customClass:
-      { 
+      {
         confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
       },
     })
@@ -573,7 +898,7 @@ const Agenda: React.FC = () => {
       didOpen: (p) => {
         const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" });
       },
-      buttonsStyling: false, 
+      buttonsStyling: false,
       confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
       customClass:
       {
@@ -618,7 +943,7 @@ const Agenda: React.FC = () => {
   const confirmOverlap = (overlapAppointment: Appointment, onConfirm: () => void): void => {
     Swal.fire({
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Conflicto de horario</p>`,
-      html: `<p style="font-size: 16px; padding: 0 40px">Ya existe una cita para el día <b>${dayNames[weekDates[overlapAppointment.dia]?.getDay() ?? 0].toLowerCase()} ${weekDates[overlapAppointment.dia]?.getDate()} a las ${overlapAppointment.time}</b>. ¿Desea permitir que se empalmen las citas?</p>`,
+      html: `<p style="font-size: 16px; padding: 0 40px">Ya existe una cita para el día <b>${dayNames[weekDates[overlapAppointment.dia]?.getDay() ?? 0].toLowerCase()} ${weekDates[overlapAppointment.dia]?.getDate()} a las ${overlapAppointment.time}</b>. ¿Desea permitir que se empalmen?</p>`,
       // <b>${overlapAppointment.nombre}</b>
       iconHtml: `
       <i class="mdi mdi-alert-circle-outline success-icon"></i>
@@ -660,6 +985,10 @@ const Agenda: React.FC = () => {
     setEditingId(null);
     setMatriculaNotFound(false);
     setMatriculaNotRegis(false);
+    setMatInput("");
+    setMatSuggestions([]);
+    setShowSuggestions(false);
+    setSelectedPatients([]);
     setFormData({
       id: "",
       matricula: "",
@@ -668,18 +997,23 @@ const Agenda: React.FC = () => {
       motivo: "",
       dia: "0",
       hora: "1",
+      minutos: 0,
       periodo: "AM",
       duracion: 0.00,
       notas: "",
     });
   };
 
-  const openPanel = (prefill?: Partial<FormData>): void => {
+  const openPanel = (prefill?: Partial<FormData>, prefillPatients?: SelectedPatient[]): void => {
     setEditingId(null);
     setIsViewMode(false);
     setOverlapWarning(null);
     setMatriculaNotFound(false);
     setMatriculaNotRegis(false);
+    setMatInput("");
+    setMatSuggestions([]);
+    setShowSuggestions(false);
+    setSelectedPatients(prefillPatients ?? []);
 
     // Día actual dentro de la semana visible
     const todayIndex = weekDates.findIndex(d =>
@@ -689,10 +1023,20 @@ const Agenda: React.FC = () => {
     );
     const defaultDia = todayIndex >= 0 ? String(todayIndex) : "0";
 
-    // Próxima hora válida
-    const horaLimite24 = Math.min(now.getHours() + (now.getMinutes() > 0 ? 1 : 0), 23);
-    const defaultPeriodo = horaLimite24 >= 12 ? "PM" : "AM";
-    const defaultHora12 = horaLimite24 === 0 ? 12 : horaLimite24 > 12 ? horaLimite24 - 12 : horaLimite24;
+    // Próxima hora válida — respeta medias horas
+    const nowH = now.getHours();
+    const nowM = now.getMinutes();
+    let defaultHora24: number;
+    let defaultMinutos: number;
+    if (nowM === 0) {
+      defaultHora24 = nowH;       defaultMinutos = 0;   // en punto → misma hora :00
+    } else if (nowM < 30) {
+      defaultHora24 = nowH;       defaultMinutos = 30;  // 1-29 min → misma hora :30
+    } else {
+      defaultHora24 = Math.min(nowH + 1, 23); defaultMinutos = 0; // 30-59 min → siguiente hora :00
+    }
+    const defaultPeriodo = defaultHora24 >= 12 ? "PM" : "AM";
+    const defaultHora12 = defaultHora24 === 0 ? 12 : defaultHora24 > 12 ? defaultHora24 - 12 : defaultHora24;
 
     setFormData({
       id: "",
@@ -702,8 +1046,9 @@ const Agenda: React.FC = () => {
       motivo: "",
       dia: defaultDia,
       hora: String(defaultHora12),
+      minutos: defaultMinutos,
       periodo: defaultPeriodo,
-      duracion: 0.00,
+      duracion: 0.5,
       notas: "",
       ...prefill,
     });
@@ -714,8 +1059,10 @@ const Agenda: React.FC = () => {
     setEditingId(apt.id);
     setIsViewMode(true)
 
-    const hora12 = apt.hora === 0 ? 12 : apt.hora > 12 ? apt.hora - 12 : apt.hora;
-    const periodo = apt.hora >= 12 ? "PM" : "AM";
+    const horaInt = Math.floor(apt.hora);
+    const minutos = Math.round((apt.hora - horaInt) * 60);
+    const hora12 = horaInt === 0 ? 12 : horaInt > 12 ? horaInt - 12 : horaInt;
+    const periodo = horaInt >= 12 ? "PM" : "AM";
 
     setFormData({
       id: String(apt.id),
@@ -725,10 +1072,62 @@ const Agenda: React.FC = () => {
       motivo: apt.type,
       dia: String(apt.dia),
       hora: String(hora12),
-      periodo: periodo,
+      minutos,
+      periodo,
       duracion: apt.duracion,
       notas: apt.notas,
     });
+
+    // Para IND restaurar la lista de seleccionados y buscar nombres reales
+    if (apt.type === "IND" && apt.pacientes && apt.pacientes.length > 0) {
+      // Mostrar de inmediato con matrícula como placeholder de nombre
+      const base = apt.pacientes.map(p => ({
+        matricula: p.matricula,
+        nombre: p.nombre !== p.matricula ? p.nombre : "...",
+        id: p.matricula,
+        estatus: "A",
+      }));
+      setSelectedPatients(base);
+
+      // Enriquecer con nombres reales en paralelo
+      (async () => {
+        const enriched = await Promise.all(
+          apt.pacientes!.map(async (p) => {
+            // Si ya tenemos el nombre real (no es igual a la matrícula), no buscar
+            if (p.nombre && p.nombre !== p.matricula) {
+              return { matricula: p.matricula, nombre: p.nombre, id: p.matricula, estatus: "A" };
+            }
+            try {
+              const res = await fetchWithAuth(`${API_BASE_URL}/Consultas/BuscarMatricula`, {
+                method: "POST",
+                body: JSON.stringify({ matricula: p.matricula }),
+              });
+              const data = await res.json();
+              const found = data?.data?.[0];
+              return {
+                matricula: p.matricula,
+                nombre: found?.Nombre ?? p.matricula,
+                id: p.matricula,
+                estatus: found?.Empl_status ?? "A",
+              };
+            } catch {
+              return { matricula: p.matricula, nombre: p.matricula, id: p.matricula, estatus: "A" };
+            }
+          })
+        );
+        setSelectedPatients(enriched);
+      })();
+    } else if (apt.type === "SEG" || apt.type === "PER") {
+      // Pre-poblar con el paciente de la cita para mostrar el chip en edición
+      setSelectedPatients([{
+        matricula: apt.matricula,
+        nombre: apt.nombre,
+        id: apt.matricula,
+        estatus: apt.status === "C" ? "C" : "A",
+      }]);
+    } else {
+      setSelectedPatients([]);
+    }
 
     setIsModalOpen(true);
     setIsPanelOpen(true);
@@ -741,12 +1140,20 @@ const Agenda: React.FC = () => {
     return h;
   };
 
+  const toStr = (h: number): string => {
+    const mins = Math.round((h % 1) * 60);
+    const hInt = Math.floor(h);
+    const p    = hInt >= 12 ? "PM" : "AM";
+    const h12  = hInt % 12 === 0 ? 12 : hInt % 12;
+    return `${String(h12).padStart(2, "0")}:${String(mins).padStart(2, "0")} ${p}`;
+  };
+
   // const selectedDiaIndex = parseInt(String(formData.dia));
   const isDiaPasado = weekDates[parseInt(String(formData.dia))] < new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
   return (
     <div className="relative flex w-full overflow-hidden">
-      <div 
+      <div
         className="flex-1 mt-14 transition-all duration-300 ease-in-out"
         // style={{ marginRight: isPanelOpen ? 420 : 0 }}
       >
@@ -761,16 +1168,30 @@ const Agenda: React.FC = () => {
               </p>
             </div>
             {esPrivilegiado && (
-              <button
-                onClick={() => openPanel()}
-                className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
-              >
-                <i className="mdi mdi-calendar-search mr-2"></i>
-                Agendar
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={() => { setGruposModalOpen(true); fetchGrupos(); }}
+                  className="flex items-center justify-center bg-white hover:bg-gray-50 hover:-translate-y-1 text-gray-700 border border-gray-200 px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all cursor-pointer hidden"
+                >
+                  <i className="mdi mdi-account-group mr-2"></i>
+                  Grupos
+                  {savedGroups.length > 0 && (
+                    <span className="ml-1.5 text-[10px] bg-sea-blue text-white rounded-full px-1.5 py-0.5 leading-none">
+                      {savedGroups.length}
+                    </span>
+                  )}
+                </button>
+                <button
+                  onClick={() => openPanel()}
+                  className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
+                >
+                  <i className="mdi mdi-calendar-search mr-2"></i>
+                  Agendar
+                </button>
+              </div>
             )}
           </div>
-          
+
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -823,7 +1244,7 @@ const Agenda: React.FC = () => {
                       })}
                     </div>
                   ) : (
-                    <>
+                    <div className="flex flex-col h-[540px]">
                       <div className="grid grid-cols-7 mb-1">
                         {["L","M","M","J","V","S","D"].map((d, i) => (
                           <div key={i} className="text-center text-[10px] font-semibold text-gray-400">{d}</div>
@@ -839,6 +1260,9 @@ const Agenda: React.FC = () => {
                           const isToday = date.toDateString() === now.toDateString();
                           const isCurrentWeek = thisWeekMonday.getTime() === currentWeekMonday.getTime();
                           const isInViewWeek = thisWeekMonday.getTime() === viewWeekMonday.getTime();
+                          const esFestivo = isCurrentMonth && diasFestivos.some(
+                            f => f.dia === date.getDate() && f.mes === date.getMonth() + 1 && f.anio === date.getFullYear()
+                          );
 
                           const dayOfWeek = date.getDay();
                           const isWeekStart = dayOfWeek === 1;
@@ -857,25 +1281,46 @@ const Agenda: React.FC = () => {
                                 }
                               `}
                             >
-                              <span className={`h-6 w-6 flex items-center justify-center rounded-full
-                                ${isToday
-                                  ? "bg-linear-to-b from-sea-blue to-sky-blue text-white font-bold"
-                                  : !isCurrentMonth
-                                  ? "text-gray-300"
-                                  : "text-gray-700"
-                                }
-                              `}>
+                              <span
+                                title={`${esFestivo ? "Festivo" : ""}`}
+                                className={`h-6 w-6 flex items-center justify-center
+                                  ${esFestivo ? "bg-gray-200 font-bold"
+                                  : isToday ? "rounded-full bg-linear-to-b from-sea-blue to-sky-blue text-white font-bold"
+                                  : !isCurrentMonth ? "text-gray-300"
+                                  : "rounded-full text-gray-700"
+                                  }
+                                `}
+                              >
                                 {date.getDate()}
                               </span>
                             </button>
                           );
                         })}
                       </div>
-                    </>
+
+                      {diasFestivos.some(f => f.mes === miniMonth + 1 && f.anio === miniYear) && (
+                        <div className="mt-auto pt-2 px-1 space-y-1">
+                          {diasFestivos
+                            .filter(f => f.mes === miniMonth + 1 && f.anio === miniYear)
+                            .sort((a, b) => a.dia - b.dia)
+                            .map((f, i) => (
+                              <div key={i} className="flex items-center gap-1.5">
+                                <span className="shrink-0 flex items-center justify-center bg-gray-200 text-[11px] font-bold leading-none w-[18px] h-[18px] text-center">
+                                  {f.dia}
+                                </span>
+                                <span className="text-[10px] text-gray-600 leading-none flex items-center">
+                                  {f.nombre}
+                                </span>
+                              </div>
+                            ))
+                          }
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
               </aside>
-              
+
               <div className="flex-1 flex flex-col overflow-hidden bg-white">
                 <div className="flex items-center gap-3 p-6 bg-linear-to-r from-white to-gray-100 shrink-0 rounded-t-xl">
                   <div className="flex items-center gap-1">
@@ -914,10 +1359,10 @@ const Agenda: React.FC = () => {
                         Hoy
                       </button>
                     </div>
-                    
+
                     {weekDates.map((d, i) => {
                       const isToday = d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-                      
+
                       return (
                         <div
                           key={i}
@@ -935,22 +1380,113 @@ const Agenda: React.FC = () => {
                         </div>
                       );
                     })}
+                    <div className="w-3.5 bg-transparent"></div>
                   </div>
-                  
-                  <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+
+                  {appointments.some(a => a.type === "VAC" || a.type === "IMSS" || a.type === "IND") && (
+                    <div className="flex shrink-0 border-b border-gray-100 bg-linear-to-r from-white to-gray-100" style={{ minHeight: 36 }}>
+                      <div className="w-14 shrink-0 flex items-center justify-end pr-2 border-b border-gray-100">
+                      </div>
+                      {weekDates.map((_, colIdx) => {
+                        const bannerApts = appointments.filter(a => (a.type === "VAC" || a.type === "IMSS" || a.type === "IND") && a.dia === colIdx);
+                        const isColToday = weekDates[colIdx].getDate() === now.getDate() && weekDates[colIdx].getMonth() === now.getMonth() && weekDates[colIdx].getFullYear() === now.getFullYear();
+                        return (
+                          <div
+                            key={colIdx}
+                            className={`flex-1 flex flex-col gap-0.5 py-1 px-1 bg-transparent last:border-0 ${isColToday ? "bg-sky-blue/5" : ""}`}
+                          >
+                            {bannerApts.map(apt => {
+                              const label = apt.type === "IND" ? "Indicadores TNG Sano" : apt.type === "IMSS" ? "Jornada PrevenIMSS" : "Campaña de vacunación";
+                              // const icon = apt.type === "IND" ? "mdi-clipboard-text" : apt.type === "IMSS" ? "mdi-security" : "mdi-star";
+                              const canClick = esPrivilegiado;
+                              return (
+                                <motion.div
+                                  key={`banner-${apt.id}`}
+                                  initial={{ opacity: 0, y: -3 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  onClick={() => { if (!esPrivilegiado) return; handleEditAppointment(apt); }}
+                                  onMouseEnter={() => setHoveredCardId(apt.id)}
+                                  onMouseLeave={() => setHoveredCardId(null)}
+                                  className={`relative flex items-start px-2 py-1 rounded-md select-none transition-all text-white bg-linear-to-r ${apt.type === "IMSS" ? "from-[#006657] to-[#00bb9f]" : "from-sea-blue to-sky-blue"} ${esPrivilegiado ? "cursor-pointer" : "cursor-default"} max-w-[134px]`}
+                                  // border border-sky-blue/40
+                                >
+                                  <div className="flex flex-col w-full">
+                                    <span className="text-[8px] opacity-70 break-words leading-tight">
+                                      {`${toStr(apt.hora)} - ${toStr(apt.hora + apt.duracion)}`}
+                                    </span>
+                                    <span className="text-[9px] font-semibold uppercase truncate w-full block">
+                                      {/* <i className={`mdi ${icon} mr-1`}></i> */}
+                                      {label}
+                                    </span>
+                                  </div>
+
+                                  {hoveredCardId === apt.id && (
+                                    <div className="absolute top-full mt-2 left-1/2 -translate-x-1/2 w-48 bg-white border border-gray-200 rounded-lg p-3 pointer-events-none z-[1000] shadow-lg text-left">
+                                      <div className="-mx-3 -mt-3 relative overflow-hidden rounded-t-lg">
+                                        <img
+                                          src={apt.type === "IND" ? indicador : apt.type === "VAC" ? vacuna : apt.type === "IMSS" ? imss : ""}
+                                          className="w-full h-25 object-cover"
+                                        />
+                                        <div className={`absolute inset-0 ${apt.type === "IMSS" ? "bg-[#006657]/50" : "bg-sea-blue/60"}`}></div>
+                                        <div className="absolute bottom-0 left-0 right-0 px-3">
+                                          <div className="text-white">
+                                            <p className={`text-justify text-[11px] ${apt.type === "IMSS" ? "text-[#DDC9A3]" : "text-horz-blue"} font-bold uppercase leading-tight`}>
+                                              {label}
+                                            </p>
+                                            <p className="text-[10px] uppercase truncate pb-2">
+                                              {weekDates[apt.dia]?.toLocaleString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).toUpperCase()}
+                                            </p>
+                                          </div>
+                                        </div>
+                                      </div>
+                                      <div className="space-y-1 text-gray-600 pt-2">
+                                        {/* {apt.type === "IND" && apt.pacientes && apt.pacientes.length > 0 && (
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="text-[10px] text-sea-blue font-semibold">
+                                              {`${apt.pacientes.length} paciente${apt.pacientes.length !== 1 ? "s" : ""}`}
+                                            </span>
+                                          </div>
+                                        )} */}
+                                        {apt.notas && (
+                                          <div className="flex items-center gap-1.5">
+                                            <span className="text-justify text-[10px] break-words">
+                                              {apt.notas}
+                                            </span>
+                                          </div>
+                                        )}
+                                        <div className="flex items-center gap-1.5">
+                                          <span className={`text-[10px] ${apt.type === "IMSS" ? "text-[#006657]" : "text-sea-blue"} font-bold uppercase truncate`}>
+                                            {`${apt.time} A ${toStr(apt.hora + apt.duracion)}`}
+                                          </span>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  )}
+                                </motion.div>
+                              );
+                            })}
+                          </div>
+                        );
+                      })}
+                      <div className="w-3.5"></div>
+                    </div>
+                  )}
+
+                  <div ref={gridScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
                     <div className="flex" style={{ minHeight: `${24 * 64}px` }}>
                       <div className="w-14 shrink-0 bg-white sticky left-0">
                         {times.map((t, i) => (
                           <div
                             key={i}
-                            className="flex items-center justify-end pr-2 text-[10px] text-gray-400 font-medium"
+                            className={`flex items-center justify-end pr-2 text-[10px] text-gray-400 font-medium`}
+                            // ${(t == "8 A.M." || t == "7 P.M.") && "border-t border-sea-blue"}
                             style={{ height: `${64}px` }}
                           >
                             <span>{t}</span>
                           </div>
                         ))}
                       </div>
-                        
+
                       <div className="flex-1 relative flex">
                         {weekDates.map((d, colIdx) => {
                           const isColToday = d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
@@ -965,7 +1501,7 @@ const Agenda: React.FC = () => {
                             >
                               {times.map((_, rowIdx) => {
                                 // const isPastDay = d < now && !isColToday;
-                                
+
                                 return (
                                   <div
                                     key={rowIdx}
@@ -975,8 +1511,9 @@ const Agenda: React.FC = () => {
                                       if (isPastDay || !esPrivilegiado) return;
 
                                       const isToday = d.getDate() === now.getDate() && d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-                                      const horaLimite = now.getHours() + (now.getMinutes() > 0 ? 1 : 0);
-                                      if (isToday && rowIdx < horaLimite) return;
+                                      // Bloquear celda solo si el slot de las :30 de esa hora ya pasó
+                                      const horaActual = now.getHours() + now.getMinutes() / 60;
+                                      if (isToday && rowIdx + 0.5 <= horaActual) return;
 
                                       const periodo = rowIdx >= 12 ? "PM" : "AM";
                                       const hora12 = rowIdx === 0 ? 12 : rowIdx > 12 ? rowIdx - 12 : rowIdx;
@@ -993,33 +1530,84 @@ const Agenda: React.FC = () => {
                             </div>
                           );
                         })}
-                          
-                        {(() => {
-                          const cellGroups: Record<string, Appointment[]> = {};
 
-                          appointments.forEach(apt => {
-                            const key = `${apt.dia}-${apt.hora}`;
+                        {(() => {
+                          // Separar citas normales (<3h) de jornadas largas (>=3h); VAC, IMSS e IND se muestran en el header
+                          const normales = appointments.filter(a => a.duracion < 3 && a.type !== "VAC" && a.type !== "IMSS" && a.type !== "IND" && a.hora >= HOUR_START && a.hora <= HOUR_END);
+                          const jornadas = appointments.filter(a => a.duracion >= 3 && a.type !== "VAC" && a.type !== "IMSS" && a.type !== "IND" && a.hora >= HOUR_START && a.hora <= HOUR_END);
+
+                          const cellGroups: Record<string, Appointment[]> = {};
+                          normales.forEach(apt => {
+                            const key = `${apt.dia}-${Math.floor(apt.hora)}`;
                             if (!cellGroups[key]) cellGroups[key] = [];
                             cellGroups[key].push(apt);
                           });
 
-                          return Object.values(cellGroups).flatMap((group) => {
+                          function formatTimeRange(hora24: number, duracion: number): string {
+                            return `${toStr(hora24)} - ${toStr(hora24 + duracion)}`;
+                          }
+
+                          // Banners de jornada — apilados desde el top por columna de día
+                          const jornadasPorDia: Record<number, Appointment[]> = {};
+                          jornadas.forEach(apt => {
+                            if (!jornadasPorDia[apt.dia]) jornadasPorDia[apt.dia] = [];
+                            jornadasPorDia[apt.dia].push(apt);
+                          });
+
+                          const BANNER_H = 28; // px por banner
+                          const BANNER_GAP = 2;
+
+                          const jornadaBanners = jornadas.map(apt => {
+                            const colWidthPct = 100 / weekDates.length;
+                            const stackIndex = jornadasPorDia[apt.dia].indexOf(apt);
+                            const topPx = (apt.hora - HOUR_START) * 64 + stackIndex * (BANNER_H + BANNER_GAP) + 4;
+                            return (
+                              <motion.div
+                                key={`jornada-${apt.id}`}
+                                initial={{ opacity: 0, y: -4 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                onClick={() => {
+                                  if (!esPrivilegiado && apt.matricula !== user?.matricula) return;
+                                  handleEditAppointment(apt);
+                                }}
+                                onMouseEnter={() => setHoveredCardId(apt.id)}
+                                onMouseLeave={() => setHoveredCardId(null)}
+                                className={`absolute flex items-center gap-1.5 px-2 rounded-sm shadow-sm cursor-pointer border-l-2 transition-all
+                                  ${apt.status === "A" ? "bg-blue-50 border-sea-blue text-sea-blue" : apt.status === "C" ? "bg-red-50 border-red-500 text-red-700" : "bg-gray-100 border-gray-400 text-gray-600"}
+                                `}
+                                style={{
+                                  top: `${topPx}px`,
+                                  height: `${BANNER_H}px`,
+                                  left: `calc(${apt.dia * colWidthPct}% + 1.5px)`,
+                                  width: `calc(${colWidthPct}% - 4px)`,
+                                  zIndex: hoveredCardId === apt.id ? 50 : 20,
+                                  opacity: hoveredCardId === apt.id ? 1 : 0.88,
+                                }}
+                              >
+                                <i className="mdi mdi-calendar-clock text-[10px] shrink-0"></i>
+                                <span className="text-[9px] font-bold truncate">{apt.nombre}</span>
+                                <span className="text-[8px] opacity-70 shrink-0 ml-auto">{formatTimeRange(apt.hora, apt.duracion)}</span>
+                              </motion.div>
+                            );
+                          });
+
+                          return [...jornadaBanners, ...Object.values(cellGroups).flatMap((group) => {
                             const totalInCell = group.length;
-    
+
                             return group.map((apt, indexInCell) => {
                               const colWidthPct = 100 / weekDates.length;
                               const cardHeight = Math.max(apt.duracion * 64 - 2, 20);
-      
+
                               let aptWidthPct: number;
                               let leftOffset: number;
-                                                    
+
                               if (totalInCell === 1) {
                                 aptWidthPct = colWidthPct;
                                 leftOffset = 0;
                               } else {
                                 aptWidthPct = colWidthPct / totalInCell;
                                 leftOffset = indexInCell * aptWidthPct;
-                              } 
+                              }
                               // else if (totalInCell === 3) {
                               //   aptWidthPct = colWidthPct / 3;
                               //   leftOffset = indexInCell * aptWidthPct;
@@ -1027,7 +1615,7 @@ const Agenda: React.FC = () => {
                               //   aptWidthPct = colWidthPct / 4;
                               //   leftOffset = indexInCell * aptWidthPct;
                               // }
-      
+
                               return (
                                 <motion.div
                                   initial={{ scale: 0.95, opacity: 0 }}
@@ -1045,62 +1633,71 @@ const Agenda: React.FC = () => {
                                   onMouseEnter={() => setHoveredCardId(apt.id)}
                                   onMouseLeave={() => setHoveredCardId(null)}
                                   className={
-                                  `absolute rounded-sm shadow-md flex flex-col px-2 ${apt.duracion > 0.5 ? "py-2" : "py-0"} ${!esPrivilegiado && apt.matricula !== user?.matricula ? "cursor-not-allowed" : "cursor-pointer"} overflow-visible group transition-all bg-linear-to-b
-                                    ${apt.status === "A" ? "text-sea-blue from-sky-blue/20 to-gray-100" : apt.status === "C" ? "text-red-700 from-red-200 to-gray-100" : "text-gray-600 from-gray-300 to-gray-50"}
+                                  `absolute rounded-sm shadow-md flex flex-col px-2 ${apt.duracion > 0.5 ? "py-2" : "py-0"} ${!esPrivilegiado && apt.matricula !== user?.matricula ? "cursor-not-allowed" : "cursor-pointer"} overflow-visible group transition-all 
+                                    bg-linear-to-b from-white to-gray-50
+                                    
                                   `}
+                                  // ${apt.status === "A" ? "border-sea-blue/60" : apt.status === "C" ? "border-red-300" : "border-gray-500/50"}
                                   style={{
-                                    top: `${apt.hora * 64 + 1}px`,
+                                    top: `${(apt.hora - HOUR_START) * 64 + 1}px`,
                                     height: `${cardHeight}px`,
                                     left: `calc(${apt.dia * colWidthPct + leftOffset}% + 1.5px)`,
                                     width: `calc(${aptWidthPct}% - 4px)`,
                                     zIndex: hoveredCardId === apt.id ? 50 : 10,
                                   }}
                                 >
-                                  <span className="text-[10px] font-semibold truncate">
-                                    <i className="mdi mdi-timer mr-1"></i>
-                                    {apt.time} ({apt.duracion} HR)
+                                  <span className={`text-[9px] font-medium uppercase truncate`}>
+                                    {/* <i className={`mdi mdi-${apt.status === "A" ? "check-circle" : apt.status === "C" ? "cancel" : "progress-helper"} mr-1`}></i> */}
+                                    <i className={`mdi mdi-${apt.status === "A" ? "check-bold" : apt.status === "C" ? "close-thick" : "calendar-blank"} mr-1`}></i>
+                                    {apt.status === "A" ? "Completo" : apt.status === "C" ? "Cancelado" : "Agendado"}
                                   </span>
-                                  <span className="text-[11px] font-bold truncate leading-tight">
-                                    {apt.nombre}
-                                  </span>
-                                  {apt.duracion > 0.5 && (
-                                    <span className="text-[10px] uppercase truncate">
-                                      {apt.type === "IND" ? "Indicadores TNG sano" : apt.type == "SEG" ? "Seguimiento" : "Periódico"}
-                                    </span>
-                                  )}
                                   
+                                  <span className="text-[11px] font-bold uppercase truncate leading-tight">
+                                    {apt.type === "IND" ? "Indicadores TNG sano" : apt.nombre}
+                                  </span>
+                                  
+                                  {/* {apt.duracion > 0.5 && apt.type !== "IND" && (
+                                    <span className="text-[10px] uppercase truncate">
+                                      {apt.type === "SEG" ? "Seguimiento" : apt.type === "VAC" ? "Campaña de vacunación" : "Periódico"}
+                                    </span>
+                                  )} */}
+
+                                  <span className={`text-[9px] font-bold truncate`}>
+                                    {/* <i className="mdi mdi-timer mr-1"></i> */}
+                                    {formatTimeRange(apt.hora, Number(apt.duracion))}
+                                  </span>
+
                                   {hoveredCardId === apt.id && (
                                     <div className={`absolute ${apt.hora < 12 ? 'top-full mt-2' : 'bottom-full mb-2'} left-1/2 -translate-x-1/2 w-45 bg-white border border-gray-200 rounded-lg p-3 pointer-events-none z-[1000] shadow-lg`}>
-                                      <div className={`flex items-center ${apt.status == "A" ? "text-sea-blue" : apt.status == "C" ? "text-red-700" : ""} mb-1`}>
+                                      {/* <div className={`flex items-center ${apt.status == "A" ? "text-sea-blue" : apt.status == "C" ? "text-red-700" : ""} mb-1`}>
                                         <i className={`mdi ${apt.status && apt.status == "A" ? "mdi-check-circle" : apt.status == "C" ? "mdi-cancel" : "mdi-progress-helper"} text-[11px] mr-1`}></i>
                                         <span className="text-[10px] font-semibold uppercase truncate">
                                           {apt.status && apt.status == "A" ? "Completo" : apt.status == "C" ? "Cancelado" : "Agendado"}
                                         </span>
+                                      </div> */}
+                                      <p className={`text-[11px] font-bold text-gray-700 uppercase truncate leading-tight block max-w-full`}>
+                                        {apt.type === "IND" ? "Indicadores TNG sano" : apt.nombre}
+                                      </p>
+                                      {/* <span className="text-[11px] font-bold text-gray-700 uppercase truncate leading-tight block max-w-full">
+                                      </span> */}
+                                      <p className="text-[9.5px] uppercase truncate pb-1">
+                                        {weekDates[apt.dia]?.toLocaleString("es-ES", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).toUpperCase()}
+                                      </p>
+                                      <div className="space-y-1 text-gray-600 pt-2">
+                                        <div className="flex items-center gap-1.5">
+                                          {/* <span className="text-justify text-[10px] break-words">
+                                            {apt.notas}
+                                          </span> */}
+                                          <span className="text-[10px] truncate">
+                                            {/* {apt.type === "SEG" ? "seguimiento" : "periódico"} */}
+                                            {apt.notas ? apt.notas : apt.type === "SEG" ? "Seguimiento" : "Periódico"}
+                                          </span>
+                                        </div>
                                       </div>
-                                      <span className="text-[11px] font-bold text-gray-700 truncate leading-tight block max-w-full">
-                                        {apt.nombre}
-                                      </span>
-                                      <div className="space-y-0.5 pt-2 text-xs text-gray-600">
-                                        <div className="flex items-center">
-                                          <i className="mdi mdi-calendar-blank mr-2"></i>
-                                          <span className="text-[10px] uppercase truncate">
-                                            {weekDates[apt.dia]?.toLocaleString("es-ES", { weekday: "short", day: "numeric", month: "short", year: "numeric" }).toUpperCase()}
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center">
-                                          <i className="mdi mdi-clock-outline mr-2"></i>
-                                          <span className="text-[10px] uppercase truncate">
-                                            {/* {apt.time.split(' ')[0].padStart(2, '0')}:00 {apt.time.split(' ')[1]} ({apt.duracion} HR) */}
-                                            {apt.time} ({apt.duracion} HR)
-                                          </span>
-                                        </div>
-                                        <div className="flex items-center">
-                                          <i className="mdi mdi-chat mr-2"></i>
-                                          <span className="text-[10px] uppercase truncate">
-                                            {apt.type === "IND" ? "Indicadores TNG sano" : apt.type == "SEG" ? "Seguimiento" : "Periódico"}
-                                          </span>
-                                        </div>
-                                        
+                                      <div className="flex items-center gap-1.5">
+                                        <span className={`text-[10px] font-bold uppercase truncate`}>
+                                          {`${apt.time} A ${toStr(apt.hora + apt.duracion)}`}
+                                        </span>
                                       </div>
                                       <div className={`absolute ${apt.hora < 12 ? 'bottom-full border-b-white' : 'top-full border-t-white'} left-1/2 -translate-x-1/2 ${apt.hora < 3 ? '-mb-px' : '-mt-px'} border-4 border-transparent`} />
                                     </div>
@@ -1108,7 +1705,7 @@ const Agenda: React.FC = () => {
                                 </motion.div>
                               );
                             });
-                          });
+                          })];
                         })()}
                       </div>
                     </div>
@@ -1117,7 +1714,6 @@ const Agenda: React.FC = () => {
               </div>
             </div>
           </motion.div>
-
         </div>
       </div>
 
@@ -1140,16 +1736,15 @@ const Agenda: React.FC = () => {
             <div className="px-3 py-4 shrink-0 bg-linear-to-r from-white to-gray-100">
               <div className="flex items-center gap-2 justify-between">
                 <div className="flex items-center gap-2">
-                  <button 
+                  <button
                     title={"Regresar"}
                     // className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-sea-blue hover:bg-gray-100 rounded-xl transition-all cursor-pointer"
                     className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-sea-blue bg-linear-to-b hover:from-sea-blue/10 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
-                    onClick={async () => { 
+                    onClick={async () => {
                       if (!isViewMode && editingId) {
-                        setIsLoadingEdit(true);
-                        setIsViewMode(true);
-                        await new Promise(r => setTimeout(r, 1000));
-                        setIsLoadingEdit(false); 
+                        const originalApt = appointments.find(a => a.id === editingId);
+                        if (originalApt) handleEditAppointment(originalApt);
+                        else setIsViewMode(true);
                       } else {
                         closePanel();
                       }
@@ -1158,8 +1753,8 @@ const Agenda: React.FC = () => {
                     <i className={`mdi mdi-chevron-${!isViewMode && editingId ? "left" : "right"} text-2xl`}></i>
                   </button>
                   <div>
-                    <p className="text-xs font-bold text-gray-800 truncate uppercase max-w-[320px]">
-                      <i className={`mdi mdi-${isViewMode ? "calendar-blank" : editingId ? "calendar-edit" : "calendar-blank"} mr-1.5`}></i>
+                    <p className="text-[14px] font-bold text-sea-blue truncate max-w-[320px]">
+                      {/* <i className={`mdi mdi-${isViewMode ? "calendar-blank" : editingId ? "calendar-edit" : "calendar-blank"} mr-1.5`}></i> */}
                       {isViewMode ? "Info. de Cita" : editingId ? "Edición de Cita" : "Agendar Cita"}
                     </p>
                     <p className="text-xs text-gray-500 truncate">
@@ -1170,7 +1765,7 @@ const Agenda: React.FC = () => {
                         const fmtMonth = (d: Date) => d.toLocaleString("es-ES", { month: "long" }); // .toUpperCase()
                         const fmtYear = (d: Date) => d.getFullYear();
 
-                        if (start.getMonth() === end.getMonth()) { return `${fmtDay(start)} al ${fmtDay(end)} de ${fmtMonth(start)} ${fmtYear(start)}`; } 
+                        if (start.getMonth() === end.getMonth()) { return `${fmtDay(start)} al ${fmtDay(end)} de ${fmtMonth(start)} ${fmtYear(start)}`; }
                         else if (start.getFullYear() === end.getFullYear()) { return `${fmtDay(start)} ${fmtMonth(start)} al ${fmtDay(end)} ${fmtMonth(end)} ${fmtYear(end)}`; }
                         else { return `${fmtDay(start)} ${fmtMonth(start)} ${fmtYear(start)} al ${fmtDay(end)} ${fmtMonth(end)} ${fmtYear(end)}`; }
                       })()}
@@ -1179,71 +1774,143 @@ const Agenda: React.FC = () => {
                 </div>
               </div>
             </div>
-          
+
             <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1.5">
               <div className="flex-1 overflow-y-auto p-2 space-y-3">
-                {/* <h3 className="text-xs font-bold text-gray-800 mb-2 flex items-center">
-                  <i className="mdi mdi-bell-ring mr-2"></i>
-                   Info. de Difusión
-                </h3>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Tipo de Alerta
-                  </label>
-                  <div className="relative">
-                    <LibraryBig className={`h-4 w-4 absolute left-3 top-2 text-gray-400`} />
-                    <select
-                      className={`w-full border pl-9 border-gray-300 rounded-lg px-2 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`} 
-                    >
-                      <option value="G">General</option>
-                      <option value="I" selected>Individual</option>
-                    </select>
-                  </div>
-                </div> */}
                 <h3 className="text-xs font-bold text-gray-800 mb-2 flex items-center">
-                  <i className="mdi mdi-account mr-2"></i>
+                  <i className="mdi mdi-account-circle mr-2"></i>
                   Datos del Paciente
                 </h3>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Matrícula
-                  </label>
-                  <div className="relative">
-                    <Search className={`h-3.5 w-3.5 absolute left-3 top-2.5 ${!formData.matricula ? "text-gray-400" : loadingMat ? "text-gray-400" : matriculaNotFound ? "text-red-500" : matriculaNotRegis ? "text-yellow-500" : "text-gray-400"}`} />
-                    <input
-                      type="text"
-                      value={formData.matricula}
-                      onChange={editingId ? () => {} : handleSearchPatient}
-                      placeholder="Matrícula (5 dígitos)"
-                      disabled={!!editingId || loadingMat || isViewMode}
-                      maxLength={5}
-                      className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none shadow-md transition-colors ${editingId ? "bg-gray-50" : ""} ${!formData.matricula ? "border-gray-100" : loadingMat ? "border-gray-100 bg-gray-100" : matriculaNotFound ? "border-red-200 bg-red-50 text-red-500" : matriculaNotRegis ? "border-yellow-300 bg-yellow-50 text-yellow-500" : "border-gray-100 focus:border-clinical-blue focus:ring-1"}`}
-                    />
-                    {loadingMat && !editingId &&
-                      <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                        <i className="mdi mdi-loading mdi-spin text-gray-400 text-lg"></i>
+                {editingId && formData.motivo !== "IND" && formData.motivo !== "VAC" && formData.motivo !== "IMSS" && formData.motivo !== "SEG" && formData.motivo !== "PER" ? (
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Matrícula
+                      </label>
+                      <input
+                        type="text"
+                        value={formData.matricula}
+                        disabled
+                        className="w-full border rounded-lg px-3 py-2 text-xs outline-none border-gray-100 shadow-md bg-gray-50"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">Nombre</label>
+                      <input
+                        type="text"
+                        value={formData.patientName}
+                        disabled
+                        className="w-full border rounded-lg px-3 py-2 text-xs outline-none border-gray-100 shadow-md bg-gray-50"
+                      />
+                    </div>
+                  </>
+                ) : (
+                  <div>
+                    {formData.motivo === "VAC" || formData.motivo === "IMSS" ? (
+                      <div>
+                        <label className="block text-xs font-medium text-gray-700 mb-1">
+                          Matrícula / Nombre
+                        </label>
+                        <div className="w-full border border-gray-100 rounded-lg shadow-md bg-gray-50 cursor-not-allowed px-2 py-2 flex items-center gap-2">
+                          <Grip className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                          <span className="text-xs">
+                            TODOS
+                          </span>
+                        </div>
+                        <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                          La programación será visible para todos los usuarios.
+                        </p>
                       </div>
-                    }
+                    ) : (
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="flex items-center gap-1 text-xs font-medium text-gray-700">
+                            Matrícula / Nombre
+                            {selectedPatients.length > 1 && (
+                              <span className="text-[10px] text-white bg-sea-blue ml-1 px-[5px] py-0.5 rounded-full leading-none">
+                                {selectedPatients.length}
+                              </span>
+                            )}
+                          </label>
+                        </div>
+                        <div
+                          className={`w-full border border-gray-100 rounded-lg shadow-md bg-white ${isViewMode ? "" : "focus-within:border-clinical-blue focus-within:ring-1 focus-within:ring-clinical-blue"}`}
+                          onClick={() => !isViewMode && (document.getElementById('mat-search-input') as HTMLInputElement)?.focus()}
+                        >
+                          {!isViewMode && (
+                            <div className="relative flex items-center gap-2 px-2 h-8 cursor-text">
+                              <Search className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                              <input
+                                id="mat-search-input"
+                                type="text"
+                                value={matInput}
+                                onChange={(e) => setMatInput(e.target.value)}
+                                onFocus={() => matSuggestions.length > 0 && setShowSuggestions(true)}
+                                onBlur={() => setTimeout(() => setShowSuggestions(false), 150)}
+                                placeholder="Matrícula / Nombre"
+                                className="flex-1 outline-none text-xs bg-transparent placeholder-gray-400"
+                              />
+                              {matLoadingAuto && (
+                                <i className="mdi mdi-loading mdi-spin text-gray-400 text-base shrink-0"></i>
+                              )}
+                              {showSuggestions && matSuggestions.length > 0 && (
+                                <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-40 overflow-y-auto">
+                                  {matSuggestions.map((s, i) => (
+                                    <button
+                                      key={i}
+                                      type="button"
+                                      onMouseDown={() => handleAddPatient(s)}
+                                      className="w-full flex items-center px-3 py-2 text-xs hover:bg-gray-50 text-left cursor-pointer"
+                                    >
+                                      <span className="font-bold text-sea-blue w-10 shrink-0">
+                                        {s.matricula}
+                                      </span>
+                                      <span className="text-gray-500 truncate flex-1">
+                                        {s.nombre}
+                                      </span>
+                                      {String(s.estatus).trim() !== "A" && (
+                                        <span className="ml-2 text-[10px] text-red-400 shrink-0">
+                                          Inactivo
+                                        </span>
+                                      )}
+                                    </button>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          )}
+                          {selectedPatients.length > 0 && (
+                            <div className="px-2 py-1.5 flex flex-col gap-1 max-h-41 overflow-y-auto">
+                              {selectedPatients.map(p => (
+                                <span
+                                  key={p.matricula}
+                                  className="flex items-center gap-2 text-xs text-sea-blue font-semibold bg-linear-to-b from-sky-blue/10 to-horz-blue/5 rounded-md border border-horz-blue/50 shadow-md px-2 py-1 uppercase tracking-wide"
+                                >
+                                  <span className="font-bold text-sea-blue w-9 shrink-0">
+                                    {p.matricula}
+                                  </span>
+                                  <span className="text-gray-400 font-normal normal-case tracking-normal truncate">
+                                    {p.nombre}
+                                  </span>
+                                  {!isViewMode && (
+                                    <button
+                                      type="button"
+                                      title="Eliminar"
+                                      onMouseDown={(e) => { e.preventDefault(); handleRemovePatient(p.matricula); }}
+                                      className="ml-auto text-gray-400 hover:text-red-500 transition-colors cursor-pointer leading-none shrink-0"
+                                    >
+                                      <i className="mdi mdi-close-thick text-[10px]"></i>
+                                    </button>
+                                  )}
+                                </span>
+                              ))}
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    )}
                   </div>
-                  {(matriculaNotRegis || matriculaNotFound) && (
-                    <p className={`text-xs mt-1 ${matriculaNotRegis ? "text-yellow-500" : "text-red-500"}`}>
-                      {matriculaNotRegis ? "La matrícula se encuentra activa sin registrar en sistema." : "La matrícula no se encuentra actualmente activa."}
-                    </p>
-                  )}
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Nombre
-                  </label>
-                  <input
-                    type="text"
-                    value={formData.patientName}
-                    disabled
-                    onChange={(e) => { setFormData(f => ({ ...f, patientName: e.target.value }));}}
-                    placeholder="Nombre"
-                    className={`w-full border rounded-lg px-3 py-2 text-xs outline-none transition-colors border-gray-100 shadow-md bg-gray-50 focus:border-clinical-blue focus:ring-1`}
-                  />
-                </div>
+                )}
                 <h3 className="text-xs font-bold text-gray-800 mt-6 mb-2 flex items-center">
                   <i className="mdi mdi-calendar-blank mr-2"></i>
                   Detalle de Agenda
@@ -1252,141 +1919,131 @@ const Agenda: React.FC = () => {
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     Motivo
                   </label>
-                  <select 
-                    className={`w-full border border-gray-100 shadow-md rounded-lg px-2 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`} 
+                  <select
+                    className={`w-full border border-gray-100 shadow-md rounded-lg px-2 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none ${isViewMode || selectedPatients.length > 1 ? "bg-gray-50 cursor-not-allowed" : ""}`}
                     value={formData.motivo}
-                    onChange={(e) => { setFormData(f => ({ ...f, motivo: e.target.value }));}}
-                    disabled={isViewMode}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      if (val === "VAC") setSelectedPatients([]);
+                      setFormData(f => ({ ...f, motivo: val }));
+                    }}
+                    disabled={isViewMode || selectedPatients.length > 1}
                   >
                     <option value="" disabled hidden>Seleccionar</option>
                     <option value="IND">Indicadores TNG sano</option>
-                    <option value="SEG">Seguimiento</option>
-                    <option value="PER">Periódico</option>
+                    <option value="SEG" disabled={selectedPatients.length > 1}>Seguimiento</option>
+                    <option value="PER" disabled={selectedPatients.length > 1}>Periódico</option>
+                    <option value="VAC" disabled={selectedPatients.length > 1}>Campaña de vacunación</option>
+                    <option value="IMSS" disabled={selectedPatients.length > 1}>Jornada PrevenIMSS</option>
                   </select>
+                  {selectedPatients.length > 1 && (
+                    <p className="text-xs text-gray-400 mt-1 flex items-center gap-1">
+                      Las citas múltiples solo aplican para indicadores.
+                    </p>
+                  )}
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700 mb-1">Fecha de inicio</label>
+                  <input
+                    type="date"
+                    value={(() => {
+                      const d = weekDates[parseInt(String(formData.dia))];
+                      return d ? d.toISOString().split("T")[0] : "";
+                    })()}
+                    min={now.toISOString().split("T")[0]}
+                    onChange={(e) => {
+                      const dateStr = e.target.value;
+                      if (!dateStr) return;
+                      const [y, m, d] = dateStr.split("-").map(Number);
+                      const sel = new Date(y, m - 1, d);
+                      const baseMonday = getMonday(now);
+                      const selMonday = getMonday(sel);
+                      const diffWeeks = Math.round((selMonday.getTime() - baseMonday.getTime()) / (7 * 24 * 3600 * 1000));
+                      const dow = sel.getDay();
+                      const dayIndex = dow === 0 ? 6 : dow - 1;
+                      if (diffWeeks !== weekOffset) setWeekOffset(diffWeeks);
+                      // Validar que no sea pasado
+                      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                      if (sel < today) return;
+                      setFormData(f => ({ ...f, dia: String(dayIndex) }));
+                    }}
+                    disabled={isViewMode}
+                    className={`w-full border border-gray-100 shadow-md rounded-lg px-3 py-2 text-xs ${isViewMode ? "bg-gray-50 cursor-not-allowed" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
+                  />
+                </div>
+                <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Día
-                    </label>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Hora de inicio</label>
                     <select
-                      className={`w-full border border-gray-100 shadow-md rounded-lg px-2 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
-                      value={formData.dia}
-                      onChange={(e) => {
-                        const newDia = e.target.value;
-                        const diaDate = weekDates[parseInt(newDia)];
-                        const esHoy = diaDate?.getDate() === now.getDate() && diaDate?.getMonth() === now.getMonth() && diaDate?.getFullYear() === now.getFullYear();
-                        const horaLimite = now.getHours() + (now.getMinutes() > 0 ? 1 : 0);
-
-                        let newHora = formData.hora;
-                        let newPeriodo = formData.periodo;
-
-                        if (esHoy) {
-                          const horaActual24 = toHora24(formData.hora, formData.periodo);
-                          if (horaActual24 < horaLimite) {
-                            // La hora/periodo actual ya no es válida, recalcular
-                            newPeriodo = horaLimite >= 12 ? "PM" : "AM";
-                            const primerValida = Array.from({ length: 12 }, (_, i) => i + 1).find(h => toHora24(h, newPeriodo) >= horaLimite);
-                            newHora = primerValida ? String(primerValida) : "12";
-                          }
-                        }
-
-                        setFormData(f => ({ ...f, dia: newDia, hora: newHora, periodo: newPeriodo }));
-                      }}
+                      className={`w-full border border-gray-100 shadow-md rounded-lg px-2 py-2 text-xs ${isViewMode ? "bg-gray-50 cursor-not-allowed" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
+                      value={toHora24(formData.hora, formData.periodo) + formData.minutos / 60}
                       disabled={isViewMode}
+                      onChange={(e) => {
+                        const val = Number(e.target.value);
+                        const h24 = Math.floor(val);
+                        const mins = Math.round((val - h24) * 60);
+                        const period = h24 >= 12 ? "PM" : "AM";
+                        const h12 = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
+                        setFormData(f => {
+                          const currentEnd = toHora24(f.hora, f.periodo) + f.minutos / 60 + f.duracion;
+                          const newDur = currentEnd - val > 0 ? currentEnd - val : 0.5;
+                          return { ...f, hora: String(h12), minutos: mins, periodo: period, duracion: newDur };
+                        });
+                      }}
                     >
-                      {weekDates.map((d, i) => {
-                        const esPasado = d < new Date(now.getFullYear(), now.getMonth(), now.getDate());
+                      {Array.from({ length: 48 }, (_, i) => {
+                        const h24 = Math.floor(i / 2);
+                        const mins = i % 2 === 0 ? 0 : 30;
+                        const val = h24 + mins / 60;
+                        const period = h24 >= 12 ? "PM" : "AM";
+                        const h12 = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
+                        const diaDate = weekDates[parseInt(String(formData.dia))];
+                        const esHoy = diaDate?.toDateString() === now.toDateString();
+                        const horaLimite = now.getHours() + now.getMinutes() / 60;
                         return (
-                          <option key={i} value={i} disabled={esPasado}>
-                            {dayNames[d.getDay()]} {d.getDate()}
+                          <option key={i} value={val} disabled={esHoy && val < horaLimite}>
+                            {h12}:{String(mins).padStart(2, "0")} {period}
                           </option>
                         );
                       })}
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Hora
-                    </label>
-                    <div className="flex space-x-3">
-                      <select
-                        className={`w-1/2 border border-gray-100 shadow-md rounded-lg px-1.5 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
-                        value={formData.hora}
-                        onChange={(e) => { setFormData(f => ({ ...f, hora: e.target.value }));}}
-                        disabled={isViewMode}
-                      >
-                        {Array.from({ length: 12 }, (_, i) => i + 1).map((h) => {
-                          const diaSeleccionado = weekDates[parseInt(String(formData.dia))];
-                          const esHoy = diaSeleccionado?.getDate() === now.getDate() && diaSeleccionado?.getMonth() === now.getMonth() && diaSeleccionado?.getFullYear() === now.getFullYear();
-                          const horaLimite = now.getHours() + (now.getMinutes() > 0 ? 1 : 0);
-                          const hora24 = toHora24(h, formData.periodo);
-                          return (
-                            <option key={h} value={h} disabled={esHoy && hora24 < horaLimite}>
-                              {h}
-                            </option>
-                          );
-                        })}
-                      </select>
-                      <select
-                        className={`w-1/2 border border-gray-100 shadow-md rounded-lg px-1.5 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
-                        value={formData.periodo}
-                        onChange={(e) => {
-                          const newPeriodo = e.target.value;
-                          const diaDate = weekDates[parseInt(String(formData.dia))];
-                          const esHoy = diaDate?.getDate() === now.getDate() && diaDate?.getMonth() === now.getMonth() && diaDate?.getFullYear() === now.getFullYear();
-                          const horaLimite = now.getHours() + (now.getMinutes() > 0 ? 1 : 0);
-                          let newHora = formData.hora;
-                          if (esHoy) {
-                            const primerValida = Array.from({ length: 12 }, (_, i) => i + 1).find(h => toHora24(h, newPeriodo) >= horaLimite);
-                            if (primerValida) newHora = String(primerValida);
-                          }
-                          setFormData(f => ({ ...f, periodo: newPeriodo, hora: newHora }));
-                        }}
-                        disabled={isViewMode}
-                      >
-                        {(() => {
-                          const diaDate = weekDates[parseInt(String(formData.dia))];
-                          const esHoy = diaDate?.getDate() === now.getDate() && diaDate?.getMonth() === now.getMonth() && diaDate?.getFullYear() === now.getFullYear();
-                          const horaLimite = now.getHours() + (now.getMinutes() > 0 ? 1 : 0);
-                          const amDisabled = esHoy && horaLimite > 11;
-                          const pmDisabled = esHoy && horaLimite > 23;
-                          return (
-                            <>
-                              <option value="AM" disabled={amDisabled}>A.M.</option>
-                              <option value="PM" disabled={pmDisabled}>P.M.</option>
-                            </>
-                          );
-                        })()}
-                      </select>
-                    </div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Hora de fin</label>
+                    <select
+                      className={`w-full border border-gray-100 shadow-md rounded-lg px-2 py-2 text-xs ${isViewMode ? "bg-gray-50 cursor-not-allowed" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
+                      value={toHora24(formData.hora, formData.periodo) + formData.minutos / 60 + Number(formData.duracion)}
+                      disabled={isViewMode}
+                      onChange={(e) => {
+                        const endVal = Number(e.target.value);
+                        const startVal = toHora24(formData.hora, formData.periodo) + formData.minutos / 60;
+                        const newDur = Math.round((endVal - startVal) * 2) / 2;
+                        if (newDur >= 0.5) setFormData(f => ({ ...f, duracion: newDur }));
+                      }}
+                    >
+                      {Array.from({ length: 48 }, (_, i) => {
+                        const h24 = Math.floor(i / 2);
+                        const mins = i % 2 === 0 ? 0 : 30;
+                        const val = h24 + mins / 60;
+                        const period = h24 >= 12 ? "PM" : "AM";
+                        const h12 = h24 === 0 ? 12 : h24 > 12 ? h24 - 12 : h24;
+                        const startVal = toHora24(formData.hora, formData.periodo) + formData.minutos / 60;
+                        return (
+                          <option key={i} value={val} disabled={val <= startVal}>
+                            {h12}:{String(mins).padStart(2, "0")} {period}
+                          </option>
+                        );
+                      })}
+                    </select>
                   </div>
-                </div>
-                <div>
-                  <label className="block text-xs font-medium text-gray-700 mb-1">
-                    Duración
-                  </label>
-                  <select
-                    className={`w-full border border-gray-100 shadow-md rounded-lg px-1 py-2 text-xs ${isViewMode ? "bg-gray-50" : editingId ? "" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
-                    // value={formData.duracion}
-                    value={Number(formData.duracion).toFixed(2)}
-                    onChange={(e) => { setFormData(f => ({ ...f, duracion: Number(e.target.value) })); }}
-                    disabled={isViewMode}
-                  >
-                    <option value="0.00" disabled hidden>Seleccionar</option>
-                    <option value="0.50">½ Hora</option>
-                    <option value="1.00">1 Hora</option>
-                    <option value="1.50">1 ½ Hora</option>
-                    <option value="2.00">2 Horas</option>
-                  </select>
                 </div>
                 <div>
                   <label className="block text-xs font-medium text-gray-700 mb-1">
                     Nota(s)
                   </label>
                   <textarea
-                    rows={2}
-                    className={`w-full border rounded-lg px-3 py-2 text-xs outline-none transition-colors border-gray-100 shadow-md focus:border-clinical-blue focus:ring-1" ${isViewMode ? "bg-gray-50" : ""} resize-none`}
+                    rows={4}
+                    className={`w-full border rounded-lg px-3 py-2 text-xs outline-none transition-colors border-gray-100 shadow-md focus:border-clinical-blue focus:ring-1" ${isViewMode ? "bg-gray-50 cursor-not-allowed" : ""} resize-none`}
                     value={formData.notas}
                     onChange={(e) => { setFormData(f => ({ ...f, notas: e.target.value })); }}
                     disabled={!!isViewMode}
@@ -1395,9 +2052,10 @@ const Agenda: React.FC = () => {
                 </div>
               </div>
             </div>
-                  
+
             {esPrivilegiado && (!editingId || !isDiaPasado) && (
-              <div className={`px-5 py-4 shrink-0 flex justify-between items-center ${(editingId || isViewMode) && "gap-3"}`}>
+              <div className={`px-5 py-4 shrink-0 flex justify-between items-center gap-3`}>
+                {/* ${(editingId || isViewMode) && "gap-3"} */}
                 {isViewMode ? (
                   <>
                     <button
@@ -1440,19 +2098,192 @@ const Agenda: React.FC = () => {
                     </button>
                   </>
                 ) : (
-                  <button
-                    onClick={() => handleSaveCita()}
-                    className="w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
-                  >
-                    <i className="mdi mdi-calendar-clock mr-2"></i>
-                    Guardar Cita
-                  </button>
+                  <>
+                    <button
+                      onClick={() => handleSaveCita()}
+                      className="w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
+                    >
+                      <i className="mdi mdi-timer mr-2"></i>
+                      Guardar Cita
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => openPanel()}
+                      className="w-full flex items-center justify-center bg-gray-100 hover:bg-gray-50/50 hover:-translate-y-1 text-sea-blue px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-gray-400/30 transition-all cursor-pointer whitespace-nowrap"
+                    >
+                      <i className="mdi mdi-broom mr-2"></i>
+                      Limpiar
+                    </button>
+                  </>
                 )}
               </div>
             )}
           </div>
         </div>
       </aside>
+
+      {/* ─── Modal independiente de Grupos ─── */}
+      <AnimatePresence>
+        {gruposModalOpen && (
+          <motion.div
+            key="grupos-modal-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-black/40 z-50 flex items-center justify-center p-4"
+            onClick={(e) => { if (e.target === e.currentTarget) setGruposModalOpen(false); }}
+          >
+            <motion.div
+              key="grupos-modal-panel"
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.18 }}
+              className="bg-white rounded-xl shadow-2xl w-full max-w-md overflow-hidden"
+            >
+              {/* Header */}
+              <div className="flex items-center justify-between px-5 py-4 bg-linear-to-r from-white to-gray-50 border-b border-gray-100">
+                <div className="flex items-center gap-2">
+                  <i className="mdi mdi-account-group text-sea-blue text-lg"></i>
+                  <div>
+                    <p className="text-sm font-bold text-gray-800 uppercase">Grupos de Pacientes</p>
+                    <p className="text-[10px] text-gray-400">Guarda y reutiliza listas de pacientes</p>
+                  </div>
+                </div>
+                <button
+                  onClick={() => setGruposModalOpen(false)}
+                  className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-400 hover:text-gray-600 transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-4 max-h-[70vh] overflow-y-auto">
+                {/* Crear nuevo grupo */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                    <i className="mdi mdi-plus-circle-outline text-sea-blue"></i>
+                    Nuevo grupo
+                  </p>
+
+                  {/* Input nombre del grupo */}
+                  <input
+                    type="text"
+                    value={mgNombre}
+                    onChange={e => setMgNombre(e.target.value)}
+                    placeholder="Nombre del grupo..."
+                    className="w-full border border-gray-200 rounded-lg px-3 py-2 text-xs outline-none focus:border-clinical-blue focus:ring-1 focus:ring-clinical-blue mb-2"
+                  />
+
+                  {/* Buscador de pacientes del modal */}
+                  <div className="w-full border border-gray-200 rounded-lg bg-white focus-within:border-clinical-blue focus-within:ring-1 focus-within:ring-clinical-blue">
+                    <div className="relative flex items-center gap-2 px-2 h-8">
+                      <Search className="h-3.5 w-3.5 text-gray-400 shrink-0" />
+                      <input
+                        type="text"
+                        value={mgInput}
+                        onChange={e => setMgInput(e.target.value)}
+                        onFocus={() => mgSuggestions.length > 0 && setMgShowSug(true)}
+                        onBlur={() => setTimeout(() => setMgShowSug(false), 150)}
+                        placeholder="Buscar matrícula / nombre..."
+                        className="flex-1 outline-none text-xs bg-transparent placeholder-gray-400"
+                      />
+                      {mgLoading && <i className="mdi mdi-loading mdi-spin text-gray-400 text-base shrink-0"></i>}
+                      {mgShowSug && mgSuggestions.length > 0 && (
+                        <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-36 overflow-y-auto">
+                          {mgSuggestions.map((s, i) => (
+                            <button
+                              key={i}
+                              type="button"
+                              onMouseDown={() => { setMgPacientes(prev => [...prev, s]); setMgInput(""); setMgShowSug(false); }}
+                              className="w-full flex items-center px-3 py-2 text-xs hover:bg-gray-50 text-left cursor-pointer"
+                            >
+                              <span className="font-bold text-sea-blue w-10 shrink-0">{s.matricula}</span>
+                              <span className="text-gray-500 truncate flex-1">{s.nombre}</span>
+                            </button>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                    {mgPacientes.length > 0 && (
+                      <div className="px-2 py-1.5 flex flex-col gap-1 max-h-36 overflow-y-auto border-t border-gray-100">
+                        {mgPacientes.map(p => (
+                          <span key={p.matricula} className="flex items-center gap-2 text-xs text-sea-blue font-semibold bg-linear-to-b from-sky-blue/10 to-horz-blue/5 rounded-md border border-horz-blue/50 px-2 py-1">
+                            <span className="font-bold w-9 shrink-0">{p.matricula}</span>
+                            <span className="text-gray-400 font-normal truncate">{p.nombre}</span>
+                            <button
+                              type="button"
+                              onMouseDown={(e) => { e.preventDefault(); setMgPacientes(prev => prev.filter(x => x.matricula !== p.matricula)); }}
+                              className="ml-auto text-gray-300 hover:text-red-400 cursor-pointer shrink-0"
+                            >
+                              <i className="mdi mdi-close-thick text-[10px]"></i>
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleSaveNewGroup}
+                    disabled={mgSaving || !mgNombre.trim() || mgPacientes.length === 0}
+                    className="mt-2 w-full flex items-center justify-center gap-1.5 bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-40 disabled:cursor-not-allowed text-white px-4 py-2 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/20 transition-all cursor-pointer"
+                  >
+                    {mgSaving ? <i className="mdi mdi-loading mdi-spin"></i> : <i className="mdi mdi-content-save-outline"></i>}
+                    Guardar grupo ({mgPacientes.length} paciente{mgPacientes.length !== 1 ? "s" : ""})
+                  </button>
+                </div>
+
+                {/* Lista de grupos guardados */}
+                <div>
+                  <p className="text-xs font-semibold text-gray-700 mb-2 flex items-center gap-1">
+                    <i className="mdi mdi-format-list-bulleted text-sea-blue"></i>
+                    Grupos guardados
+                    {savedGroups.length > 0 && (
+                      <span className="ml-1 text-[10px] bg-sea-blue text-white rounded-full px-1.5 py-0.5 leading-none">{savedGroups.length}</span>
+                    )}
+                  </p>
+
+                  {loadingGroups && (
+                    <p className="text-[10px] text-gray-400 text-center py-4 flex items-center justify-center gap-1">
+                      <i className="mdi mdi-loading mdi-spin"></i> Cargando grupos...
+                    </p>
+                  )}
+                  {!loadingGroups && savedGroups.length === 0 && (
+                    <p className="text-[10px] text-gray-400 text-center py-4">Sin grupos guardados aún</p>
+                  )}
+                  <div className="space-y-1">
+                    {savedGroups.map(g => (
+                      <div key={g.id} className="flex items-center gap-2 px-3 py-2 border border-gray-100 rounded-lg hover:bg-gray-50 transition-colors">
+                        <i className="mdi mdi-account-group text-gray-400 text-sm shrink-0"></i>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-xs font-semibold text-gray-700 truncate">{g.name}</p>
+                          <p className="text-[10px] text-gray-400">{g.patients.length} paciente{g.patients.length !== 1 ? "s" : ""}</p>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => { setGruposModalOpen(false); openPanel(undefined, g.patients); }}
+                          className="text-[10px] font-semibold text-white bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 px-2 py-1 rounded-md cursor-pointer transition-colors shrink-0"
+                        >
+                          Usar
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => handleDeleteGroup(g.id)}
+                          className="text-gray-300 hover:text-red-400 transition-colors cursor-pointer shrink-0"
+                        >
+                          <i className="mdi mdi-trash-can-outline text-sm"></i>
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

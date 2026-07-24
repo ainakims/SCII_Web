@@ -7,16 +7,19 @@ import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import { createDb } from './server/config/db';
-// const LoginRouter = require('./routes/LoginRoutes');
 import LoginRouter from './routes/LoginRoutes';
+import AsistenteIA from './routes/consultRoutes';
+// import DashboardRouter from './routes/DashboardRoutes';
 import PerfilRouter from './routes/PerfilRoutes';
 import AgendaRouter from './routes/AgendaRoutes';
 import ConsultasRouter from './routes/ConsultasRoutes';
+import IndicadoresRouter from './routes/IndicadoresRoutes';
 import EvaluacionRouter from './routes/EvaluacionRoutes';
 import RecetasRouter from './routes/RecetasRoutes';
 import DocumentosRouter from './routes/DocumentosRoutes';
 import Pacientes from './routes/PacientesRoutes';
 import Configuracion from './routes/ConfigRoutes';
+// import GruposRouter from './routes/GruposRoutes';
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -42,18 +45,20 @@ const path = require('path');
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/LoginToken', LoginRouter(db));
+app.use('/AsistenteIA', AsistenteIA(db));
+// app.use('/Dashboard', DashboardRouter(db));
 app.use('/Perfil', PerfilRouter(db));
 app.use('/Agenda', AgendaRouter(db));
 app.use('/Consultas', ConsultasRouter(db));
+app.use('/Indicadores', IndicadoresRouter(db));
 app.use('/Evaluacion', EvaluacionRouter(db));
 app.use('/Recetas', RecetasRouter(db));
 app.use('/Documentos', DocumentosRouter(db));
 app.use('/Pacientes', Pacientes(db));
 app.use('/Configuracion', Configuracion(db));
+// app.use('/Grupos', GruposRouter(db));
 // app.use('/Stats', require('./routes/statsRoutes'));
 // app.use('/api/Inventario', require('./routes/inventoryRoutes'));
-
-
 
 // app.listen(5000, () => {
 //     console.log("Servidor escuchando en http://localhost:5000");

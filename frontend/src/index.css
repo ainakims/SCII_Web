@@ -39,6 +39,12 @@
   fill: #002E6D !important;
 } */
 
+/* Selecciona el SVG dentro del contenedor del cuerpo */
+.body-component svg {
+  margin-top: -15px;
+  display: block;
+}
+
 .body-component svg path[style] {
   fill: #002E6D !important;
 }
@@ -68,4 +74,22 @@
 
 .swal2-validation-message::before {
   content: none !important;
+}
+
+/* .recharts-sector:focus,
+.recharts-pie-sector:focus {
+  outline: none !important;
+}
+
+.recharts-sector {
+  stroke: none !important;
+} */
+
+.recharts-wrapper:focus,
+.recharts-surface:focus {
+  outline: none !important;
+}
+
+svg:focus {
+  outline: none !important;
 }

@@ -7,7 +7,7 @@ const TitleManager: FC = () => {
   useEffect(() => {
     switch (location.pathname) {
       case "/":
-        document.title = "Inicio";
+        document.title = "SCII - Dashboard";
         break;
       case "/Dashboard":
         document.title = "SCII - Dashboard";
@@ -20,6 +20,9 @@ const TitleManager: FC = () => {
         break;
       case "/Consultas":
         document.title = "SCII - Consultas";
+        break;
+      case "/Indicadores":
+        document.title = "SCII - Indicadores";
         break;
       case "/Evaluacion":
         document.title = "SCII - Evaluación";

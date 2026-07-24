@@ -69,7 +69,9 @@ export function EvaluacionController(db: DB) {
           String(r.empresa ?? "").trim() || String(r.puesto ?? "").trim() || String(r.tiempo ?? "").trim()
         )) ||
         (agentes && typeof agentes === "object" && Object.values(agentes).some((v: any) =>
-          String(v.tiempo ?? "").trim() || String(v.puesto ?? "").trim()
+          Array.isArray(v)
+            ? v.some((o: any) => String(o?.tipo ?? "").trim() || String(o?.tiempo ?? "").trim() || String(o?.puesto ?? "").trim())
+            : (String(v?.tiempo ?? "").trim() || String(v?.puesto ?? "").trim())
         ));
 
       let idLaboral = 0;

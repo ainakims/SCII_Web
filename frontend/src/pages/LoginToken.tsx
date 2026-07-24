@@ -8,10 +8,11 @@ import { motion } from "framer-motion";
 // import { ConexionSql } from "../services/Conexion";
 import hphLogo from "../assets/img/hph-logo.png";
 import hospital from "../assets/img/hospital.png";
+import tngsano from "../assets/img/logo-tngsano.svg";
 import microsoft from "../assets/img/microsoft.png";
-import appStore from "../assets/img/app-store.png";
+// import appStore from "../assets/img/app-store.png";
 import google from "../assets/img/google.png";
-import playStore from "../assets/img/play-store.png";
+// import playStore from "../assets/img/play-store.png";
 import qr from "../assets/img/qr.png";
 import { Shield } from "lucide-react";
 // ../assets/img/hutchison-ports.png
@@ -348,23 +349,22 @@ const Login: React.FC = () => {
       >
         <div
           className="hidden md:flex md:w-1/2 relative items-center justify-center p-12 overflow-hidden"
-          style={{
-            backgroundImage: `url(${hospital})`,
-            backgroundSize: "cover",
-            backgroundPosition: "center",
-          }}
+          // style={{
+          //   backgroundImage: `url(${tngsano})`,
+          //   backgroundSize: "cover",
+          //   backgroundPosition: "center",
+          // }}
         >
           <div className="absolute inset-0 bg-sea-blue opacity-90"></div>
           <div className="relative z-10 text-center text-white">
             <img
-              src={hospital}
+              src={tngsano}
               draggable={false}
-              className="w-full h-auto max-w-70 mx-auto drop-shadow-2xl rounded-2xl mb-6"
+              className="w-full h-auto bg-gray-100 shadow-2xl max-w-100 mx-auto drop-shadow-2xl rounded-2xl mb-4"
             />
             <div className="h-20 flex flex-col items-center justify-center relative overflow-hidden shrink-0">
               <h1 className="text-[40px] font-bold italic tracking-tighter">
-                <i className="fa fa-star-of-life text-aqua-green"></i>
-                SCII
+                Integrapp
               </h1>
               <p className="italic text-blue-100 text-sm">
                 Agenda, gestiona y controla tus <b>citas médicas</b>.
@@ -373,7 +373,7 @@ const Login: React.FC = () => {
           </div>
         </div>
 
-        <div className="w-full md:w-1/2 flex flex-col bg-white">
+        <div className="w-full md:w-1/2 flex flex-col bg-linear-to-b from-white to-gray-50">
           <div className="relative flex-1 overflow-hidden">
             <div
               className="flex h-full transition-transform duration-500 ease-in-out"
@@ -402,7 +402,7 @@ const Login: React.FC = () => {
                         type="text"
                         value={usuario}
                         onChange={(e) => setUsuario(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 text-xs font-semibold text-slate-400 bg-gray-50 border border-gray-100 shadow-md rounded-md focus:outline-none focus:ring-2 focus:ring-clinical-blue/20 focus:border-clinical-blue transition-all"
+                        className="w-full pl-10 pr-4 py-3 text-xs font-semibold text-slate-400 bg-white border border-gray-100 shadow-md rounded-md focus:outline-none focus:ring-2 focus:ring-clinical-blue/20 focus:border-clinical-blue transition-all"
                         // className="peer w-full px-6 pt-7 pb-3 bg-slate-50/50 border border-slate-100 rounded-xl text-xs font-semibold text-slate-400 outline-none focus:border-secondary focus:bg-white transition-all shadow-sm"
                         placeholder="Cuenta"
                       />
@@ -419,7 +419,7 @@ const Login: React.FC = () => {
                         type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-10 pr-12 py-3 text-xs font-semibold text-slate-400 bg-gray-50 border border-gray-100 shadow-md rounded-md focus:outline-none focus:ring-2 focus:ring-clinical-blue/20 focus:border-clinical-blue transition-all"
+                        className="w-full pl-10 pr-12 py-3 text-xs font-semibold text-slate-400 bg-white border border-gray-100 shadow-md rounded-md focus:outline-none focus:ring-2 focus:ring-clinical-blue/20 focus:border-clinical-blue transition-all"
                         placeholder="Clave de Acceso"
                       />
                       <button

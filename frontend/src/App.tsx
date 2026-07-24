@@ -9,6 +9,7 @@ import Dashboard from './pages/Dashboard';
 import Perfil from './pages/Perfil';
 import Agenda from './pages/Agenda';
 import Consultas from './pages/Consultas';
+import Indicadores from './pages/Indicadores';
 import Evaluacion from './pages/Evaluacion';
 import Recetas from './pages/Recetas';
 import Inventario from './pages/Inventario';
@@ -37,9 +38,11 @@ function App() {
             </ProtectedRoute>
           }>
             <Route index element={<Dashboard />} />
+            <Route path="Dashboard" element={<Dashboard />} />
             <Route path="Perfil" element={<Perfil />} />
             <Route path="Agenda" element={<Agenda />} />
             <Route path="Consultas" element={<Consultas />} />
+            <Route path="Indicadores" element={<Indicadores />} />
             <Route path="Evaluacion" element={<Evaluacion />} />
             <Route path="Recetas" element={<Recetas />} />
             <Route path="Inventario" element={<Inventario />} />

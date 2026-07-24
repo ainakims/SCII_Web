@@ -15,6 +15,8 @@ import {
   User,
   Trash,
   TextSelect,
+  UserSearch,
+  ScanSearch,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
@@ -537,7 +539,7 @@ const Documentos: React.FC = () => {
                   type="submit"
                   // disabled={loading || !esPrivilegiado}
                   disabled
-                  className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0"
+                  className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0"
                 >
                   {/* <i className={`mdi ${loading ? "mdi-loading mdi-spin" : "mdi-magnify"} mr-2`}></i> */}
                   <i className={`mdi mdi-magnify mr-2`}></i>
@@ -609,10 +611,12 @@ const Documentos: React.FC = () => {
                   </div>
                 ) : (
                   <div className="space-y-2">
-                    <div className="flex flex-col items-center justify-center py-14 text-gray-500 mt-7.5">
-                      <TextSelect className="h-8 w-8 mb-4 opacity-40" />
-                      <p className="text-xs">
-                        Ingrese una matrícula para mostrar datos del paciente.
+                    <div className="flex flex-col items-center justify-center py-10.5 text-gray-500 mt-7">
+                      <div className="bg-linear-to-b from-gray-200/50 to-gray-50 shadow-md w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <ScanSearch className="h-8 w-8 text-gray-400/50" />
+                      </div>
+                      <p className="text-gray-500 text-xs">
+                        Realice la búsqueda de una matrícula primero.
                       </p>
                     </div>
                   </div>

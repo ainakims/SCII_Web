@@ -1,6 +1,6 @@
 import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef, memo } from "react";
 import {
   Scale, Ruler, Weight, ShieldAlert, Sparkles, Search,
   Activity, X, FileText, Bubbles, HeartPulse, AudioWaveform,
@@ -10,6 +10,8 @@ import {
   Clock,
   Beaker,
   RulerDimensionLine,
+  CircleAlert,
+  Dumbbell,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { motion } from "framer-motion";
@@ -20,6 +22,7 @@ interface PatientData {
   id: number | null;
   matricula: string | null;
   nombre: string;
+  embarcacion: string;
   tipoPaciente: "I" | "E" | null;
   estatus: string | null;
   especialidad: string;
@@ -32,6 +35,7 @@ interface FormData {
   TipoAtencion: string;
   TipoEnfermedad: string;
   ProtocoloAtencion: string;
+  Procedimiento: string;
   PadecimientoActual: string;
   Diagnostico: string;
   Recomendaciones: string;
@@ -43,6 +47,7 @@ interface VitalSigns {
   Talla: string;
   IMC: string;
   Abdomen: string;
+  ICT: string;
   Sistolica: string;
   Diastolica: string;
   TA: string;
@@ -62,8 +67,10 @@ interface Medicamento {
 
 interface Consulta {
   Abdomen: string;
+  ICT?: string;
   Atencion: string;
   Diagnostico: string;
+  PrimerosAux: number;
   Enfermedad?: string;
   FC?: string;
   FR?: string;
@@ -77,6 +84,7 @@ interface Consulta {
   Peso?: number;
   Protocolo: number;
   ProtocoloNombre: string;
+  Procedimiento: string;
   Recomendacion: string;
   SpO2?: number;
   TA?: string;
@@ -93,6 +101,7 @@ interface AIResult {
   sugerencias?: string[];
   diagnosticoDiferencial?: string[];
   diferencial?: string[];
+  antecedentesRelevantes?: string[];
 }
 
 const formatDate = (d: string | number | Date) => {
@@ -107,6 +116,18 @@ const formatDate = (d: string | number | Date) => {
     hour12: false
   });
 };
+
+const CkCell = memo(({ checked, onChange }: { checked: boolean | null; onChange: (v: boolean | null) => void }) => (
+  <button
+    type="button"
+    onClick={() => onChange(checked ? null : true)}
+    className={`w-5 h-5 rounded border transition-all cursor-pointer flex items-center justify-center shadow-md ${
+      checked ? "bg-linear-to-b from-sea-blue to-sky-blue text-white border-gray-400" : "border-gray-100 bg-white"
+    }`}
+  >
+    {checked && <span className="text-[10px] font-bold">✓</span>}
+  </button>
+));
 
 const DetalleConsulta: React.FC<{ consulta: Consulta; onClose: () => void }> = ({ consulta, onClose }) => (
   <div className="flex flex-col h-full bg-white border-0 animate-in slide-in-from-right duration-200">
@@ -147,18 +168,51 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onClose: () => void }> = (
           </div>
         </div>
       )}
+      <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+        <div className={!consulta.PrimerosAux ? "col-span-2" : ""}>
+          <label className="block text-xs font-medium text-gray-700 mb-1">
+            Tipo de atención
+          </label>
+          <div className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+            {consulta.TipoAtencion
+              ? consulta.TipoAtencion === "AUX" ? "Primeros auxilios" : "Enfermedad general" : ""}
+          </div>
+        </div>
+        {consulta.PrimerosAux && (
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Atención primeros auxilios
+            </label>
+            <div className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+              {consulta.PrimerosAux === 1 ? "Accidente de trabajo" : "Accidente de trayecto"}
+            </div>
+          </div>
+        )}
+      </div>
       <div>
-        <label className="block text-xs font-medium text-gray-700 mb-1">
-          Protocolo de atención
-        </label>
-        <div className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
-          {consulta.ProtocoloNombre}
+        <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Protocolo de atención
+            </label>
+            <div className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+              {consulta.ProtocoloNombre}
+            </div>
+          </div>
+          <div>
+            <label className="block text-xs font-medium text-gray-700 mb-1">
+              Procedimiento realizado
+            </label>
+            <div className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+              {consulta.Procedimiento}
+            </div>
+          </div>
         </div>
       </div>
       {consulta.Padecimiento && (
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
-            Padecimiento
+            Padecimiento actual
           </label>
           <div className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
             {consulta.Padecimiento}
@@ -170,11 +224,11 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onClose: () => void }> = (
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Exploración fisica
           </label>
-          <div className="grid grid-cols-2 gap-1.5 text-[10px]">
+          <div className="grid grid-cols-3 gap-1.5 text-[10px]">
             {consulta.Peso && 
               <div className="flex justify-between w-full px-3 py-2 mb-1 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
                 <span className="flex items-center gap-1">
-                  <Weight className="h-3 w-3 mr-1 text-gray-400" />
+                  {/* <Weight className="h-3 w-3 mr-1 text-gray-400" /> */}
                   Peso
                 </span>
                 <p>{consulta.Peso} kg</p>
@@ -183,7 +237,7 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onClose: () => void }> = (
             {consulta.Talla && 
               <div className="flex justify-between w-full px-3 py-2 mb-1 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
                 <span className="flex items-center gap-1">
-                  <Ruler className="h-3 w-3 mr-1 text-gray-400" />
+                  {/* <Ruler className="h-3 w-3 mr-1 text-gray-400" /> */}
                   Altura
                 </span>
                 <p>{consulta.Talla} m</p>
@@ -192,7 +246,7 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onClose: () => void }> = (
             {consulta.IMC && 
               <div className="flex justify-between w-full px-3 py-2 mb-1 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
                 <span className="flex items-center gap-1">
-                  <Scale className="h-3 w-3 mr-1 text-gray-400" />
+                  {/* <Scale className="h-3 w-3 mr-1 text-gray-400" /> */}
                   IMC
                 </span>
                 <p>{consulta.IMC}</p>
@@ -201,17 +255,26 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onClose: () => void }> = (
             {consulta.Abdomen &&
               <div className="flex justify-between w-full px-3 py-2 mb-1 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
                 <span className="flex items-center gap-1">
-                  <RulerDimensionLine className="h-3 w-3 mr-1 text-gray-400" />
-                  Abdomen
+                  {/* <RulerDimensionLine className="h-3 w-3 mr-1 text-gray-400" /> */}
+                  PA
                 </span>
                 <p>{consulta.Abdomen} cm</p>
+              </div>
+            }
+            {consulta.ICT &&
+              <div className="flex justify-between w-full px-3 py-2 mb-1 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+                <span className="flex items-center gap-1">
+                  {/* <Dumbbell className="h-3 w-3 mr-1 text-gray-400" /> */}
+                  ICT
+                </span>
+                <p>{consulta.ICT}</p>
               </div>
             }
             {consulta.PA &&
               <div className="flex justify-between w-full px-3 py-2 mb-1 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
                 <span className="flex items-center gap-1">
-                  <Activity className="h-3 w-3 mr-1 text-gray-400" />
-                  T/A (mmHg)
+                  {/* <Activity className="h-3 w-3 mr-1 text-gray-400" /> */}
+                  T/A
                 </span>
                 <p>{consulta.PA}</p>
               </div>
@@ -226,9 +289,9 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onClose: () => void }> = (
               </div>
             } */}
             {consulta.FC &&
-              <div className="flex justify-between w-full px-3 py-2 mb-1 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+              <div className="flex justify-between w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
                 <span className="flex items-center gap-1">
-                  <HeartPulse className="h-3 w-3 mr-1 text-gray-400" />
+                  {/* <HeartPulse className="h-3 w-3 mr-1 text-gray-400" /> */}
                   FC
                 </span>
                 <p>{consulta.FC} lmp</p>
@@ -237,7 +300,7 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onClose: () => void }> = (
             {consulta.FR && 
               <div className="flex justify-between w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
                 <span className="flex items-center gap-1">
-                  <Wind className="h-3 w-3 mr-1 text-gray-400" />
+                  {/* <Wind className="h-3 w-3 mr-1 text-gray-400" /> */}
                   FR
                 </span>
                 <p>{consulta.FR} rpm</p>
@@ -246,7 +309,7 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onClose: () => void }> = (
             {consulta.SpO2 && 
               <div className="flex justify-between w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
                 <span className="flex items-center gap-1">
-                  <Bubbles className="h-3 w-3 mr-1 text-gray-400" />
+                  {/* <Bubbles className="h-3 w-3 mr-1 text-gray-400" /> */}
                   SpO2
                 </span>
                 <p>{consulta.SpO2} %</p>
@@ -295,7 +358,7 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onClose: () => void }> = (
                             {r.Farmaco}
                           </p>
                           <span className="absolute right-0 text-gray-400 text-xs pointer-events-none leading-none">
-                            {r.Dosis} tab, c / {r.Frecuencia} horas {r.Duracion} días
+                            {r.Dosis}, c / {r.Frecuencia} horas {r.Duracion} días
                           </span>
                         </div>
                       </td>
@@ -339,10 +402,13 @@ const Consultas: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [citaLigada, setCitaLigada] = useState<{ id: number; fecha: string; hora: string; motivo?: string } | null>(null);
 
+  const [pacienteExterno, setPacienteExterno] = useState(false);
+
   const [patientData, setPatientData] = useState<PatientData>({
     id: null,
     matricula: null,
     nombre: "",
+    embarcacion: "",
     tipoPaciente: null,
     estatus: null,
     especialidad: "",
@@ -355,6 +421,7 @@ const Consultas: React.FC = () => {
     TipoAtencion: "",
     TipoEnfermedad: "",
     ProtocoloAtencion: "",
+    Procedimiento: "",
     PadecimientoActual: "",
     Diagnostico: "",
     Recomendaciones: "",
@@ -369,6 +436,7 @@ const Consultas: React.FC = () => {
     Talla: "",
     IMC: "",
     Abdomen: "",
+    ICT: "",
     Sistolica: "",
     Diastolica: "",
     TA: "",
@@ -388,9 +456,17 @@ const Consultas: React.FC = () => {
     return (w > 0 && h > 0) ? (w / (h * h)).toFixed(2) : "";
   };
 
+  // ICT = perímetro abdominal (cm) / talla (cm) * 100  (igual que en Indicadores)
+  const calcICT = (abdomen: string, talla: string) => {
+    const c = parseFloat(abdomen), h = parseFloat(talla);
+    return (c > 0 && h > 0) ? ((c / (h * 100)) * 100).toFixed(2) : "";
+  };
+
   const handleMeasureChange = (field: "Peso" | "Talla", value: string) =>
     setVitalSigns(prev => {
-      const next = { ...prev, [field]: value }; next.IMC = calcIMC(next.Peso, next.Talla);
+      const next = { ...prev, [field]: value };
+      next.IMC = calcIMC(next.Peso, next.Talla);
+      next.ICT = calcICT(next.Abdomen, next.Talla);
       return next;
     }
   );
@@ -417,7 +493,7 @@ const Consultas: React.FC = () => {
   // const dayNames = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
   
   const handleSearchPatient = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPatientData(prev => ({ ...prev, id: null, matricula: e.target.value, nombre: "", edad: "", especialidad: "", alergiasMedicamentos: null, alergias: null }));
+    setPatientData(prev => ({ ...prev, id: null, matricula: e.target.value, nombre: "", embarcacion: "", edad: "", especialidad: "", alergiasMedicamentos: null, alergias: null }));
     setHistoryData([]);
     setShowHistory(false);
     setIsDetailOpen(false);
@@ -466,35 +542,44 @@ const Consultas: React.FC = () => {
     try {
       const payload = {
         TipoAtencion: formData.TipoAtencion || "Consulta General",
+        ProtocoloAtencion: formData.ProtocoloAtencion || "",
+        Procedimiento: formData.Procedimiento || "",
         PadecimientoActual: formData.PadecimientoActual || "",
+        matricula: patientData.matricula || "",
+        pacienteId: patientData.id ?? null,
         SignosVitales:
         {
-          Peso: parseFloat(vitalSigns.Peso) || null, 
-          Talla: parseFloat(vitalSigns.Talla) || null, 
-          Abdomen: parseFloat(vitalSigns.Abdomen) || null, 
-          TA: vitalSigns.TA || "", 
-          FC: parseInt(vitalSigns.FC) || null, 
-          FR: 18, 
-          SpO2: parseInt(vitalSigns.SpO2) || null, 
+          Peso: parseFloat(vitalSigns.Peso) || null,
+          Talla: parseFloat(vitalSigns.Talla) || null,
+          Abdomen: parseFloat(vitalSigns.Abdomen) || null,
+          ICT: parseFloat(vitalSigns.ICT) || null,
+          PA: vitalSigns.Sistolica + "/" + vitalSigns.Diastolica || null,
+          TA: vitalSigns.TA || "",
+          FC: parseInt(vitalSigns.FC) || null,
+          FR: parseFloat(vitalSigns.FR) || null,
+          SpO2: parseInt(vitalSigns.SpO2) || null,
           IMC: parseFloat(vitalSigns.IMC) || null
-        }, 
-        Laboratorios:
-        {
-          Colesterol: parseFloat(labs.colesterol) || null, 
-          Trigliceridos: parseFloat(labs.trigliceridos) || null, 
-          Glucosa: parseFloat(labs.glucosa) || null, 
-          HbA1c: parseFloat(labs.hba1c) || null
-        }
+        },
+        // Laboratorios:
+        // {
+        //   Colesterol: parseFloat(labs.colesterol) || null, 
+        //   Trigliceridos: parseFloat(labs.trigliceridos) || null, 
+        //   Glucosa: parseFloat(labs.glucosa) || null, 
+        //   HbA1c: parseFloat(labs.hba1c) || null
+        // }
       };
 
-      const res = await fetchWithAuth(`${API_BASE_URL}/api/consultas/ai-analyze`,
-        {
-          method: "POST",
-          body: JSON.stringify(payload)
-        });
+      const cons = await fetchWithAuth(`${API_BASE_URL}/AsistenteIA/ai-analyze`,
+      {
+        method: "POST",
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
 
-      if (res.ok) {
-        setAiResult(await res.json());
+      const res = await cons.json();
+
+      if (res?.ok && res.data && res.data.riesgo) {
+        setAiResult(res.data);
       } else {
         throw new Error();
       }
@@ -503,7 +588,8 @@ const Consultas: React.FC = () => {
         riesgo: "Desconocido", 
         inconsistencias: ["La conexión con el Asistente IA falló."], 
         sugerenciasTratamiento: ["Revisa que el servidor esté en línea."], 
-        diagnosticoDiferencial: ["Error de Red"] });
+        diagnosticoDiferencial: ["Error de Red"]
+      });
     }
     finally {
       setAnalyzing(false);
@@ -698,12 +784,16 @@ const Consultas: React.FC = () => {
 
   const handleSaveConsult = async () => {
     const validations = [
-      // {
-      //   condition: matriculaNotRegis || !patientData.id,
-      //   message: "Debe realizar el registro del <b>paciente</b> en sistema antes de levantar una consulta."
-      // },
       {
-        condition: matriculaNotFound,
+        condition: !pacienteExterno && !patientData.matricula?.trim(),
+        message: "Debe ingresar una <b>matrícula o CURP</b> válida antes de levantar una consulta."
+      },
+      {
+        condition: !patientData.nombre,
+        message: "Debe ingresar el <b>nombre</b> del paciente."
+      },
+      {
+        condition: !pacienteExterno && matriculaNotFound,
         message: "Debe ingresar una <b>matrícula</b> que se encuentre actualmente activa."
       },
       // {
@@ -717,10 +807,6 @@ const Consultas: React.FC = () => {
       {
         condition: !formData.TipoAtencion || !formData.ProtocoloAtencion || !formData.PadecimientoActual,
         message: "Debe completar toda la información en el apartado de <b>datos de atención</b>."
-      },
-      {
-        condition: !vitalSigns.Peso || !vitalSigns.Talla || !vitalSigns.Abdomen || !vitalSigns.IMC || !vitalSigns.SpO2 || !vitalSigns.Sistolica || !vitalSigns.Diastolica || !vitalSigns.TA || !vitalSigns.FC || !vitalSigns.FR,
-        message: "Debe completar toda la información en el apartado de <b>exploración física</b>."
       },
       {
         condition: !formData.Diagnostico || !formData.Recomendaciones,
@@ -739,7 +825,7 @@ const Consultas: React.FC = () => {
     const error = validations.find(v => v.condition);
 
     if (error) {
-      errorModal("Error al guardar", error.message);
+      errorModal("Campos requeridos", error.message);
 
       return;
     }
@@ -756,19 +842,24 @@ const Consultas: React.FC = () => {
             {
               MedicoID: user?.id,
               PacienteID: patientData.id,
-              IdAgenda: citaLigada?.id ?? null, 
+              IdAgenda: citaLigada?.id ?? null,
               Matricula: patientData.matricula,
               TipoPaciente: patientData.tipoPaciente,
-              TipoAtencion: formData.TipoAtencion, 
-              TipoEnfermedad: formData.TipoEnfermedad || "", 
-              ProtocoloAtencion: formData.ProtocoloAtencion, 
-              PadecimientoActual: formData.PadecimientoActual, 
+              NombreExt: pacienteExterno ? patientData.nombre : "",
+              Barco: pacienteExterno ? patientData.embarcacion : "",
+              TipoAtencion: formData.TipoAtencion,
+              TipoEnfermedad: formData.TipoEnfermedad || "",
+              PrimerosAux: formData.TipoEnfermedad || "",
+              ProtocoloAtencion: formData.ProtocoloAtencion,
+              Procedimiento: formData.Procedimiento || "",
+              PadecimientoActual: formData.PadecimientoActual,
               ExploracionFisica: 
               {
                 Peso: parseFloat(vitalSigns.Peso), 
                 Talla: parseFloat(vitalSigns.Talla), 
-                Abdomen: parseFloat(vitalSigns.Abdomen), 
                 IMC: parseFloat(vitalSigns.IMC), 
+                Abdomen: parseFloat(vitalSigns.Abdomen), 
+                ICT: parseFloat(vitalSigns.ICT),
                 SpO2: parseFloat(vitalSigns.SpO2), 
                 PA: `${vitalSigns.Sistolica} / ${vitalSigns.Diastolica}`, 
                 TA: vitalSigns.TA, 
@@ -811,8 +902,8 @@ const Consultas: React.FC = () => {
         setIsDetailOpen(false);
         setSelectedExp(null);
         setCitaLigada(null);
-        setFormData({ TipoAtencion: "", TipoEnfermedad: "", ProtocoloAtencion: "", PadecimientoActual: "", Diagnostico: "", Recomendaciones: "", RecetaMedica: "" });
-        setVitalSigns({ Peso: "", Talla: "", IMC: "", Abdomen: "", Sistolica: "", Diastolica: "", TA: "", FC: "", FR: "", SpO2: "" });
+        setFormData({ TipoAtencion: "", TipoEnfermedad: "", ProtocoloAtencion: "", Procedimiento: "", PadecimientoActual: "", Diagnostico: "", Recomendaciones: "", RecetaMedica: "" });
+        setVitalSigns({ Peso: "", Talla: "", IMC: "", Abdomen: "", ICT: "", Sistolica: "", Diastolica: "", TA: "", FC: "", FR: "", SpO2: "" });
         setMedicamentosReceta([]);
       }
     } catch (err) {
@@ -923,7 +1014,7 @@ const Consultas: React.FC = () => {
   const getImcInput = (imc: string) => {
     const v = parseFloat(imc);
     
-    if (!imc || isNaN(v) || v === 0) return "border-gray-100 bg-gray-50 text-gray-700";
+    if (!imc || isNaN(v) || v === 0) return "border-gray-100 bg-gray-100 text-gray-700";
     if (v < 18.5) return "border-yellow-300/20 bg-yellow-50 text-yellow-500";
     if (v <= 24.9) return "border-horz-blue/20 bg-blue-50 text-sky-blue";
     if (v <= 29.9) return "border-yellow-300/20 bg-yellow-50 text-yellow-500";
@@ -934,30 +1025,252 @@ const Consultas: React.FC = () => {
     const v = parseFloat(imc);
 
     if (!imc || isNaN(v) || v === 0) return "text-gray-400";
-    if (v < 18.5) return "text-yellow-500"; 
-    if (v <= 24.9) return "text-sky-blue"; 
-    if (v <= 29.9) return "text-yellow-500"; 
+    if (v < 18.5) return "text-yellow-500";
+    if (v <= 24.9) return "text-sky-blue";
+    if (v <= 29.9) return "text-yellow-500";
     return "text-red-500";
   };
 
-  const protocolos: Record<number,string> = {
-    1: "Resfriado común, faringitis, faringoamigdalistis, COVID-19.", 
-    2: "Cólicos, diarrea, GEPI, nauseas, vómito, odontalgía.", 
-    3: "Disuria, coluria, cólico renal, poliuria, pielonefritis, hidronefrosis, IVU, cistitis, uretritis, VPH, VIH.", 
-    4: "Taquicardia, bradicardia, arritmias, urgencia o emergencia hipertensiva, EVC, infarto, angina.", 
-    5: "CCE, conjuntivitis, orzuelo.", 
-    6: "Contusión, esguince, luxación, FX, dorsalgia, lumbalgia, tendinitis, artropatías.", 
-    7: "Cefalea, parálisis, migraña, vértigo, epilepsia, neurodegenerativo.",
-    8: "Intento de suicidio, psicosis, conducta agresiva, crisis de angustia, estrés postraumático.", 
-    9: "Dislipidemia, glucosa, DM2, pie diabético, neuropatía, tiroides, EVC.", 
-    10: "Curación, aplicaciones, retiro de puntos, monitoreo PA.", 
-    11: "CE oído, otitis, otalgia.", 
-    12: "Síndrome febril, golpe de calor.", 
-    13: "Llamado auxilio, valoración y atención en área, traslado IMSS.", 
-    14: "", 
-    15: "Dermatitis, abscesos, quistes sebáceos, quemaduras, heridas, suturas.", 
-    16: ""
+  const getIctInput = (ict: string) => {
+    const v = parseFloat(ict);
+
+    if (!ict || isNaN(v) || v === 0) return "border-gray-100 bg-gray-100 text-gray-700";
+    if (v < 50) return "border-horz-blue/20 bg-blue-50 text-sky-blue";
+    if (v < 60) return "border-yellow-300/20 bg-yellow-50 text-yellow-500";
+    return "border-red-200/20 bg-red-50 text-red-500";
   };
+
+  const getIctIcon = (ict: string) => {
+    const v = parseFloat(ict);
+
+    if (!ict || isNaN(v) || v === 0) return "text-gray-400";
+    if (v < 50) return "text-sky-blue";
+    if (v < 60) return "text-yellow-500";
+    return "text-red-500";
+  };
+
+  const subtiposAtencion: Record<string, string[]> = {
+    "1": [
+      "Aplicación de medicamentos",
+      "Chequeo de signos vitales",
+      "Curaciones",
+      "Retiro de puntos",
+    ],
+    "2": [
+      "Llamado de auxilio",
+      "Traslado IMSS",
+      "Valoración y atención en área",
+    ],
+    "3": [
+      "Dermatitis",
+      "Dermatitis por contacto",
+      "Escabiasis",
+      "Heridas",
+      "Micosis",
+      "Sarpullido",
+      "Quemadura",
+      "Quiste pilonidal",
+      "Otras",
+    ],
+    "4": [
+      "Cistitis",
+      "Insuficiencia renal",
+      "Incontinencia urinaria",
+      "IVU",
+      "Litiasis renal",
+      "Prostatitis",
+      "Uretritis",
+      "Otras",
+    ],
+    "5": [
+      "Apendicitis",
+      "Enfermedad diverticular",
+      "ERGE y dispepsia",
+      "Estreñimiento",
+      "Gastritis y úlceras pépticas",
+      "Gastroenteritis",
+      "Hemorroides",
+      "SII",
+      "Otras",
+    ],
+    "6": [
+      "Asma",
+      "Bronquitis",
+      "COVID-19",
+      "EPOC",
+      "Influenza",
+      "Neumonia",
+      "Resfriado",
+      "Rinitis alérgica",
+      "Tuberculosis",
+      "Otras",
+    ],
+    "7": [
+      "Angina",
+      "Arritmia",
+      "EVC",
+      "Hipertensión arterial",
+      "Infarto",
+      "Síncope",
+      "Taquicardia o bradicardia",
+      "Otras",
+    ],
+    "8": [
+      "Diabetes",
+      "Obesidad",
+      "Pancreatitis metabólica",
+      "Trastornos de paratiroides",
+      "Trastornos hipofisarios",
+      "Trastornos suprarrenales",
+      "Trastornos tiroideos",
+      "Otras",
+    ],
+    "9": [
+      "Herpes (zoster, 6 y 7)",
+      "Roseola",
+      "Rubeola",
+      "Sarampión",
+      "Varicela",
+      "Otras",
+    ],
+    "10": [
+      "Artritis reumatoide",
+      "Enfermedad inflamatoria intestinal",
+      "Esclerosis",
+      "Lupus",
+      "Psoriasis",
+      "Tiroiditis",
+      "Trastornos de hipersensibilidad",
+      "Otras",
+    ],
+    "11": [
+      "Chagas",
+      "Chikungunya",
+      "Dengue",
+      "Paludismo",
+      "Rickettsiosis",
+      "Zika",
+      "Otras",
+    ],
+    "12": [
+      "Clamidia",
+      "Gonorrea",
+      "Herpes",
+      "Sífilis",
+      "VIH",
+      "VPH",
+      "Otras",
+    ],
+    "13": [
+      "Amenorrea",
+      "Complicaciones de embarazo",
+      "Dismenorrea",
+      "Embarazo",
+      "Endometriosis",
+      "Hipermenorrea",
+      "Miomatosis",
+      "SOP",
+      "SUA",
+      "Otras",
+    ],
+    "14": [
+      "Artralgia",
+      "Artropatia",
+      "Artrosis",
+      "Contractura",
+      "Contusión",
+      "Esguince",
+      "Fractura",
+      "Lesiones columna (cervicalgia, dorsalgia, lumbalgia)",
+      "Lesiones tendinosas",
+      "Luxación",
+      "Traumatismos",
+    ],
+    "15": [
+      "Absceso periapical",
+      "Bruxismo",
+      "Caries",
+      "Enfermedad periodontal",
+      "Halitosis",
+      "Odontalgia",
+      "Otras",
+    ],
+    "16": [
+      "Blefaritis",
+      "CEEO",
+      "Conjuntivitis",
+      "Irritación",
+      "Orzuelo o chalazión",
+      "Polvo",
+      "Quemadura corneal",
+      "Uveítis",
+      "Otras",
+    ],
+    // "17": [
+
+    // ],
+    "18": [
+      "Coleastoma",
+      "Enfermedad de Ménière",
+      "Perforación timpánica",
+      "Otitis (externa, media, interna)",
+      "Otocerosis",
+      "Otoesclerosis",
+      "Vértigo periférico",
+      "VPPB",
+      "Otras",
+    ],
+    "19": [
+      "Ansiedad",
+      "Depresión",
+      "Esquizofrenia",
+      "Trastorno del sueño",
+      "Otras",
+    ],
+    "20": [
+      "Cefalea o migraña",
+      "Enfermedades neurodegenerativas",
+      "Epilepsia",
+      "Parálisis",
+      "Vertigo central",
+      "Otras",
+    ],
+    "21": [
+      "Cirrosis",
+      "Colecistitis",
+      "Colelitiasis",
+      "Hepatitis no viral",
+      "Hepatitis viral",
+      "Pancreatitis",
+      "Otras",
+    ],
+    "22": [
+      "Agotamiento por calor",
+      "Espasmos por calor",
+      "Golpe de calor",
+      "Síncope por calor",
+      "Otras",
+    ],
+  };
+
+  // const protocolos: Record<number,string> = {
+  //   1: "Resfriado común, faringitis, faringoamigdalistis, COVID-19.", 
+  //   2: "Cólicos, diarrea, GEPI, nauseas, vómito, odontalgía.", 
+  //   3: "Disuria, coluria, cólico renal, poliuria, pielonefritis, hidronefrosis, IVU, cistitis, uretritis, VPH, VIH.", 
+  //   4: "Taquicardia, bradicardia, arritmias, urgencia o emergencia hipertensiva, EVC, infarto, angina.", 
+  //   5: "CCE, conjuntivitis, orzuelo.", 
+  //   6: "Contusión, esguince, luxación, FX, dorsalgia, lumbalgia, tendinitis, artropatías.", 
+  //   7: "Cefalea, parálisis, migraña, vértigo, epilepsia, neurodegenerativo.",
+  //   8: "Intento de suicidio, psicosis, conducta agresiva, crisis de angustia, estrés postraumático.", 
+  //   9: "Dislipidemia, glucosa, DM2, pie diabético, neuropatía, tiroides, EVC.", 
+  //   10: "Curación, aplicaciones, retiro de puntos, monitoreo PA.", 
+  //   11: "CE oído, otitis, otalgia.", 
+  //   12: "Síndrome febril, golpe de calor.", 
+  //   13: "Llamado auxilio, valoración y atención en área, traslado IMSS.", 
+  //   14: "", 
+  //   15: "Dermatitis, abscesos, quistes sebáceos, quemaduras, heridas, suturas.", 
+  //   16: ""
+  // };
 
   return (
     <div className="relative flex w-full">
@@ -1014,17 +1327,17 @@ const Consultas: React.FC = () => {
                       </span>
                       {citaLigada.motivo && (
                         <>
-                        {/* <span>·</span> */}
-                        <i className="mdi mdi-vector-point px-1"></i>
-                        {citaLigada.motivo ? citaLigada.motivo == "IND" ? "Indicadores TNG sano" : citaLigada.motivo == "SEG" ? "Seguimiento" : citaLigada.motivo == "PER" ? "Periódico" : "" : ""}
+                          {/* <span>·</span> */}
+                          <i className="mdi mdi-vector-point px-1"></i>
+                          {citaLigada.motivo ? citaLigada.motivo == "IND" ? "Indicadores TNG sano" : citaLigada.motivo == "SEG" ? "Seguimiento" : citaLigada.motivo == "PER" ? "Periódico" : "" : ""}
                         </>
                       )}
                     </p>
                   </div>
                   <button
-                    onClick={() => setCitaLigada(null)}
-                    className="text-gray-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
                     title="Desligar Cita"
+                    className="text-gray-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
+                    onClick={() => setCitaLigada(null)}
                   >
                     <i className="mdi mdi-close-thick text-lg"></i>
                   </button>
@@ -1032,17 +1345,18 @@ const Consultas: React.FC = () => {
               )}
 
               <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col p-6"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.1 }}
+                className={`bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl p-6`}
               >
                 <div className="mb-4 relative flex items-center">
                   <h2 className="text-sm font-bold text-gray-800 flex items-center">
                     <i className="mdi mdi-account mr-4"></i>
                     Datos del Paciente
                   </h2>
-                            
-                  {!matriculaNotFound && patientData.nombre && patientData.estatus === "A" && (
+                  
+                  {!matriculaNotFound && patientData.nombre && (patientData.estatus === "A" || (patientData.tipoPaciente === "E" && patientData.id != null)) && (
                     <button
                       onClick={() => {
                         if (showHistory) {
@@ -1066,25 +1380,57 @@ const Consultas: React.FC = () => {
                       Matrícula / CURP
                     </label>
                     <div className="relative">
-                      <Search className={`h-3.5 w-3.5 absolute left-3 top-2.5 ${!patientData.matricula ? "text-gray-400" : loadingMat ? "text-gray-400" : matriculaNotFound ? "text-red-500":matriculaNotRegis ? "text-yellow-500":"text-gray-400"}`} />
+                      <Search className={`h-3.5 w-3.5 absolute left-3 top-2.5 ${!patientData.matricula ? "text-gray-400" : loadingMat ? "text-gray-400" : matriculaNotFound ? "text-red-500" : "text-gray-400"}`} />
                       <input
                         type="text"
                         value={patientData.matricula ?? ""}
                         onChange={handleSearchPatient}
-                        placeholder="Buscar por Matrícula o CURP"
-                        disabled={loadingMat}
+                        placeholder="Buscar por matrícula o CURP"
+                        // disabled={loadingMat}
+                        disabled={loadingMat || pacienteExterno}
                         maxLength={18}
-                        className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none shadow-md transition-colors ${!patientData.matricula ? "border-gray-100 focus:ring-1 focus:ring-sea-blue" : loadingMat ? "border-gray-100 bg-gray-100" : matriculaNotFound ? "border-red-200 bg-red-50 text-red-500 focus:ring-0" : matriculaNotRegis ? "border-yellow-300 bg-yellow-50 text-yellow-500 focus:ring-0" : "border-gray-100 focus:ring-1 focus:ring-sea-blue"}`}
+                        className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none shadow-md transition-colors ${pacienteExterno ? "border-gray-100 bg-gray-100 text-gray-400 cursor-not-allowed" : !patientData.matricula ? "border-gray-100 bg-white focus:ring-1 focus:ring-sea-blue" : loadingMat ? "border-gray-100 bg-gray-100" : matriculaNotFound ? "border-red-200 bg-red-50 text-red-500 focus:ring-0" : "border-gray-100 bg-white focus:ring-1 focus:ring-sea-blue"}`}
                       />
                       {loadingMat && (
-                        <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                        <div className="absolute right-3 top-[10px] -translate-y-1/4">
                           <i className="mdi mdi-loading mdi-spin text-gray-400 text-lg"></i>
                         </div>
                       )}
+                      <div className="flex items-center mt-2 gap-2">
+                        <CkCell
+                          checked={pacienteExterno}
+                          onChange={(checked) => {
+                            setPacienteExterno(checked ?? false);
+                            if (checked) {
+                              setPatientData(p => ({ ...p, matricula: "", nombre: "", embarcacion: "", tipoPaciente: "E" }));
+                            } else {
+                              setPatientData(p => ({ ...p, nombre: "", embarcacion: "", especialidad: "", tipoPaciente: null }));
+                            }
+                          }}
+                        />
+                        <label
+                          onClick={() => {
+                            const newState = !pacienteExterno;
+                            setPacienteExterno(newState);
+                            if (newState) {
+                              setPatientData(p => ({ ...p, matricula: "", nombre: "", embarcacion: "", tipoPaciente: "E" }));
+                            } else {
+                              setPatientData(p => ({ ...p, nombre: "", embarcacion: "", especialidad: "", tipoPaciente: null }));
+                            }
+                          }}
+                          className="text-xs text-gray-700 font-medium cursor-pointer">
+                          Extranjero
+                        </label>
+                      </div>
                     </div>
-                    {(matriculaNotRegis || matriculaNotFound) && (
+                    {/* {(matriculaNotRegis || matriculaNotFound) && (
                       <p className={`text-xs mt-1 ${matriculaNotRegis ? "text-yellow-500" : "text-red-500"}`}>
                         {matriculaNotRegis ? "La matrícula se encuentra activa, pero sin alta en sistema." : "No se encontró ningún paciente con esa matrícula / CURP."}
+                      </p>
+                    )} */}
+                    {(matriculaNotFound) && (
+                      <p className={`text-xs mt-1 text-red-500`}>
+                        No se encontró ningún paciente con esa matrícula / CURP.
                       </p>
                     )}
                   </div>
@@ -1097,129 +1443,163 @@ const Consultas: React.FC = () => {
                       value={patientData.especialidad}
                       disabled
                       placeholder="Especialidad"
-                      className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-800 font-medium outline-none"
+                      className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-100 text-gray-800 font-medium outline-none"
                     />
                   </div>
-                  <div className="md:col-span-2">
+                  <div className={pacienteExterno ? "" : "md:col-span-2"}>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Nombre
                     </label>
                     <input
                       type="text"
                       value={patientData.nombre}
-                      disabled
+                      onChange={(e) => setPatientData(p => ({ ...p, nombre: e.target.value })) }
+                      disabled={!pacienteExterno}
                       placeholder="Nombre del paciente"
-                      className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-800 font-medium outline-none"
+                      className={`w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs font-medium outline-none ${ pacienteExterno ? "bg-white text-gray-800" : "bg-gray-100 text-gray-800" }`}
                     />
                   </div>
+                  {pacienteExterno && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Embarcación
+                      </label>
+                      <input
+                        type="text"
+                        value={patientData.embarcacion}
+                        onChange={(e) => setPatientData(p => ({ ...p, embarcacion: e.target.value }))}
+                        placeholder="Embarcación"
+                        className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-white text-gray-800 font-medium outline-none focus:ring-1 focus:ring-sea-blue"
+                      />
+                    </div>
+                  )}
                 </div>
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                // className="bg-white rounded-xl border border-gray-200 shadow-sm p-6"
-                className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col p-6"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.2 }}
+                className={`bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl p-6`}
               >
                 <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
                   <i className="mdi mdi-ambulance mr-4"></i>
                   Datos de Atención
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className={formData.TipoAtencion === "EFG" ? "" : "md:col-span-2"}>
+                  <div className={formData.TipoAtencion === "AUX" ? "" : "md:col-span-2"}>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Tipo de atención
                     </label>
                     <select 
-                      className="w-full border border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none" 
+                      className="w-full bg-white border border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none" 
                       value={formData.TipoAtencion} 
                       onChange={(e) => setFormData(f => ({ ...f, TipoAtencion: e.target.value }))}
                     >
                       <option value="" disabled hidden>Seleccionar</option>
                       <option value="AUX">Primeros auxilios</option>
                       <option value="EFG">Enfermedad general</option>
-                      <option value="IND">Indicadores TNG sano</option>
+                      {/* <option value="IND">Indicadores TNG sano</option> */}
                     </select>
                   </div>
-                  {formData.TipoAtencion === "EFG" && (
+                  {formData.TipoAtencion === "AUX" && (
                     <div>
                       <label className="block text-xs font-medium text-gray-700 mb-1">
-                        Atención por enfermedad
+                        Atención por primeros auxilios
                       </label>
                       <select 
-                        className="w-full border border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
+                        className="w-full bg-white border border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
                         value={formData.TipoEnfermedad || ""}
                         onChange={(e) => setFormData(f => ({ ...f,TipoEnfermedad: e.target.value }))}
                       >
                         <option value="" disabled hidden>Seleccionar</option>
-                        <option value="1">Conjuntivitis</option>
-                        <option value="2">Dolor de cabeza</option>
-                        <option value="3">Dolor muscular</option>
-                        <option value="4">Enfermedad estomacal</option>
-                        <option value="5">Relacionada con diabetes</option>
-                        <option value="6">Relacionada con hipertensión</option>
-                        <option value="7">Enfermedad respiratoria</option>
+                        <option value="1">Accidente de trabajo</option>
+                        <option value="2">Accidente de trayecto</option>
                       </select>
                     </div>
                   )}
                 </div>
-                <div className="space-y-4 mt-4">
-                  <div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                  <div className={subtiposAtencion[formData.ProtocoloAtencion]?.length > 0 ? "" : "md:col-span-2"}>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Protocolo de atención
                     </label>
                     <select
-                      className="w-full border border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none" 
+                      className="w-full bg-white border border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none" 
                       value={formData.ProtocoloAtencion || ""} 
-                      onChange={(e) => setFormData(f => ({ ...f,ProtocoloAtencion: e.target.value }))}
+                      onChange={(e) => setFormData(f => ({ ...f, ProtocoloAtencion: e.target.value, Procedimiento: "" }))}
                     >
                       <option value="" disabled hidden>Seleccionar</option>
-                      <option value="1">Respiratoria</option>
-                      <option value="2">Gastrointestinal</option>
-                      <option value="3">Genito urinaria</option>
-                      <option value="4">Cardiovascular</option>
-                      <option value="5">Oftalmológica</option>
-                      <option value="6">Músculo esquelética</option>
-                      <option value="7">SNC</option>
-                      <option value="8">Psicológico</option>
-                      <option value="9">Metabólico</option>
-                      <option value="10">Acción de enfermería</option>
-                      <option value="11">Ótico</option>
-                      <option value="12">Golpe de calor</option>
-                      <option value="13">Acción de TUM</option>
-                      <option value="14">Deshidratación</option>
-                      <option value="15">Dermatológica</option>
-                      <option value="16">Gineco-obstetrico</option>
+                      <option value="1">Acción de enfermería</option>
+                      <option value="2">Acción de TUM</option>
+                      <option value="3">Dermatología</option>
+                      <option value="4">Enfermedad del tracto urinario</option>
+                      <option value="5">Enfermedad gastrointestinal</option>
+                      <option value="6">Enfermedad respiratoria</option>
+                      <option value="7">Enfermedades cardiovasculares</option>
+                      <option value="8">Enfermedades endocrinas</option>
+                      <option value="9">Enfermedades exantemáticas</option>
+                      <option value="10">Enfermedades inmunológicas</option>
+                      <option value="11">Enfermedades por vectores</option>
+                      <option value="12">ETS</option>
+                      <option value="13">Gineco-obstétrico</option>
+                      <option value="14">Músculo esquelético</option>
+                      <option value="15">Odontológico</option>
+                      <option value="16">Oftalmología</option>
+                      <option value="17">Oncológicas</option>
+                      <option value="18">Ótico</option>
+                      <option value="19">Psicológico / psiquiátrico</option>
+                      <option value="20">SNC</option>
+                      <option value="21">Trastornos del hígado y vías biliares</option>
+                      <option value="22">Trastornos por altas temperaturas</option>
                     </select>
-                    <p className="text-xs text-gray-400 mt-1">
+                    {/* <p className="text-xs text-gray-400 mt-1">
                       {protocolos[Number(formData.ProtocoloAtencion)] || "Selecciona un protocolo para ver la descripción."}
-                    </p>
+                    </p> */}
                   </div>
-                  <div>
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Padecimiento actual
-                    </label>
-                    <textarea
-                      rows={2} 
-                      value={formData.PadecimientoActual} 
-                      onChange={(e) => setFormData(f => ({ ...f,PadecimientoActual:e.target.value }))}
-                      className="w-full p-2.5 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none resize-none"
-                      placeholder="Descripción del padecimiento"
-                    />
-                  </div>
+                  {formData.ProtocoloAtencion !== "17" && subtiposAtencion[formData.ProtocoloAtencion]?.length > 0 && (
+                    <div>
+                      <label className="block text-xs font-medium text-gray-700 mb-1">
+                        Procedimiento realizado
+                      </label>
+                      <select
+                        className="w-full bg-white border border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
+                        value={formData.Procedimiento}
+                        onChange={(e) => setFormData(f => ({ ...f, Procedimiento: e.target.value }))}
+                      >
+                        <option value="" disabled hidden>Seleccionar</option>
+                        {subtiposAtencion[formData.ProtocoloAtencion].map((op) => (
+                          <option key={op} value={op}>{op}</option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
+                </div>
+                <div className="mt-4">
+                  <label className="block text-xs font-medium text-gray-700 mb-1">
+                    Padecimiento actual
+                  </label>
+                  <textarea
+                    rows={2} 
+                    value={formData.PadecimientoActual} 
+                    onChange={(e) => setFormData(f => ({ ...f,PadecimientoActual:e.target.value }))}
+                    className="w-full p-2.5 bg-white border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none resize-none"
+                    placeholder="Descripción del padecimiento"
+                  />
                 </div>
               </motion.div>
               
               <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col p-6"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3 }}
+                className={`bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl p-6`}
               >
                 <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
                   <i className="mdi mdi-human mr-4"></i>
                   Exploración Física
                 </h2>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Peso (kg)
@@ -1231,7 +1611,7 @@ const Consultas: React.FC = () => {
                         step="0.1" 
                         value={vitalSigns.Peso}
                         onChange={(e) => { if(e.target.value.length > 6) return; handleMeasureChange("Peso",e.target.value); }} 
-                        className="w-full p-2 pl-9 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-full p-2 pl-9 pr-10 bg-white border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0.0"
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">kg</span>
@@ -1251,7 +1631,7 @@ const Consultas: React.FC = () => {
                         step="0.01" 
                         value={vitalSigns.Talla} 
                         onChange={(e) => { if(e.target.value.length > 4) return; handleMeasureChange("Talla",e.target.value); }} 
-                        className="w-full p-2 pl-9 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                        className="w-full p-2 pl-9 pr-10 bg-white border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                         placeholder="0.00" 
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">m</span>
@@ -1272,21 +1652,21 @@ const Consultas: React.FC = () => {
                         placeholder="0.00"
                       />
                     </div>
-                    <p className="text-xs text-gray-400 mt-1">
+                    {/* <p className="text-xs text-gray-400 mt-1">
                       Índice de masa corporal
-                    </p>
+                    </p> */}
                   </div>
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
-                      Abdomen (cm)
+                      PA (cm)
                     </label>
                     <div className="relative flex items-center">
                       <RulerDimensionLine className="h-3.5 w-3.5 absolute left-3 top-2.5 text-gray-400" />
                       <input
                         type="text"
-                        value={vitalSigns.Abdomen} 
-                        onChange={(e) => { if(e.target.value.length > 6) return; setVitalSigns(v => ({ ...v, Abdomen: e.target.value })); }} 
-                        className="w-full px-3 py-2 pl-9 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        value={vitalSigns.Abdomen}
+                        onChange={(e) => { const val = e.target.value; if(val.length > 6) return; setVitalSigns(v => ({ ...v, Abdomen: val, ICT: calcICT(val, v.Talla) })); }}
+                        className="w-full px-3 py-2 pl-9 pr-10 bg-white border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0.00"
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">cm</span>
@@ -1295,13 +1675,25 @@ const Consultas: React.FC = () => {
                       Perímetro abdominal
                     </p>
                   </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">ICT</label>
+                    <div className="relative flex items-center">
+                      <Dumbbell className={`h-3.5 w-3.5 absolute left-3 top-2.5 pointer-events-none transition-colors ${getIctIcon(vitalSigns.ICT)}`} /><input
+                        type="text"
+                        value={vitalSigns.ICT}
+                        disabled
+                        className={`w-full px-3 py-2 pl-9 border rounded-lg text-xs shadow-md outline-none transition-colors ${getIctInput(vitalSigns.ICT)}`}
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </div>
                 </div>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       T/A (mmHg)
                     </label>
-                    <div className="relative flex items-center border border-gray-100 shadow-md rounded-lg focus-within:ring-1 focus-within:ring-clinical-blue focus-within:border-clinical-blue bg-white">
+                    <div className="relative flex items-center bg-white border border-gray-100 shadow-md rounded-lg focus-within:ring-1 focus-within:ring-clinical-blue focus-within:border-clinical-blue">
                       <Activity className="h-3.5 w-3.5 absolute left-3 text-gray-400 pointer-events-none z-10" />
                       <div className="flex items-center w-full pl-9 pr-2 py-2">
                         <input
@@ -1384,7 +1776,7 @@ const Consultas: React.FC = () => {
                         type="number" 
                         value={vitalSigns.FC} 
                         onChange={(e) => { if (e.target.value.length > 3) {  return; } setVitalSigns(v => ({ ...v, FC: e.target.value })); }}
-                        className="w-full p-2 pl-9 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                        className="w-full p-2 pl-9 pr-10 bg-white border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                         placeholder="70"
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">lpm</span>
@@ -1410,7 +1802,7 @@ const Consultas: React.FC = () => {
                           
                           setVitalSigns(v => ({ ...v, FR: e.target.value }));
                         }} 
-                        className="w-full p-2 pl-9 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-full p-2 pl-9 pr-10 bg-white border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="18"
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">rpm</span>
@@ -1450,9 +1842,10 @@ const Consultas: React.FC = () => {
               </motion.div>
 
               <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col p-6"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.4 }}
+                className={`bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl p-6`}
               >
                 <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
                   <i className="mdi mdi-chat mr-4"></i>
@@ -1467,7 +1860,7 @@ const Consultas: React.FC = () => {
                       type="text"
                       value={formData.Diagnostico}
                       onChange={(e) => setFormData(f => ({ ...f, Diagnostico: e.target.value }))}
-                      className="w-full p-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none"
+                      className="w-full p-2 bg-white border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none"
                       placeholder="Diagnóstico"
                     />
                   </div>
@@ -1479,7 +1872,7 @@ const Consultas: React.FC = () => {
                       rows={2} 
                       value={formData.Recomendaciones} 
                       onChange={(e) => setFormData(f => ({ ...f, Recomendaciones: e.target.value }))}
-                      className="w-full p-2.5 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none resize-none" 
+                      className="w-full p-2.5 bg-white border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none resize-none" 
                       placeholder="Recomendaciones"
                     />
                   </div>
@@ -1487,9 +1880,10 @@ const Consultas: React.FC = () => {
               </motion.div>
               
               <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col p-6"
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.5 }}
+                className={`bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl p-6`}
               >
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-sm font-bold text-gray-800 flex items-center">
@@ -1536,9 +1930,10 @@ const Consultas: React.FC = () => {
                             key={med.id} 
                             // className="border-b border-gray-100 last:border-0"
                           >
-                            <td className="w-full px-2 py-2">
+                            <td className="w-full px-2 py-1">
                               <div className="relative flex items-center">
-                                <Pill className="h-4 w-4 absolute left-3 top-1.5 text-gray-400" />
+                                {/* <Pill className="h-4 w-4 absolute left-3 top-1.5 text-gray-400" /> */}
+                                <i className="mdi mdi-pill absolute left-3 text-gray-400"></i>
                                 <input
                                   type="text" 
                                   value={med.medicamento} 
@@ -1548,20 +1943,20 @@ const Consultas: React.FC = () => {
                                 />
                               </div>
                             </td>
-                            <td className="px-2 py-2">
+                            <td className="px-2 py-1">
                               <div className="relative flex items-center">
                                 <Beaker className="h-4 w-4 absolute left-3 top-1.5 text-gray-400" />
                                 <input 
-                                  type="number" 
+                                  type="text" 
                                   value={med.dosis} 
-                                  onChange={(e) => { if (e.target.value.length > 3) { return; } actualizarMedicamento(med.id, "dosis", e.target.value) }}
+                                  onChange={(e) => { if (e.target.value.length > 20) { return; } actualizarMedicamento(med.id, "dosis", e.target.value) }}
                                   className="w-30 border border-gray-100 shadow-md rounded px-2 py-1.5 pl-9 outline-none text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                                   placeholder="1" 
                                 />
-                                <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">tab</span>
+                                {/* <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">tab</span> */}
                               </div>
                             </td>
-                            <td className="px-2 py-2">
+                            <td className="px-2 py-1">
                               <div className="relative flex items-center">
                                 <Clock className="h-4 w-4 absolute left-3 top-1.5 text-gray-400" />
                                 <span className="absolute left-9 text-gray-400 text-xs pointer-events-none">c /</span>
@@ -1575,7 +1970,7 @@ const Consultas: React.FC = () => {
                                 <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">hrs</span>
                               </div>
                             </td>
-                            <td className="px-2 py-2">
+                            <td className="px-2 py-1">
                               <div className="relative flex items-center">
                                 <Calendar className="h-4 w-4 absolute left-3 top-1.5 text-gray-400" />
                                 <input 
@@ -1588,7 +1983,7 @@ const Consultas: React.FC = () => {
                                 <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">días</span>
                               </div>
                             </td>
-                            <td className="px-2 py-2 text-center">
+                            <td className="px-2 py-1 text-center">
                               <button 
                                 title="Eliminar"
                                 onClick={() => eliminarMedicamento(med.id)}
@@ -1604,9 +1999,9 @@ const Consultas: React.FC = () => {
                     </table>
                   </div>
                 ) : (
-                <div className="text-center py-[34.5px] border border-gray-100 rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
-                  No hay medicamentos prescritos en la receta actual.
-                </div>
+                  <div className="text-center py-[36px] border border-gray-100 rounded-lg shadow-md text-xs bg-gray-100 text-gray-400 font-small outline-none">
+                    No hay medicamentos prescritos en la receta actual.
+                  </div>
                 )}
               </motion.div>
 
@@ -1646,7 +2041,7 @@ const Consultas: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className={`bg-gradient-to-b from-blue-50 to-white rounded-xl border-horz-blue shadow-lg shadow-horz-blue p-6`}
+                className={`bg-linear-to-b from-blue-50 to-white rounded-xl border-horz-blue shadow-lg shadow-horz-blue p-6`}
                 // sticky top-55 z-1
               >
                 <div className="flex items-center justify-between mb-6">
@@ -1662,19 +2057,52 @@ const Consultas: React.FC = () => {
                   )}
                 </div>
                 {!aiResult ? (
-                  <div className="text-center py-4">
-                    <Sparkles className={`h-12 w-12 mx-auto mt-4 mb-8 ${analyzing?"text-yellow-400 animate-spin-slow":"text-gray-300"}`} />
-                    <p className="text-sm text-gray-500 mb-10">
-                      {analyzing?"Analizando cuadro clínico y cruzando datos...":"El asistente está listo para analizar los síntomas y signos capturados."}
+                  <div className="relative text-center py-4">
+                    <div className="relative z-0 flex items-center justify-center mt-4 mb-8">
+                      {analyzing &&
+                        [0, 0.5, 1, 1.5, 2].map((d, i) => (
+                          <Sparkles
+                            key={i}
+                            className="absolute text-horz-blue/30"
+                            style={{
+                              width: 48,
+                              height: 48,
+                              animation: "aiSparkRipple 2.6s ease-out infinite",
+                              animationDelay: `${d}s`,
+                            }}
+                          />
+                        ))
+                      }
+
+                      <Sparkles className={`relative h-12 w-12 ${analyzing ? "text-horz-blue animate-pulse" : "text-gray-300"}`} />
+                    </div>
+                      
+                    <p className="relative z-0 text-sm text-gray-500 mb-10">
+                      {analyzing ? "Analizando cuadro clínico y cruzando datos capturados" : "El asistente está listo para analizar los síntomas y signos capturados."}
                     </p>
-                    <button 
-                      onClick={handleAIAnalysis} 
-                      // disabled={analyzing} 
-                      disabled
-                      className="w-full items-center bg-linear-to-r from-sea-blue to-sky-blue disabled:from-sea-blue/60 disabled:to-sky-blue/60 disabled:cursor-default disabled:hover:-translate-0  hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+                      
+                    <button
+                      onClick={handleAIAnalysis}
+                      disabled={analyzing}
+                      className="relative z-0 w-full items-center bg-linear-to-r from-sea-blue to-sky-blue disabled:from-sea-blue/80 disabled:to-sky-blue/80 disabled:cursor-default disabled:hover:-translate-0 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
                     >
-                      {analyzing?"Procesando...":"Analizar Consulta Actual"}
+                      {analyzing ? "Procesando..." : "Analizar Consulta Actual"}
                     </button>
+                      
+                    {analyzing && (
+                      <style>{`
+                        @keyframes aiSparkRipple {
+                          0% {
+                            transform: scale(0.3) rotate(0deg);
+                            opacity: 0.6;
+                          }
+                          100% {
+                            transform: scale(6.5) ;
+                            opacity: 0;
+                          }
+                        }
+                      `}</style>
+                    )}
                   </div>
                 ) : (
                   <motion.div
@@ -1682,26 +2110,46 @@ const Consultas: React.FC = () => {
                     animate={{opacity:1,scale:1}} 
                     className="space-y-5"
                   >
-                    <div className={`p-4 rounded-lg border ${aiResult.riesgo==="Alto"?"bg-red-50 border-red-200 text-red-800":"bg-green-50 border-green-200"}`}>
+                    <div className={`p-4 rounded-lg shadow-md bg-linear-to-r ${aiResult.riesgo === "Alto" ? "from-red-100 to-red-50/50 text-red-700" : aiResult.riesgo === "Moderado" ? "from-sunray-yellow/20 to-sunray-yellow/5 text-yellow-700" : "from-horz-blue/30 to-horz-blue/5"}`}>
                       <div className="flex items-center font-bold mb-1">
-                        {aiResult.riesgo === "Alto" && 
+                        {/* {aiResult.riesgo === "Alto" && 
                           <ShieldAlert className="h-5 w-5 mr-2"/>
-                        }
-                        Nivel de Riesgo: {aiResult.riesgo}
+                        } */}
+                        <i className="mdi mdi-security mr-2"></i>
+                        Nivel de riesgo: {aiResult.riesgo}
                       </div>
-                      <p className="text-sm opacity-90">
+                      <p className="text-xs opacity-90">
                         {aiResult.inconsistencias[0]}
                       </p>
                     </div>
+                    {aiResult.antecedentesRelevantes && aiResult.antecedentesRelevantes.length > 0 && (
+                      <div>
+                        <label className="block text-xs font-semibold text-gray-400 tracking-wider mb-1">
+                          Antecedentes Relevantes
+                        </label>
+                        <ul className="space-y-2">
+                          {aiResult.antecedentesRelevantes.map((a, i) => (
+                            <li
+                              key={i}
+                              className="w-full px-3 py-2 border border-yellow-200 shadow-md rounded-lg text-xs bg-yellow-50 text-yellow-800 font-medium outline-none"
+                            >
+                              {a}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    )}
                     <div>
-                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">
+                      <label className="block text-xs font-semibold text-gray-400 uppercasetracking-wider mb-1">
+                        {/* <i className="mdi mdi-information mr-2"></i> */}
                         Diagnóstico Diferencial
-                      </h4>
+                      </label>
                       <ul className="space-y-2">
                         {(aiResult.diagnosticoDiferencial || aiResult.diferencial || []).map((d,i)=>(
                           <li
                             key={i} 
-                            className="text-sm bg-white border border-gray-100 p-2 rounded-md font-medium text-gray-700"
+                            // className="text-sm bg-white border border-gray-100 p-2 rounded-md font-medium text-gray-700"
+                            className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-sm bg-white text-gray-800 font-medium outline-none focus:ring-1 focus:ring-sea-blue"
                           >
                             {d}
                           </li>
@@ -1709,22 +2157,23 @@ const Consultas: React.FC = () => {
                       </ul>
                     </div>
                     <div>
-                      <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mt-4 mb-2">
+                      <label className="block text-xs font-semibold text-gray-400 tracking-wider mb-1">
+                        {/* <i className="mdi mdi-chat mr-2"></i> */}
                         Sugerencias (AI)
-                      </h4>
-                      <ul className="space-y-2 mt-2">
-                        {(aiResult.sugerenciasTratamiento || aiResult.sugerencias || []).map((s,i)=>(
+                      </label>
+                      <ul className="space-y-2 text-sm text-justify mt-2">
+                        {(aiResult.sugerenciasTratamiento || aiResult.sugerencias || []).map((s, i) => (
                           <li key={i}>{s}</li>
                         ))}
                       </ul>
                     </div>
                     <button
                       onClick={() => setAiResult(null)}
-                      className="mt-4 text-xs font-medium text-gray-400 hover:text-gray-600 text-center w-full"
+                      className="mt-4 text-xs font-semibold text-gray-400 hover:text-sea-blue text-center w-full cursor-pointer"
                     >
                       Descartar análisis
                     </button>
-                  </motion.div>
+                  </motion.div>                  
                 )}
               </motion.div>
             </div>
@@ -1763,17 +2212,21 @@ const Consultas: React.FC = () => {
             <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1.5">
               {loadingHistory ? (
                 <div className="flex flex-col items-center justify-center py-10 text-gray-400">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-clinical-blue mb-3"></div>
-                  <p className="text-sm">Cargando historial...</p>
+                  <div className="w-12 h-12 rounded-full animate-spin bg-linear-to-r from-sea-blue to-sky-blue p-[4px] mt-2">
+                    <div className="w-full h-full rounded-full bg-white"></div>
+                  </div>
+                  <span className="text-xs mt-3">
+                    Cargando historial...
+                  </span>
                 </div>
               ) : historyData.length === 0 ? (
                 <div className="text-center py-8 px-2">
-                  <div className="bg-linear-to-b from-gray-200 to-gray-50 shadow-md w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <FileText className="h-8 w-8 text-gray-400/50" />
+                  <div className="bg-linear-to-b from-gray-200/50 to-gray-50 shadow-md w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <CircleAlert className="h-8 w-8 text-gray-400/50" />
                   </div>
-                  <h2 className="text-sm font-bold text-gray-800">
+                  {/* <h2 className="text-sm font-bold text-gray-800">
                     Sin consultas previas
-                  </h2>
+                  </h2> */}
                   <p className="text-gray-500 text-xs">
                     El paciente aún no tiene un historial de consultas en sistema.
                   </p>

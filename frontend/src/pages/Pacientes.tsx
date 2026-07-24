@@ -13,6 +13,8 @@ import {
   Camera,
   Upload,
   UserCog,
+  ShieldAlert,
+  CircleAlert,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
@@ -33,6 +35,7 @@ interface Paciente {
   FechaNacimiento?: string;
   TipoSanguineo?: string;
   FechaConsulta?: string;
+  Empl_fecha_baja?: string;
   CURP?: string;
   NSS?: string;
   RFC?: string;
@@ -43,6 +46,8 @@ interface Paciente {
   Cirugias?: string;
   Fracturas?: string;
   Riesgo: string;
+  Empl_tipo_empleado?: string;
+  Empl_tipo_contrato?: string;
 }
 
 interface Proveedor {
@@ -142,6 +147,12 @@ const Pacientes: React.FC = () => {
   const [checkingCurp, setCheckingCurp] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState<number>(1);
   const itemsPerPage = 100;
+  const [tabView, setTabView] = useState<"activos" | "inactivos">("activos");
+
+  const [showFiltros, setShowFiltros] = useState<boolean>(true);
+  const [filtroTipoEmpleado, setFiltroTipoEmpleado] = useState<string>("");
+  const [filtroTipoContrato, setFiltroTipoContrato] = useState<string>("");
+  const [filtroSexo, setFiltroSexo] = useState<string>("");
 
   type SortCol = "matricula" | "nombre" | "especialidad" | "consulta" | "perfil" | null;
   type SortDir = "asc" | "desc" | "none";
@@ -162,7 +173,10 @@ const Pacientes: React.FC = () => {
   const filtered = pacientes.filter((p) =>
     `${p.Empl_Nombres} ${p.Empl_matricula} ${p.Categoria_desc}`
       .toLowerCase()
-      .includes(searchTerm.toLowerCase()),
+      .includes(searchTerm.toLowerCase())
+    && (!filtroTipoEmpleado || p.Empl_tipo_empleado === filtroTipoEmpleado)
+    && (!filtroTipoContrato || p.Empl_tipo_contrato === filtroTipoContrato)
+    && (!filtroSexo || p.Sexo === filtroSexo),
   );
 
   const sorted = [...filtered].sort((a, b) => {
@@ -171,7 +185,7 @@ const Pacientes: React.FC = () => {
     if (sortCol === "matricula")    { va = a.Empl_matricula ?? ""; vb = b.Empl_matricula ?? ""; }
     if (sortCol === "nombre")       { va = a.Empl_Nombres ?? "";   vb = b.Empl_Nombres ?? ""; }
     if (sortCol === "especialidad") { va = a.Especialidad ?? "";   vb = b.Especialidad ?? ""; }
-    if (sortCol === "consulta")     { va = a.FechaConsulta ?? "";  vb = b.FechaConsulta ?? ""; }
+    if (sortCol === "consulta")     { va = (tabView === "activos" ? a.FechaConsulta : a.Empl_fecha_baja) ?? "";  vb = (tabView === "activos" ? b.FechaConsulta : b.Empl_fecha_baja) ?? ""; }
     if (sortCol === "perfil")     { va = a.FechaNacimiento ?? "";  vb = b.FechaNacimiento ?? ""; }
     const cmp = va.localeCompare(vb, "es", { numeric: true });
     return sortDir === "asc" ? cmp : -cmp;
@@ -185,9 +199,17 @@ const Pacientes: React.FC = () => {
   const [formData, setFormData] = useState<FormData>(DEFAULT_FORM);
 
   useEffect(() => {
-    ObtenerPacientes();
     ObtenerProveedor();
   }, []);
+
+  useEffect(() => {
+    ObtenerPacientes();
+    setCurrentPage(1);
+  }, [tabView]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filtroTipoEmpleado, filtroTipoContrato, filtroSexo]);
 
   useEffect(() => {
     if (formData.fechaNacimiento) {
@@ -201,6 +223,7 @@ const Pacientes: React.FC = () => {
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/Pacientes/ObtenerPacientes`, {
         method: "POST",
+        body: JSON.stringify({ esActivo: tabView === "activos" ? "1" : "0" }),
       });
 
       if (res.ok) {
@@ -543,13 +566,10 @@ const Pacientes: React.FC = () => {
 
   return (
     <div className="relative flex w-full overflow-hidden">
-      <div
-        className="flex-1 mt-14 transition-all duration-300 ease-in-out"
-        // style={{ marginRight: isModalOpen ? 300 : 0 }}
-      >
+      <div className="flex-1 mt-14 transition-all duration-300 ease-in-out"> {/* style={{ marginRight: isModalOpen ? 300 : 0 }} */}
         <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
-          {/* Header */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white/70 backdrop-blur-xl p-4 sm:p-6 rounded-xl shadow-xl gap-4">
+            {/* bg-linear-to-r from-white to-gray-50 */}
             <div>
               <h1 className="text-2xl font-bold text-sea-blue flex items-center">
                 Expediente de Pacientes
@@ -567,29 +587,39 @@ const Pacientes: React.FC = () => {
             </button>
           </div>
 
-          {/* Table card */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col min-h-125"
+            className="bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl overflow-hidden flex flex-col min-h-125"
           >
-            {/* Toolbar */}
             <div className="flex items-center justify-between px-6 py-[21px] bg-linear-to-r from-white to-gray-100 rounded-t-xl">
-              {/* border-b border-gray-100 */}
               <div className="relative w-92">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
                   type="text"
                   // className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:border-clinical-blue focus:ring-1 focus:ring-clinical-blue outline-none transition-shadow"
-                  className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none transition-colors border-gray-100 shadow-md focus:border-clinical-blue focus:ring-1`}
+                  className={`w-full bg-white border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none transition-colors border-gray-100 shadow-md focus:border-clinical-blue focus:ring-1`}
                   placeholder="Buscar por nombre o matrícula"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
                 />
               </div>
-              <span className="text-xs font-bold text-gray-400">
-                {filtered.length} pacientes
-              </span>
+              <div className="flex items-center gap-1 bg-white border border-gray-100 shadow-md rounded-lg p-1">
+                <button
+                  onClick={() => setTabView("activos")}
+                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${tabView === "activos" ? "bg-linear-to-r from-sea-blue to-sky-blue text-white shadow-md" : "text-gray-500 hover:text-sea-blue"}`}
+                >
+                  <i className="mdi mdi-account-check"></i>
+                  Activos
+                </button>
+                <button
+                  onClick={() => setTabView("inactivos")}
+                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${tabView === "inactivos" ? "bg-linear-to-r from-sea-blue to-sky-blue text-white shadow-md" : "text-gray-500 hover:text-sea-blue"}`}
+                >
+                  <i className="mdi mdi-account-off"></i>
+                  Inactivos
+                </button>
+              </div>
             </div>
 
             <div className="space-y-4">
@@ -602,7 +632,7 @@ const Pacientes: React.FC = () => {
                           Tipo
                         </th> */}
                         {(["matricula","nombre","especialidad","consulta","perfil"] as SortCol[]).map((col, i) => {
-                          const labels: Record<string, string> = { matricula: "Matrícula", nombre: "Paciente", especialidad: "Especialidad", consulta: "Última consulta", perfil: "Perfil"};
+                          const labels: Record<string, string> = { matricula: "Matrícula", nombre: "Paciente", especialidad: "Especialidad", consulta: tabView === "activos" ? "Última consulta" : "Fecha de baja", perfil: "Perfil"};
                           const widths: Record<string, string> = { matricula: "w-[110px]", nombre: "w-auto", especialidad: "w-[210px]", consulta: "w-[145px]", perfil: "w-[142px]" };
                           const active = sortCol === col && sortDir !== "none";
                           return (
@@ -610,6 +640,9 @@ const Pacientes: React.FC = () => {
                               <span className="flex items-center gap-1">
                                 {labels[col!]}
                                 <i className={`mdi ${sortIcon(col)} text-sm transition-colors ${active ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`} />
+                                {/* {col === "matricula" && (
+                                  
+                                )} */}
                               </span>
                             </th>
                           );
@@ -623,7 +656,69 @@ const Pacientes: React.FC = () => {
                         <th className="px-3 py-2 text-center font-medium text-gray-700 mb-1 w-[100px]">
                           Acciones
                         </th>
+                        <th className="px-3 py-2 text-center font-medium mb-1 w-[40px]">
+                          <i
+                            onClick={(e) => { e.stopPropagation(); setShowFiltros((v) => !v); }}
+                            title="Filtrar"
+                            className={`mdi mdi-filter-variant cursor-pointer text-sm transition-colors ml-0.5 ${showFiltros || filtroTipoEmpleado || filtroTipoContrato || filtroSexo ? "text-sea-blue" : "text-gray-300 hover:text-gray-400"}`}
+                          />
+                        </th>
                       </tr>
+                      {showFiltros && (
+                        <tr className="bg-linear-to-r from-white to-gray-100">
+                          <td colSpan={8} className="px-6 py-2">
+                            <div className="flex items-center justify-end gap-4">
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] font-medium text-gray-500">Tipo de empleado</span>
+                                <select
+                                  value={filtroTipoEmpleado}
+                                  onChange={(e) => setFiltroTipoEmpleado(e.target.value)}
+                                  className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
+                                >
+                                  <option value="">Todos</option>
+                                  <option value="C">Confianza</option>
+                                  <option value="O">Sindicalizado</option>
+                                  <option value="EX">Externo</option>
+                                </select>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] font-medium text-gray-500">Tipo de contrato</span>
+                                <select
+                                  value={filtroTipoContrato}
+                                  onChange={(e) => setFiltroTipoContrato(e.target.value)}
+                                  className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
+                                >
+                                  <option value="">Todos</option>
+                                  <option value="E">Eventual</option>
+                                  <option value="P">Planta</option>
+                                  <option value="C">Por contrato</option>
+                                  <option value="EX">Subcontrato</option>
+                                </select>
+                              </div>
+                              <div className="flex items-center gap-1.5">
+                                <span className="text-[11px] font-medium text-gray-500">Sexo</span>
+                                <select
+                                  value={filtroSexo}
+                                  onChange={(e) => setFiltroSexo(e.target.value)}
+                                  className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
+                                >
+                                  <option value="">Todos</option>
+                                  <option value="M">Masculino</option>
+                                  <option value="F">Femenino</option>
+                                </select>
+                              </div>
+                              {(filtroTipoEmpleado || filtroTipoContrato || filtroSexo) && (
+                                <button
+                                  onClick={() => { setFiltroTipoEmpleado(""); setFiltroTipoContrato(""); setFiltroSexo(""); }}
+                                  className="text-[11px] font-medium text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                                >
+                                  <i className="mdi mdi-creation mr-2"></i>Limpiar filtros
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      )}
                     </thead>
                     <tbody>
                       <AnimatePresence mode="wait">
@@ -671,7 +766,10 @@ const Pacientes: React.FC = () => {
                             </td>
 
                             <td className="px-3 font-medium text-gray-700 mb-1">
-                              {p.FechaConsulta ? new Date(p.FechaConsulta).toLocaleTimeString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) : ""}
+                              {(() => {
+                                const fecha = tabView === "activos" ? p.FechaConsulta : p.Empl_fecha_baja;
+                                return fecha ? new Date(fecha).toLocaleTimeString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
+                              })()}
                             </td>
 
                             <td className="px-3 font-medium text-gray-700 mb-1">
@@ -699,7 +797,7 @@ const Pacientes: React.FC = () => {
                               {p.Riesgo}
                             </td>
 
-                            <td className="px-2 pr-0 whitespace-nowrap">
+                            <td colSpan={2} className="px-2 pr-0 whitespace-nowrap">
                               <div className="flex items-center gap-1">
                                 {p.Empl_matricula && Number(p.Empl_matricula) > 0 && p.IdPaciente == null ? (
                                   <button
@@ -719,7 +817,7 @@ const Pacientes: React.FC = () => {
                                     <i className="mdi mdi-pencil-outline text-lg"></i>
                                   </button>
                                 )}
-                                {p.Empl_matricula && Number(p.Empl_matricula) === 0 && (
+                                {p.Empl_matricula && Number(p.Empl_matricula) === 0 ? (
                                   <button 
                                     onClick={() => handleDelete(p.IdPaciente)}
                                     className="w-9 h-9 text-gray-400 hover:text-red-500 bg-linear-to-b hover:from-red-100 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
@@ -727,9 +825,19 @@ const Pacientes: React.FC = () => {
                                   >
                                     <i className="mdi mdi-trash-can-outline text-lg"></i>
                                   </button>
+                                ) : (
+                                  <button
+                                    onClick={() => navigate("/Documentos", { state: { matricula: String(p.Empl_matricula ?? "") } })}
+                                    className="w-9 h-9 text-gray-400 hover:text-sky-blue bg-linear-to-b hover:from-sky-blue/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
+                                    title="Documentación"
+                                  >
+                                    <i className="mdi mdi-file-outline text-lg"></i>
+                                  </button>
                                 )}
                               </div>
                             </td>
+
+                            
                           </motion.tr>
                         ))}
                       </AnimatePresence>
@@ -738,18 +846,27 @@ const Pacientes: React.FC = () => {
                         <tr>
                           <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                             <div className="flex flex-col items-center gap-2">
-                              <i className="mdi mdi-loading mdi-spin text-3xl text-sea-blue"></i>
-                              <span className="text-xs">Cargando pacientes...</span>
+                              <div className="w-12 h-12 rounded-full animate-spin bg-linear-to-r from-sea-blue to-sky-blue p-[4px] mt-2">
+                                <div className="w-full h-full rounded-full bg-white"></div>
+                              </div>
+                              <span className="text-xs mt-3">
+                                Cargando pacientes...
+                              </span>
                             </div>
                           </td>
                         </tr>
                       ) : filtered.length === 0 && (
                         <tr>
                           <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                            <div className="flex flex-col items-center gap-2">
+                            <div className="flex flex-col items-center justify-center gap-2">
                               {/* <i className="mdi mdi-loading mdi-spin text-3xl text-sea-blue"></i> */}
-                              <UserCog className="h-12 w-12 text-gray-200 mb-3" />
-                              <span className="text-xs">No se encontraron pacientes que coincidan con la búsqueda</span>
+                              <div className="bg-linear-to-b from-gray-200/50 to-gray-50 shadow-md w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <CircleAlert className="h-8 w-8 text-gray-400/50" />
+                                {/* UserCog */}
+                              </div>
+                              <p className="text-gray-500 text-xs">
+                                No se encontraron pacientes que coincidan con la búsqueda
+                              </p>
                             </div>
                           </td>
                         </tr>
@@ -760,7 +877,7 @@ const Pacientes: React.FC = () => {
                 <div className="grid grid-cols-2 gap-4 border-t border-gray-100 items-center h-10">
                   <div className="col-span-1 pl-6 flex items-center">
                     <span className="text-xs font-bold text-gray-400">
-                      {currentPage} de {totalPages} páginas
+                      {currentPage} de {totalPages} páginas · {filtered.length} pacientes
                     </span>
                   </div>
                   <div className="col-span-1 flex justify-end pr-6">
@@ -830,7 +947,7 @@ const Pacientes: React.FC = () => {
       </div>
 
       <aside
-        className={`fixed top-[64px] right-0 h-[calc(100vh-64px)] bg-white border-l border-gray-200 transition-all duration-300 ease-in-out z-40 ${ isModalOpen ? "" : "translate-x-full" }`}
+        className={`fixed top-[64px] right-0 h-[calc(100vh-64px)] bg-white border-l border-gray-200 transition-all shadow-lg duration-300 ease-in-out z-40 ${ isModalOpen ? "" : "translate-x-full" }`}
         style={{ width: isModalOpen ? 420 : 0}}
       >
         <div className="flex h-full w-full">
@@ -846,12 +963,12 @@ const Pacientes: React.FC = () => {
                     <i className={`mdi mdi-chevron-right text-2xl`}></i>
                   </button>
                   <div>
-                    <p className="text-xs font-bold text-gray-800 truncate uppercase max-w-[320px]">
-                      <i className={`mdi mdi-${editingId ? "account-edit" : "account-multiple-plus"} mr-2`}></i>
+                    <p className="text-[14px] font-bold text-sea-blue truncate max-w-[320px]">
+                      {/* <i className={`mdi mdi-${editingId ? "account-edit" : "account-multiple-plus"} mr-2`}></i> */}
                       {editingId ? "Editar Paciente" : "Nuevo Paciente"}
                     </p>
-                    <p className="text-xs text-gray-500 uppercase truncate">
-                      {editingType === "internal" ? "Paciente interno / empleado." : "Registro de paciente externo."}
+                    <p className="text-xs text-gray-500 truncate">
+                      {editingType === "internal" ? "Paciente interno / empleado" : "Registro de paciente externo"}
                     </p>
                   </div>
                 </div>
@@ -962,7 +1079,7 @@ const Pacientes: React.FC = () => {
                       <input
                         type="text"
                         value={formData.curp}
-                        maxLength={18}
+                        maxLength={20}
                         onChange={(e) => { setFormData({ ...formData, curp: e.target.value }); setCurpDuplicado(false); }}
                         onBlur={(e) => verificarCURP(e.target.value, editingId)}
                         placeholder="CURP / Pasaporte"
@@ -1155,7 +1272,7 @@ const Pacientes: React.FC = () => {
                 </div>
               </div>
             </form>
-            <div className={`px-5 py-4 shrink-0 flex justify-between items-center `}>
+            <div className={`px-5 py-4 shrink-0 flex justify-between items-center`}>
               <button
                 // onClick={() => handleSubmit()}
                 form="pacienteForm"

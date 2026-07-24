@@ -1,7 +1,31 @@
 {
   "permissions": {
     "allow": [
-      "Bash(Remove-Item -Recurse -Force \"C:\\\\Users\\\\soporte.desarrollo2\\\\Documents\\\\Visual Studio Code\\\\tng-medical\\\\frontend\\\\node_modules\\\\.vite\" -ErrorAction SilentlyContinue)"
+      "Bash(Remove-Item -Recurse -Force \"C:\\\\Users\\\\soporte.desarrollo2\\\\Documents\\\\Visual Studio Code\\\\tng-medical\\\\frontend\\\\node_modules\\\\.vite\" -ErrorAction SilentlyContinue)",
+      "Bash(node_modules/.bin/tsc --noEmit)",
+      "Bash(npx react-scripts *)",
+      "Bash(node)",
+      "Bash(grep -v \"//\")",
+      "Bash(npm run *)",
+      "Bash(npx vite *)",
+      "Bash(npx tsc *)",
+      "Bash(./node_modules/.bin/tsc --noEmit -p .)",
+      "Bash(npm view *)",
+      "Read(//tmp/**)",
+      "Bash(tar -xzf react-pageflip-*.tgz)",
+      "Bash(cd /tmp/pfcheck && cat package/build/index.d.ts; echo \"---settings---\"; cat package/build/settings.d.ts; echo \"---htmlflipbook index---\"; cat package/build/html-flip-book/index.d.ts)",
+      "Bash(npm install *)",
+      "Bash(tar -tzf /tmp/pfcheck/react-pageflip-*.tgz)",
+      "Bash(grep -o \"insertRule\\\\|createElement\\('style'\\)\\\\|styleSheet\\\\|\\\\\\\\.css\" /tmp/pfcheck/package/build/index.js)",
+      "Bash(xargs -I{} sh -c 'echo ==={}===; cat {}')",
+      "Bash(mkdir -p /tmp/pfcheck2)",
+      "Bash(npm pack *)",
+      "Bash(tar -xzf page-flip-*.tgz)",
+      "Bash(xargs grep -l \"usePortrait\")",
+      "Bash(python -)",
+      "Bash(node --check \"backend/services/aiService.js\")",
+      "Bash(node -e ' *)",
+      "Bash(node --check \"/c/Users/soporte.desarrollo2/Documents/Visual Studio Code/tng-medical/backend/services/aiService.js\")"
     ]
   }
 }

@@ -7,11 +7,12 @@ export default function AgendaRoutes(db: DB): Router {
   const router = Router();
   const con = AgendaController(db);
 
-  router.post('/ObtenerCitas', ValidarToken, con.ObtenerCitas);
-  router.post('/AgregarCitas', ValidarToken, con.AgregarCitas);
-  router.post('/EdicionCitas', ValidarToken, con.EdicionCitas);
-  router.post('/ConfirmaCita', ValidarToken, con.ConfirmaCita);
-  router.post('/EliminaCitas', ValidarToken, con.EliminaCitas);
+  router.post('/ObtenerCitas',   ValidarToken, con.ObtenerCitas);
+  router.post('/AgregarCitas',   ValidarToken, con.AgregarCitas);
+  router.post('/EdicionCitas',   ValidarToken, con.EdicionCitas);
+  router.post('/ConfirmaCita',   ValidarToken, con.ConfirmaCita);
+  router.post('/EliminaCitas',   ValidarToken, con.EliminaCitas);
+  router.get('/ObtenerFestivos', ValidarToken, con.ObtenerFestivos);
 
   return router;
 }

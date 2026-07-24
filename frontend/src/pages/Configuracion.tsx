@@ -10,6 +10,8 @@ import {
   Trash2,
   UserCog,
   Mail,
+  ShieldAlert,
+  CircleAlert,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { useAuth } from "../context/AuthToken";
@@ -161,14 +163,36 @@ const Configuracion: React.FC = () => {
     return () => clearTimeout(delay);
   }, [formData.Matricula]);
 
+  // const handleInputChange = (
+  //   e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  // ) => {
+  //   const { name, value } = e.target;
+  //   if (name === "Usuario") {
+  //     const generatedEmail = `${value}@tnghph.com.mx`;
+  //     setFormData((prev) => ({ ...prev, Usuario: value, Correo: emailEdit ? prev.Correo : generatedEmail, }));
+  //   } else {
+  //     setFormData((prev) => ({ ...prev, [name]: value }));
+  //   }
+  // };
+
   const handleInputChange = (
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     const { name, value } = e.target;
+
     if (name === "Usuario") {
       const generatedEmail = `${value}@tnghph.com.mx`;
-      setFormData((prev) => ({ ...prev, Usuario: value, Correo: emailEdit ? prev.Correo : generatedEmail, }));
-    } else {
+      setFormData((prev) => ({ 
+        ...prev, 
+        Usuario: value, 
+        Correo: emailEdit ? prev.Correo : generatedEmail 
+      }));
+    } 
+    else if (name === "Matricula") {
+      const soloNumeros = value.replace(/\D/g, ""); // Elimina cualquier cosa que no sea número
+      setFormData((prev) => ({ ...prev, [name]: soloNumeros }));
+    }
+    else {
       setFormData((prev) => ({ ...prev, [name]: value }));
     }
   };
@@ -466,7 +490,7 @@ const Configuracion: React.FC = () => {
             </div>
             <button
               onClick={openPanelNew}
-              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
             >
               <i className="mdi mdi-plus-thick mr-2"></i>
               Nuevo
@@ -501,7 +525,10 @@ const Configuracion: React.FC = () => {
                     <thead className="sticky top-0 z-10">
                       <tr className="bg-linear-to-r from-white to-gray-100">
                         <th className="px-3 py-2 pl-6 text-left font-medium text-gray-700 mb-1 w-[108px]">
-                          Estado
+                          <span className="flex items-center gap-1">
+                            Estado
+                            <i className={`mdi mdi-sort-ascending text-sm transition-colors text-white group-hover:text-gray-400"}`}></i>
+                          </span>
                         </th>
                         <th className="px-3 py-2 pl-6 text-left font-medium text-gray-700 mb-1 w-[100px]">
                           Matrícula
@@ -526,10 +553,14 @@ const Configuracion: React.FC = () => {
                     <tbody>
                       {loading ? (
                         <tr>
-                          <td colSpan={7} className="px-6 py-10 text-center text-gray-400">
+                          <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
                             <div className="flex flex-col items-center gap-2">
-                              <i className="mdi mdi-loading mdi-spin text-3xl text-sea-blue"></i>
-                              <span className="text-xs">Cargando personal médico...</span>
+                              <div className="w-12 h-12 rounded-full animate-spin bg-linear-to-r from-sea-blue to-sky-blue p-[4px] mt-2">
+                                <div className="w-full h-full rounded-full bg-white"></div>
+                              </div>
+                              <span className="text-xs mt-3">
+                                Cargando personal...
+                              </span>
                             </div>
                           </td>
                         </tr>
@@ -620,8 +651,12 @@ const Configuracion: React.FC = () => {
                           <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
                             <div className="flex flex-col items-center gap-2">
                               {/* <i className="mdi mdi-loading mdi-spin text-3xl text-sea-blue"></i> */}
-                              <UserCog className="h-12 w-12 text-gray-200 mb-3" />
-                              <span className="text-xs">No se encontraron usuarios registrados</span>
+                              <div className="bg-linear-to-b from-gray-200/50 to-gray-50 shadow-md w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                <CircleAlert className="h-8 w-8 text-gray-400/50" />
+                              </div>
+                              <p className="text-gray-500 text-xs">
+                                No se encontraron usuarios registrados
+                              </p>
                             </div>
                           </td>
                         </tr>

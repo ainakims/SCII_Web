@@ -130,12 +130,12 @@ export function DocumentosController(db: DB) {
 
         const paciente = await executeConnection<{ IdPaciente: number }>("[TNGCORE].[dbo].[SCII_Control_Documentos]", TipoConsulta.ProcedimientoAlmacenado, params);
 
-        if (!paciente || paciente.length === 0 || !paciente[0].IdPaciente) {
-          res.status(404).json({ ok: false, error: 'Paciente no encontrado.' });
-          return;
-        }
+        // if (!paciente || paciente.length === 0 || !paciente[0].IdPaciente) {
+        //   res.status(404).json({ ok: false, error: 'Paciente no encontrado.' });
+        //   return;
+        // }
 
-        const pacienteId = paciente[0].IdPaciente;
+        const pacienteId = paciente[0].IdPaciente ?? "";
 
         const doc_param: Parametros[] = [
           { Nombre: "@PacienteId", Valor: String(pacienteId) },

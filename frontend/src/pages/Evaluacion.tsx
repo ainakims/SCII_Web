@@ -1,6 +1,6 @@
 import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
-import React, { useState, useEffect, useCallback, useMemo, memo } from "react";
+import React, { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
 import {
   Search, Factory, User, Briefcase, Heart, FlaskConical,
   ClipboardList, CheckCircle, AlertTriangle, Weight, Ruler,
@@ -53,6 +53,12 @@ interface AntLaboral {
 }
 
 interface ExposicionAgente {
+  tiempo: string;
+  puesto: string;
+}
+
+interface OtroAgente {
+  tipo: string;
   tiempo: string;
   puesto: string;
 }
@@ -153,9 +159,9 @@ interface Conclusiones {
   recomendacion1: string;
   recomendacion2: string;
   recomendacion3: string;
-  resultado: "Sano" | "Riesgo moderado" | "Riesgo alto" | "";
-  // gradoSalud: string;
-  observaciones: "Optimo" | "Bueno" | "Regular" | "Malo" | "";
+  resultado: "Bueno" | "Regular" | "Malo" | "";
+  gradoSalud: "Sano" | "R. Moderado" | "R. Alto" | "";
+  observaciones: "Apto" | "No Apto" | "";
 }
 
 const STEPS = [
@@ -405,6 +411,8 @@ const selectAllSection = (
   });
 };
 
+const stripSiNoSuffix = (f: string) => f.replace(/\s*\(Si \/ No\)/, "");
+
 const thSelectCls = (active: boolean, type: "normal" | "anormal") =>
   `px-3 py-2 text-center font-medium w-1/4 cursor-pointer select-none transition-colors ` +
   (active && "bg-gray-200/60 text-gray-700 hover:bg-gray-200");
@@ -631,10 +639,65 @@ function ExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter, rightT
       </table>
     </div>
   );
-} 
+}
 
 const makeExpSection = (fields: string[]): ExploracionSeccion =>
   Object.fromEntries(fields.map((f) => [f, { valor: "" as NormalAnormal, descripcion: "" }]));
+
+function AgudezaInput({ value, onChange, disabled }: { value: string; onChange: (v: string) => void; disabled?: boolean }) {
+  const topRef = useRef<HTMLInputElement>(null);
+  const bottomRef = useRef<HTMLInputElement>(null);
+  const [top = "", bottom = ""] = value.split("/").map((s) => s.trim());
+
+  const commit = (newTop: string, newBottom: string) =>
+    onChange(newTop || newBottom ? `${newTop} / ${newBottom}` : "");
+
+  return (
+    <div className={`flex items-center justify-center gap-1 border border-gray-100 shadow-md rounded text-center py-1 focus-within:ring-1 focus-within:ring-sea-blue ${disabled ? "bg-gray-100" : "bg-white"}`}>
+      <input
+        ref={topRef}
+        type="number"
+        value={top}
+        disabled={disabled}
+        onChange={(e) => {
+          const r = e.target.value.slice(0, 2);
+          if (r !== "" && parseInt(r, 10) > 20) return;
+          commit(r, bottom);
+          if (r.length === 2) bottomRef.current?.focus();
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "/" || e.key === "-") {
+            e.preventDefault();
+            bottomRef.current?.focus();
+          }
+        }}
+        className="w-6 text-xs text-center outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        placeholder="20"
+      />
+      <span className="text-gray-400 font-medium text-xs">/</span>
+      <input
+        ref={bottomRef}
+        type="number"
+        value={bottom}
+        disabled={disabled}
+        onChange={(e) => {
+          const r = e.target.value.slice(0, 2);
+          if (r !== "" && parseInt(r, 10) > 20) return;
+          commit(top, r);
+        }}
+        onKeyDown={(e) => {
+          if (e.key === "Backspace" && bottom === "") {
+            e.preventDefault();
+            topRef.current?.focus();
+            commit(top.slice(0, -1), "");
+          }
+        }}
+        className="w-6 text-xs text-center outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+        placeholder="20"
+      />
+    </div>
+  );
+}
 
 const calcIMC = (peso: string, talla: string) => {
   const w = parseFloat(peso), h = parseFloat(talla);
@@ -781,11 +844,13 @@ const DescExpTable = memo(({ title, fields, section, setter }: {
   );
 });
 
-function DescExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter }: {
+function DescExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter, posLabel, negLabel }: {
   leftTitle: string;
   leftFields: string[];
   leftSection: ExploracionSeccion;
   leftSetter: React.Dispatch<React.SetStateAction<ExploracionSeccion>>;
+  posLabel?: string;
+  negLabel?: string;
   // rightTitle: string;
   // rightFields: string[];
   // rightSection: ExploracionSeccion;
@@ -795,6 +860,8 @@ function DescExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter }: 
   const lAllA = leftFields.every((f) => leftSection[f]?.valor === "Anormal");
   // const rAllN = rightFields.every((f) => rightSection[f]?.valor === "Normal");
   // const rAllA = rightFields.every((f) => rightSection[f]?.valor === "Anormal");
+  const headerPos = posLabel ?? (leftTitle == "Genitales" ? "Presente" : "Normal");
+  const headerNeg = negLabel ?? (leftTitle == "Genitales" ? "Ausente" : "Anormal");
   const rows = Math.max(leftFields.length);
   return (
     <div className="overflow-hidden mb-4">
@@ -809,14 +876,14 @@ function DescExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter }: 
               title="Clic para marcar todo"
               onClick={() => selectAllSection(leftFields, leftSection, leftSetter, "Normal")}
             >
-              {leftTitle == "Genitales" ? "Presente" : "Normal"}
+              {headerPos}
             </th>
             <th
               className={thSelectClsNarrow(lAllA, "anormal") + " w-[10%]"}
               title="Clic para marcar todo"
               onClick={() => selectAllSection(leftFields, leftSection, leftSetter, "Anormal")}
             >
-              {leftTitle == "Genitales" ? "Ausente" : "Anormal"}
+              {headerNeg}
             </th>
             <th className="px-3 py-2 text-left font-medium text-gray-700 w-[50%]">
               Descripción
@@ -827,10 +894,11 @@ function DescExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter }: 
           {Array.from({ length: rows }).map((_, i) => {
             const lf = leftFields[i];
             // const rf = rightFields[i];
+            const lfLabel = lf ? stripSiNoSuffix(lf) : "";
             return (
               <tr key={i}>
                 <td className="px-6 py-2 font-medium text-gray-700">
-                  {lf ?? ""}
+                  {lfLabel}
                 </td>
                 <td className="px-3 py-2 text-center">
                   {lf && (
@@ -883,8 +951,25 @@ const agentesInit: Record<string, ExposicionAgente> = {
   Gases: { tiempo: "", puesto: "" },
   Biológicos: { tiempo: "", puesto: "" },
   Tensionales: { tiempo: "", puesto: "" },
-  Otros: { tiempo: "", puesto: "" },
 };
+
+const otrosAgentesInit: OtroAgente[] = [{ tipo: "", tiempo: "", puesto: "" }];
+
+function splitAgentes(raw: any): { fixed: Record<string, ExposicionAgente>; otros: OtroAgente[] } {
+  if (!raw || typeof raw !== "object") {
+    return { fixed: agentesInit, otros: otrosAgentesInit };
+  }
+  const { Otros, ...fixed } = raw;
+  let otros: OtroAgente[];
+  if (Array.isArray(Otros) && Otros.length > 0) {
+    otros = Otros.map((o: any) => ({ tipo: o?.tipo ?? "", tiempo: o?.tiempo ?? "", puesto: o?.puesto ?? "" }));
+  } else if (Otros && typeof Otros === "object" && (Otros.tiempo || Otros.puesto)) {
+    otros = [{ tipo: "", tiempo: Otros.tiempo ?? "", puesto: Otros.puesto ?? "" }];
+  } else {
+    otros = otrosAgentesInit;
+  }
+  return { fixed: Object.keys(fixed).length > 0 ? fixed : agentesInit, otros };
+}
 
 const antFamiliaresInit: Record<string, AntFamiliar> = {
   Tuberculosis: { abuelos: null, padres: null, hermanos: null, hijos: null, otros: null },
@@ -894,6 +979,7 @@ const antFamiliaresInit: Record<string, AntFamiliar> = {
   Cardiópatas: { abuelos: null, padres: null, hermanos: null, hijos: null, otros: null },
   Epilépticos: { abuelos: null, padres: null, hermanos: null, hijos: null, otros: null },
   Oncológicos: { abuelos: null, padres: null, hermanos: null, hijos: null, otros: null },
+  "Neumológico / fumador": { abuelos: null, padres: null, hermanos: null, hijos: null, otros: null },
   "Malformaciones congénitas": { abuelos: null, padres: null, hermanos: null, hijos: null, otros: null },
   Otros: { abuelos: null, padres: null, hermanos: null, hijos: null, otros: null },
 };
@@ -924,6 +1010,11 @@ const Evaluacion: React.FC = () => {
   const [loadingMat, setLoadingMat] = useState(false);
   const [matriculaNotFound, setMatriculaNotFound] = useState(false);
   const [matriculaNotRegis, setMatriculaNotRegis] = useState(false);
+  const [nuevoIngreso, setNuevoIngreso] = useState(false);
+  // Campo por el que se está buscando ("matricula" | "nombre") y el que encontró resultados
+  const [searchField, setSearchField] = useState<"matricula" | "nombre" | null>(null);
+  const [foundField, setFoundField] = useState<"matricula" | "nombre" | null>(null);
+  const lastQueryRef = useRef<string>("");
 
   // ── Patient ──
   const [patientData, setPatientData] = useState<PatientData>({
@@ -945,9 +1036,12 @@ const Evaluacion: React.FC = () => {
     { empresa: "", puesto: "", tiempo: "" },
     { empresa: "", puesto: "", tiempo: "" },
     { empresa: "", puesto: "", tiempo: "" },
+    { empresa: "", puesto: "", tiempo: "" },
+    { empresa: "", puesto: "", tiempo: "" },
   ]);
 
   const [agentes, setAgentes] = useState<Record<string, ExposicionAgente>>(agentesInit);
+  const [otrosAgentes, setOtrosAgentes] = useState<OtroAgente[]>(otrosAgentesInit);
   const [antFamiliares, setAntFamiliares] = useState<Record<string, AntFamiliar>>(antFamiliaresInit);
   const [antPatologicos, setAntPatologicos] = useState<Record<string, AntPersonalPatologico>>(antPatInit);
 
@@ -982,7 +1076,7 @@ const Evaluacion: React.FC = () => {
   });
 
   const [expCabeza, setExpCabeza] = useState<ExploracionSeccion>(makeExpSection(["Forma", "Tamaño", "Pelo", "Cara"]));
-  const [expOidos, setExpOidos] = useState<ExploracionSeccion>(makeExpSection(["C.A.E", "Pabellón", "Tímpanos", "Descripción"]));
+  const [expOidos, setExpOidos] = useState<ExploracionSeccion>(makeExpSection(["C.A.E", "Pabellón", "Tímpanos"]));
   const [expOjos, setExpOjos] = useState<ExploracionSeccion>(makeExpSection(["Reflejos", "Párpados", "Pupilas", "Conjuntivas", "Fondo de ojo"]));
   const [agudezaOD, setAgudezaOD] = useState({ sinLentes: "", conLentes: "" });
   const [agudezaOI, setAgudezaOI] = useState({ sinLentes: "", conLentes: "" });
@@ -1011,7 +1105,7 @@ const Evaluacion: React.FC = () => {
   const [conclusiones, setConclusiones] = useState<Conclusiones>({
     diagnostico1: "", diagnostico2: "", diagnostico3: "", diagnostico4: "",
     recomendacion1: "", recomendacion2: "", recomendacion3: "",
-    resultado: "", observaciones: "",
+    resultado: "", gradoSalud: "", observaciones: "",
   });
 
   // ── IMC calc ──
@@ -1053,28 +1147,55 @@ const Evaluacion: React.FC = () => {
   };
 
   const handleSearchPatient = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchField("matricula");
+    setFoundField(null);
     setPatientData((prev) => ({
       ...prev, id: null, matricula: e.target.value,
       nombre: "", edad: "", especialidad: "",
     }));
   }, []);
 
+  const handleSearchByName = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearchField("nombre");
+    setFoundField(null);
+    setPatientData((prev) => ({
+      ...prev, id: null, nombre: e.target.value,
+      matricula: null, edad: "", especialidad: "",
+    }));
+  }, []);
+
   useEffect(() => {
-    if (!patientData.matricula) {
+    if (nuevoIngreso) return;
+
+    if (!patientData.matricula && !patientData.nombre) {
       setMatriculaNotFound(false);
       setMatriculaNotRegis(false);
+      setFoundField(null);
+      lastQueryRef.current = "";
       return;
     }
+
+    const buscarPorNombre = searchField === "nombre";
+    const valorBusqueda = buscarPorNombre ? patientData.nombre : patientData.matricula;
+    if (!valorBusqueda) return;
+
+    const query = `${buscarPorNombre ? "nombre" : "matricula"}:${valorBusqueda}`;
+    if (query === lastQueryRef.current) return;
 
     const delay = setTimeout(() => {
       (async () => {
         try {
           setLoadingMat(true);
+          lastQueryRef.current = query;
           await new Promise(r => setTimeout(r, 2000));
-          
+
+          const searchBody = buscarPorNombre
+            ? { nombre: patientData.nombre }
+            : { matricula: patientData.matricula };
+
           const cons = await fetchWithAuth(`${API_BASE_URL}/Evaluacion/InformacionPerfil`, {
             method: "POST",
-            body: JSON.stringify({ matricula: patientData.matricula }),
+            body: JSON.stringify(searchBody),
           });
 
           const res = await cons.json();
@@ -1082,21 +1203,27 @@ const Evaluacion: React.FC = () => {
           if (res && res.data.length == 0) {
             setMatriculaNotFound(true);
             setMatriculaNotRegis(false);
-            setPatientData((p) => ({ ...p, id: null, nombre: "", especialidad: "", estatus: "" }));
+            setFoundField(null);
+            setPatientData((p) => buscarPorNombre
+              ? { ...p, id: null, matricula: null, especialidad: "", estatus: "" }
+              : { ...p, id: null, nombre: "", especialidad: "", estatus: "" });
             return;
           }
 
           const pacienteId = res.data[0].IdPaciente;
+          const matriculaActual = res.data![0].Empl_matricula ?? patientData.matricula;
+          // const nombreActual = res.data![0].Nombre ?? patientData.nombre ?? "";
           setMatriculaNotFound(false);
+          setFoundField(buscarPorNombre ? "nombre" : "matricula");
           setPatientData((p) => ({
             ...p, id: pacienteId,
             nombre: res.data![0].Nombre,
+            matricula: matriculaActual,
             especialidad: res.data![0].Categoria_desc,
             estatus: res.data![0].Empl_status,
           }));
           setMatriculaNotRegis(pacienteId == null);
 
-          // Pre-poblar ficha con datos del perfil
           const fechaNacPerfil = res.data[0].FechaNacimiento
             ? String(res.data[0].FechaNacimiento).split("T")[0]
             : "";
@@ -1111,11 +1238,10 @@ const Evaluacion: React.FC = () => {
             noImss:          typeof res.data[0].NSS  === "string" ? res.data[0].NSS  : "",
           }));
 
-          // ── Revisar borrador primero ─────────────────────────────────────────
           try {
             const bRes = await fetchWithAuth(`${API_BASE_URL}/Evaluacion/ObtenerBorrador`, {
               method: "POST",
-              body: JSON.stringify({ matricula: patientData.matricula }),
+              body: JSON.stringify({ matricula: matriculaActual }),
             });
             if (bRes.ok) {
               const bJson = await bRes.json();
@@ -1142,7 +1268,11 @@ const Evaluacion: React.FC = () => {
                   if (b.ficha)              setFicha((f) => ({ ...f, ...b.ficha }));
                   if (b.edadInicioLaboral  !== undefined) setEdadInicioLaboral(b.edadInicioLaboral ?? "");
                   if (b.antLaborales)       setAntLaborales(b.antLaborales);
-                  if (b.agentes)            setAgentes(b.agentes);
+                  if (b.agentes) {
+                    const { fixed, otros } = splitAgentes(b.agentes);
+                    setAgentes(fixed);
+                    setOtrosAgentes(otros);
+                  }
                   if (b.antFamiliares)      setAntFamiliares(b.antFamiliares);
                   if (b.antPatologicos)     setAntPatologicos(b.antPatologicos);
                   if (b.vacunas)            setVacunas(b.vacunas);
@@ -1177,15 +1307,21 @@ const Evaluacion: React.FC = () => {
                   if (b.expHallazgos)       setExpHallazgos(b.expHallazgos);
                   if (b.expGabinete)        setExpGabinete(b.expGabinete);
                   if (b.conclusiones)       setConclusiones(b.conclusiones);
+                  if (buscarPorNombre)      setFoundField(null); // Permite editar la Matrícula tras cargar
                   return; // No buscar evaluación permanente
                 }
               }
             }
           } catch { /* Si falla la consulta de borrador, continuar con flujo normal */ }
-
-          // ── Sin borrador (o usuario rechazó): revisar evaluación permanente ──
-          const cons2 = await fetchWithAuth(`${API_BASE_URL}/Evaluacion/ObtenerEvaluacion/${patientData.matricula}/${pacienteId ?? 0}`, {
+          
+          const matriculaParam = matriculaActual && String(matriculaActual).trim() !== "" ? matriculaActual : "0";
+          const cons2 = await fetchWithAuth(`${API_BASE_URL}/Evaluacion/ObtenerEvaluacion`, {
             method: "POST",
+            body: JSON.stringify({
+              matricula: matriculaParam,
+              pacienteId: pacienteId,
+              nombre: patientData.nombre,
+            }),
           });
 
           if (!cons2.ok) return;
@@ -1212,6 +1348,8 @@ const Evaluacion: React.FC = () => {
 
 
           if (!isConfirmed) return;
+
+          if (buscarPorNombre) setFoundField(null); // Permite editar la Matrícula tras cargar
 
           const jp = (val: string | null) => { try { return val ? JSON.parse(val) : null; } catch { return null; } };
 
@@ -1240,7 +1378,11 @@ const Evaluacion: React.FC = () => {
           const parsedLaborales = jp(evalData.AntecedenteLaboral);
           if (parsedLaborales) setAntLaborales(parsedLaborales);
           const parsedAgentes = jp(evalData.ExposicionAgentes);
-          if (parsedAgentes) setAgentes(parsedAgentes);
+          if (parsedAgentes) {
+            const { fixed, otros } = splitAgentes(parsedAgentes);
+            setAgentes(fixed);
+            setOtrosAgentes(otros);
+          }
 
           // Familiar
           const parsedFamiliar = jp(evalData.AntecedenteFamiliar);
@@ -1346,7 +1488,8 @@ const Evaluacion: React.FC = () => {
             recomendacion1:  recoms[0] ?? "",
             recomendacion2:  recoms[1] ?? "",
             recomendacion3:  recoms[2] ?? "",
-            resultado:       evalData.GradoSalud   ?? "",
+            resultado:       evalData.Resultado    ?? "",
+            gradoSalud:      evalData.GradoSalud   ?? "",
             observaciones:   evalData.Observaciones ?? "",
           });
 
@@ -1356,7 +1499,7 @@ const Evaluacion: React.FC = () => {
       })();
     }, 1000);
     return () => clearTimeout(delay);
-  }, [patientData.matricula]);
+  }, [patientData.matricula, patientData.nombre, searchField, nuevoIngreso]);
 
   const exitoModal = (title: string, message: string) =>
     Swal.fire({
@@ -1385,7 +1528,9 @@ const Evaluacion: React.FC = () => {
     const errors: string[] = [];
     switch (step) {
       case 0:
-        if (!patientData.matricula) errors.push("Matrícula");
+        if (!nuevoIngreso && !patientData.matricula) errors.push("Matrícula");
+        if (nuevoIngreso && !patientData.nombre) errors.push("Nombre");
+        if (nuevoIngreso && !ficha.puestoAspira) errors.push("Puesto al que aspira");
         if (!ficha.fechaNacimiento) errors.push("Fecha de nacimiento");
         if (!ficha.edad) errors.push("Edad");
         if (!ficha.genero) errors.push("Género");
@@ -1408,8 +1553,9 @@ const Evaluacion: React.FC = () => {
       case 9: // Conclusiones
         // if (!conclusiones.gradoSalud) errors.push("Grado de salud");
         if (!conclusiones.diagnostico1) errors.push("Al menos un diagnóstico");
-        if (!conclusiones.resultado) errors.push("Grado de salud");
-        if (!conclusiones.observaciones) errors.push("Resultado");
+        if (!conclusiones.resultado) errors.push("Resultado");
+        if (!conclusiones.gradoSalud) errors.push("Grado de salud");
+        if (!conclusiones.observaciones) errors.push("Observaciones");
         break;
     }
     return errors;
@@ -1452,7 +1598,7 @@ const Evaluacion: React.FC = () => {
       ficha,
       edadInicioLaboral,
       antLaborales,
-      agentes,
+      agentes: { ...agentes, Otros: otrosAgentes },
       antFamiliares,
       antPatologicos,
       vacunas,
@@ -1477,7 +1623,7 @@ const Evaluacion: React.FC = () => {
       conclusiones,
     });
 
-    if (!patientData.matricula) {
+    if (!nuevoIngreso && !patientData.matricula) {
       errorModal("Campo requerido", "Debe ingresar una <b>matrícula</b> para guardar la evaluación.");
       return;
     }
@@ -1563,6 +1709,7 @@ const Evaluacion: React.FC = () => {
           medico: 8,
           paciente: patientData.id,
           matricula: patientData.matricula,
+          nombre: patientData.nombre,
           ...buildPayload(),
         }),
       });
@@ -1626,7 +1773,7 @@ const Evaluacion: React.FC = () => {
     } finally {
       setSaving(false);
     }
-  }, [patientData, conclusiones, ficha, edadInicioLaboral, antLaborales, agentes, antFamiliares, antPatologicos, vacunas, antNoPatologico, gineco, incapacidadRiesgo, incapacidadValuacion, incapacidadEG, incapacidadComentario, enfermedadActual, manoDominante, vitalSigns, expCabeza, expOidos, expOjos, agudezaOD, agudezaOI, usaLentes, expBoca, expNariz, expCuello, expPrecordial, expMTor, expMPel, expAbdomen, expGenitales, expPiel, expColCervical, expColLumbar, labs, expRadiografia, expHallazgos, expGabinete, user, navigate, currentStep]);
+  }, [patientData, conclusiones, ficha, edadInicioLaboral, antLaborales, agentes, otrosAgentes, antFamiliares, antPatologicos, vacunas, antNoPatologico, gineco, incapacidadRiesgo, incapacidadValuacion, incapacidadEG, incapacidadComentario, enfermedadActual, manoDominante, vitalSigns, expCabeza, expOidos, expOjos, agudezaOD, agudezaOI, usaLentes, expBoca, expNariz, expCuello, expPrecordial, expMTor, expMPel, expAbdomen, expGenitales, expPiel, expColCervical, expColLumbar, labs, expRadiografia, expHallazgos, expGabinete, user, navigate, currentStep]);
   
 
   // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1638,7 +1785,7 @@ const Evaluacion: React.FC = () => {
             Ficha de identificación
           </span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-6">
           <div className={`${matriculaNotFound ? "mb-2" : ""}`}>
             <div className="block text-xs font-medium text-gray-700 mb-1">
               Matrícula <b className="text-red-400">*</b>
@@ -1651,34 +1798,77 @@ const Evaluacion: React.FC = () => {
                 value={patientData.matricula ?? ""}
                 onChange={handleSearchPatient}
                 placeholder="Matrícula (5 dígitos)"
-                disabled={loadingMat}
+                disabled={loadingMat || nuevoIngreso || foundField === "nombre"}
                 maxLength={5}
-                className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none shadow-md transition-colors ${!patientData.matricula ? "border-gray-100 focus:ring-1 focus:ring-sea-blue" : loadingMat ? "border-gray-100 bg-gray-100" : matriculaNotFound ? "border-red-400 bg-red-50 text-red-700" : "border-gray-100 focus:ring-1 focus:ring-sea-blue"}`}
+                className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none shadow-md transition-colors ${nuevoIngreso || foundField === "nombre" ? "border-gray-100 bg-gray-100" : !patientData.matricula ? "border-gray-100 focus:ring-1 focus:ring-sea-blue" : loadingMat ? "border-gray-100 bg-gray-100" : matriculaNotFound ? "border-red-400 bg-red-50 text-red-700" : "border-gray-100 focus:ring-1 focus:ring-sea-blue"}`}
                 // matriculaNotRegis ? "border-yellow-400 bg-yellow-50 text-yellow-700"
               />
-              {loadingMat &&
+              {loadingMat && searchField === "matricula" &&
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
                   <i className="mdi mdi-loading mdi-spin text-gray-400 text-lg"></i>
                 </div>
               }
             </div>
             {matriculaNotFound && (
-              <p className="absolute text-xs mt-1 text-red-700">
+              <p className="text-xs mt-1 text-red-700">
                 No se encontró ningún paciente con esa matrícula.
               </p>
             )}
+            <div className="flex items-center gap-2 mt-3">
+              <CkCell
+                checked={nuevoIngreso}
+                onChange={(checked) => {
+                  const newState = checked === true;
+                  setNuevoIngreso(newState);
+                  setSearchField(null);
+                  setFoundField(null);
+                  setMatriculaNotFound(false);
+                  lastQueryRef.current = "";
+                  setPatientData(p => ({ ...p, id: null, matricula: null, nombre: "" }));
+                }}
+              />
+              <label
+                onClick={() => {
+                  const newState = !nuevoIngreso;
+                  setNuevoIngreso(newState);
+                  setSearchField(null);
+                  setFoundField(null);
+                  setMatriculaNotFound(false);
+                  lastQueryRef.current = "";
+                  setPatientData(p => ({ ...p, id: null, matricula: null, nombre: "" }));
+                }}
+                className="text-xs text-gray-700 font-medium cursor-pointer">
+                Nuevo Ingreso
+              </label>
+            </div>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Nombre <b className="text-red-400">*</b>
             </label>
-            <input
-              type="text" 
-              value={patientData.nombre} 
-              disabled 
-              placeholder="Nombre" 
-              className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md bg-gray-50 text-gray-800 font-medium outline-none"
-            />
+            <div className="relative">
+              {!nuevoIngreso && (
+                <Search className={`h-3.5 w-3.5 absolute left-3 top-2.5 ${matriculaNotFound && searchField === "nombre" ? "text-red-700" : "text-gray-400"}`} />
+              )}
+              <input
+                type="text"
+                value={patientData.nombre}
+                onChange={(e) => nuevoIngreso ? setPatientData(p => ({ ...p, nombre: e.target.value })) : handleSearchByName(e)}
+                disabled={loadingMat || foundField === "matricula"}
+                placeholder={"Nombre"}
+                className={`w-full ${nuevoIngreso ? "px-3" : "pl-9 px-3 pr-10"} py-2 border rounded-lg text-xs shadow-md text-gray-800 font-medium outline-none transition-colors ${foundField === "matricula" ? "border-gray-100 bg-gray-100" : matriculaNotFound && searchField === "nombre" ? "border-red-400 bg-red-50 text-red-700" : "border-gray-100 bg-white focus:ring-1 focus:ring-sea-blue"}`}
+              />
+              {loadingMat && searchField === "nombre" &&
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <i className="mdi mdi-loading mdi-spin text-gray-400 text-lg"></i>
+                </div>
+              }
+            </div>
+            {matriculaNotFound && searchField === "nombre" && (
+              <p className="absolute text-xs mt-1 text-red-700">
+                No se encontró ningún paciente con ese nombre.
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -1801,14 +1991,15 @@ const Evaluacion: React.FC = () => {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              Puesto al que aspira
+              Puesto al que aspira {nuevoIngreso && <b className="text-red-400">*</b>}
             </label>
             <input
-              type="text" 
-              value={patientData.especialidad}
-              disabled 
-              placeholder="Puesto al que aspira" 
-              className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md bg-gray-50 text-gray-800 font-medium outline-none"
+              type="text"
+              value={nuevoIngreso ? ficha.puestoAspira : patientData.especialidad}
+              onChange={(e) => nuevoIngreso && setFicha(f => ({ ...f, puestoAspira: e.target.value }))}
+              disabled={!nuevoIngreso}
+              placeholder="Puesto al que aspira"
+              className={`w-full px-3 py-2 border rounded-lg text-xs shadow-md text-gray-800 font-medium outline-none transition-colors ${nuevoIngreso ? "border-gray-100 bg-white focus:ring-1 focus:ring-sea-blue" : "border-gray-100 bg-gray-50"}`}
             />
           </div>
           <div>
@@ -1838,9 +2029,9 @@ const Evaluacion: React.FC = () => {
             />
           </div>
         </div>
-        <label className="block text-xs text-right font-medium text-gray-700 mr-6">
+        {/* <label className="block text-xs text-right font-medium text-gray-700 mr-6">
           <b className="text-red-400">*</b> Campo obligatorio
-        </label>
+        </label> */}
       </div>
     </div>,
 
@@ -1945,36 +2136,89 @@ const Evaluacion: React.FC = () => {
         <table className="w-full text-xs mb-4">
           <thead>
             <tr className="bg-linear-to-r from-white to-gray-100">
-              <th className="px-6 py-2 text-left font-medium text-gray-700 mb-1 w-1/3">
+              <th className="px-6 py-2 text-left font-medium text-gray-700 mb-1 w-1/4">
                 Agente
               </th>
-              <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/3">
+              <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/4">
+                {/* Tipo */}
+              </th>
+              <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/4">
                 Tiempo de exposición
               </th>
-              <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/3">
+              <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/4">
                 Puesto de trabajo
               </th>
             </tr>
           </thead>
           <tbody>
-            {Object.entries(agentes).map(([agente, val], i) => (
-              <tr
-                key={agente}
-                // className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
-              >
+            {Object.entries(agentes).map(([agente, val]) => (
+              <tr key={agente}>
                 <td className="pl-6 pr-3 py-2 font-medium text-gray-700 mb-1">
                   {agente}
                 </td>
-            
-                {(["tiempo", "puesto"] as const).map((col, idx, arr) => (
-                  <td
-                    key={col}
-                    className={`py-2 ${idx === arr.length - 1 ? "pl-3 pr-6" : "px-3"}`}
-                  >
+
+                <td className="px-3 py-2"></td>
+
+                {(["tiempo", "puesto"] as const).map((col) => (
+                  <td key={col} className="px-3 py-2">
                     <input
                       type="text"
                       value={val[col]}
                       onChange={(e) => setAgentes((prev) => ({ ...prev, [agente]: { ...prev[agente], [col]: e.target.value, }, })) }
+                      className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                      placeholder={col.charAt(0).toUpperCase() + col.slice(1)}
+                    />
+                  </td>
+                ))}
+              </tr>
+            ))}
+
+            {otrosAgentes.map((row, i) => (
+              <tr key={`otros-${i}`}>
+                <td className="pl-6 pr-3 py-2 font-medium text-gray-700 mb-1">
+                  <div className="flex items-center justify-between">
+                    <span>{i === 0 ? "Otros" : ""}</span>
+                    <div className="flex items-center">
+                      {i === otrosAgentes.length - 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setOtrosAgentes((prev) => [...prev, { tipo: "", tiempo: "", puesto: "" }])}
+                          className="w-9 h-9 text-gray-400 hover:text-sky-blue bg-linear-to-b hover:from-sky-blue/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
+                          title="Agregar"
+                        >
+                          <i className="mdi mdi-plus-thick text-lg"></i>
+                        </button>
+                      )}
+                      {otrosAgentes.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => setOtrosAgentes((prev) => prev.filter((_, idx) => idx !== i))}
+                          className="w-9 h-9 text-gray-400 hover:text-red-500 bg-linear-to-b hover:from-red-100 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
+                          title="Eliminar"
+                        >
+                          <i className="mdi mdi-trash-can-outline text-lg"></i>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </td>
+
+                <td className="px-3 py-2">
+                  <input
+                    type="text"
+                    value={row.tipo}
+                    onChange={(e) => setOtrosAgentes((prev) => prev.map((r, idx) => idx === i ? { ...r, tipo: e.target.value } : r))}
+                    className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                    placeholder="Tipo"
+                  />
+                </td>
+
+                {(["tiempo", "puesto"] as const).map((col) => (
+                  <td key={col} className="px-3 py-2">
+                    <input
+                      type="text"
+                      value={row[col]}
+                      onChange={(e) => setOtrosAgentes((prev) => prev.map((r, idx) => idx === i ? { ...r, [col]: e.target.value } : r))}
                       className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                       placeholder={col.charAt(0).toUpperCase() + col.slice(1)}
                     />
@@ -2844,19 +3088,25 @@ const Evaluacion: React.FC = () => {
             Cabeza
           </h2>
         </div>
-        <div className="my-4 flex items-center justify-between">
+      </div>
+
+      <DescExpTableDouble
+        leftTitle="Cabeza" leftFields={["Forma", "Tamaño", "Pelo", "Cara"]}
+        leftSection={expCabeza} leftSetter={setExpCabeza}
+      />
+
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-          <i className="mdi mdi-ear-hearing mr-4"></i>
+            <i className="mdi mdi-ear-hearing mr-4"></i>
             Oídos
           </h2>
         </div>
       </div>
 
-      <ExpTableDouble
-        leftTitle="Cabeza" leftFields={["Forma", "Tamaño", "Pelo", "Cara"]}
-        leftSection={expCabeza} leftSetter={setExpCabeza}
-        rightTitle="Oídos" rightFields={["C.A.E", "Pabellón", "Tímpanos", "Descripción"]}
-        rightSection={expOidos} rightSetter={setExpOidos}
+      <DescExpTableDouble
+        leftTitle="Oídos" leftFields={["C.A.E", "Pabellón", "Tímpanos"]}
+        leftSection={expOidos} leftSetter={setExpOidos}
       />
 
       <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
@@ -2866,174 +3116,74 @@ const Evaluacion: React.FC = () => {
             Ojos
           </h2>
         </div>
-        <div className="my-4 flex items-center justify-between">
+      </div>
+
+      <DescExpTableDouble
+        leftTitle="Ojos" leftFields={["Reflejos", "Párpados", "Pupilas", "Conjuntivas", "Fondo de ojo"]}
+        leftSection={expOjos} leftSetter={setExpOjos}
+      />
+
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-          <i className="mdi mdi-bullseye-arrow mr-4"></i>
+            <i className="mdi mdi-bullseye-arrow mr-4"></i>
             Agudeza Visual
           </h2>
         </div>
       </div>
-      
+
       <div className="overflow-hidden mb-4">
         <table className="w-full text-xs">
           <thead>
             <tr className="bg-linear-to-r from-white to-gray-100">
-              <th className="px-6 py-2 text-left font-medium text-gray-700 w-[30%]">
-                Ojos
-              </th>
-              <th
-                title="Clic para marcar todo"
-                className={thSelectClsNarrow(["Reflejos","Párpados","Pupilas","Conjuntivas","Fondo de ojo"].every((f) => expOjos[f]?.valor === "Normal"), "normal")}
-                onClick={() => selectAllSection(["Reflejos","Párpados","Pupilas","Conjuntivas","Fondo de ojo"], expOjos, setExpOjos, "Normal")}
-              >
-                Normal
-              </th>
-              <th
-                title="Clic para marcar todo"
-                className={thSelectClsNarrow(["Reflejos","Párpados","Pupilas","Conjuntivas","Fondo de ojo"].every((f) => expOjos[f]?.valor === "Anormal"), "anormal")}
-                onClick={() => selectAllSection(["Reflejos","Párpados","Pupilas","Conjuntivas","Fondo de ojo"], expOjos, setExpOjos, "Anormal")}
-              >
-                Anormal
-              </th>
-              <th className="px-3 py-2 text-left font-medium text-gray-700 w-[30%]">
+              <th className="px-6 py-2 text-left font-medium text-gray-700 w-[50%]">
                 Agudeza visual
               </th>
-              <th className="px-0 py-2 text-center font-medium text-gray-700 w-[10%]">
-                {/* Sin lentes */}
+              <th className="px-0 py-2 text-center font-medium text-gray-700 w-[25%]">
+                Sin lentes
               </th>
-              <th className="px-0 py-2 text-center font-medium text-gray-700 w-[10%]">
-                {/* Con lentes */}
+              <th className="px-0 py-2 text-center font-medium text-gray-700 w-[25%]">
+                Con lentes
               </th>
             </tr>
           </thead>
 
           <tbody>
-            {["Reflejos", "Párpados", "Pupilas", "Conjuntivas", "Fondo de ojo"].map((field, i) => {
-              const avRows = [
-                null,
-                null,
-                { label: "Ojo derecho", st: agudezaOD, set: setAgudezaOD },
-                { label: "Ojo izquierdo", st: agudezaOI, set: setAgudezaOI },
-              ];
-              const av = avRows[i];
-            
-              return (
-                <tr key={field}>
-                  {/* Columnas Izquierdas (Ojos) */}
-                  <td className="px-6 py-2 font-medium text-gray-700">
-                    {field}
-                    {/* <b className="text-red-400">*</b> */}
-                  </td>
-                  <td className="px-3 py-2 text-center">
-                    <div className="flex justify-center">
-                      <CkCell
-                        checked={expOjos[field]?.valor === "Normal"}
-                        onChange={() =>
-                          setExpOjos((p) => ({
-                            ...p,
-                            [field]: { ...p[field], valor: p[field]?.valor === "Normal" ? "" : "Normal" },
-                          }))
-                        }
-                      />
-                    </div>
-                  </td>
-                  <td className="px-3 py-2 text-center">
-                    <div className="flex justify-center">
-                      <CkCell
-                        checked={expOjos[field]?.valor === "Anormal"}
-                        onChange={() =>
-                          setExpOjos((p) => ({
-                            ...p,
-                            [field]: { ...p[field], valor: p[field]?.valor === "Anormal" ? "" : "Anormal" },
-                          }))
-                        }
-                      />
-                    </div>
-                  </td>
-                  
-                  {(() => {
-                    const avRows = [
-                      { label: "Ojo derecho", st: agudezaOD, set: setAgudezaOD },
-                      { label: "Ojo izquierdo", st: agudezaOI, set: setAgudezaOI },
-                    ];
-                  
-                    if (i === 0) {
-                      return (
-                        <>
-                          <td className="px-3 py-2 font-medium text-gray-700">
-                            ¿Usa lentes?
-                          </td>
-                          <td colSpan={2} className="px-2 py-1 bg-gray-50/30">
-                            <Toggle2
-                              value={usaLentes === null ? "" : usaLentes ? "Si" : "No"}
-                              options={["Si", "No"]}
-                              onChange={(v) => setUsaLentes(v === "Si" ? true : v === "No" ? false : null)}
-                            />
-                          </td>
-                        </>
-                      );
-                    }
-                  
-                    if (i === 1) {
-                      return (
-                        <>
-                          <td className="px-3 py-2 font-medium text-gray-700 bg-linear-to-r from-white to-gray-50">
-                            {/* ¿Usa lentes? */}
-                          </td>
-                          <td className="text-center font-medium text-gray-700 bg-gray-50">
-                            Con lentes
-                          </td>
-                          <td className="text-center font-medium text-gray-700 bg-linear-to-r from-gray-50 to-gray-100">
-                            Sin lentes
-                          </td>
-                        </>
-                      );
-                    }
-                  
-                    const av = avRows[i - 2];
-                  
-                    if (av) {
-                      return (
-                        <>
-                          <td className="px-3 py-2 font-medium text-gray-700">
-                            {av.label}
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <input
-                              type="text"
-                              value={av.st.sinLentes}
-                              onChange={(e) => av.set((p) => ({ ...p, sinLentes: e.target.value }))}
-                              className="w-full px-2 py-1 border border-gray-100 shadow-md rounded text-center outline-none focus:ring-1 focus:ring-sea-blue text-xs"
-                              placeholder="20/20"
-                            />
-                          </td>
-                          <td className="px-2 py-1.5">
-                            <input
-                              type="text"
-                              value={av.st.conLentes}
-                              onChange={(e) => av.set((p) => ({ ...p, conLentes: e.target.value }))}
-                              disabled={!usaLentes}
-                              className={`w-full px-2 py-1 border border-gray-100 shadow-md rounded text-center outline-none text-xs ${
-                                !usaLentes ? "bg-gray-100 cursor-not-allowed" : "focus:ring-1 focus:ring-sea-blue"
-                              }`}
-                              placeholder="20/20"
-                            />
-                          </td>
-                        </>
-                      );
-                    }
-
-                    return (
-                      <>
-                        <td className="" />
-                        <td />
-                        <td />
-                      </>
-                    );
-                  })()}
-                </tr>
-              );
-            })}
+            <tr>
+              <td className="px-6 py-2 font-medium text-gray-700">
+                ¿Usa lentes?
+              </td>
+              <td colSpan={2} className="px-2 py-1 bg-gray-50/30">
+                <Toggle2
+                  value={usaLentes === null ? "" : usaLentes ? "Si" : "No"}
+                  options={["Si", "No"]}
+                  onChange={(v) => setUsaLentes(v === "Si" ? true : v === "No" ? false : null)}
+                />
+              </td>
+            </tr>
+            {[
+              { label: "Ojo derecho", st: agudezaOD, set: setAgudezaOD },
+              { label: "Ojo izquierdo", st: agudezaOI, set: setAgudezaOI },
+            ].map((av) => (
+              <tr key={av.label}>
+                <td className="px-6 py-2 font-medium text-gray-700">
+                  {av.label}
+                </td>
+                <td className="px-2 py-1.5">
+                  <AgudezaInput
+                    value={av.st.sinLentes}
+                    onChange={(v) => av.set((p) => ({ ...p, sinLentes: v }))}
+                  />
+                </td>
+                <td className="px-2 py-1.5">
+                  <AgudezaInput
+                    value={av.st.conLentes}
+                    onChange={(v) => av.set((p) => ({ ...p, conLentes: v }))}
+                    disabled={!usaLentes}
+                  />
+                </td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
@@ -3042,24 +3192,30 @@ const Evaluacion: React.FC = () => {
         <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
             <i className="mdi mdi-tooth mr-4"></i>
-            Noca
+            Boca
           </h2>
         </div>
-        <div className="my-4 flex items-center justify-between">
+      </div>
+
+      <DescExpTableDouble
+        leftTitle="Boca" leftFields={["Mucosas", "Dentadura", "Lengua", "Encías", "Faringe", "Amígdalas"]}
+        leftSection={expBoca} leftSetter={setExpBoca}
+      />
+
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-          <i className="mdi mdi-weather-windy mr-4"></i>
+            <i className="mdi mdi-weather-windy mr-4"></i>
             Nariz
           </h2>
         </div>
       </div>
 
-      <ExpTableDouble
-        leftTitle="Boca" leftFields={["Mucosas", "Dentadura", "Lengua", "Encías", "Faringe", "Amígdalas"]}
-        leftSection={expBoca} leftSetter={setExpBoca}
-        rightTitle="Nariz" rightFields={["Mucosas", "Tabique"]}
-        rightSection={expNariz} rightSetter={setExpNariz}
+      <DescExpTableDouble
+        leftTitle="Nariz" leftFields={["Mucosas", "Tabique"]}
+        leftSection={expNariz} leftSetter={setExpNariz}
       />
-      
+
       <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
         <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
@@ -3112,8 +3268,14 @@ const Evaluacion: React.FC = () => {
       </div>
 
       <DescExpTableDouble
-        leftTitle="Miembros pélvicos" leftFields={["Integridad", "Forma", "Articulaciones", "Tono Muscular", "Reflejos", "Sensibilidad", "Micosis (Si / No)", "Edemas (Si / No)", "Varices (Si / No)"]}
+        leftTitle="Miembros pélvicos" leftFields={["Integridad", "Forma", "Articulaciones", "Tono Muscular", "Reflejos", "Sensibilidad"]}
         leftSection={expMPel} leftSetter={setExpMPel}
+      />
+
+      <DescExpTableDouble
+        leftTitle="Miembros pélvicos" leftFields={["Micosis (Si / No)", "Edemas (Si / No)", "Varices (Si / No)"]}
+        leftSection={expMPel} leftSetter={setExpMPel}
+        posLabel="Si" negLabel="No"
       />
 
       <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
@@ -3126,8 +3288,14 @@ const Evaluacion: React.FC = () => {
       </div>
 
       <DescExpTableDouble
-        leftTitle="Abdomen" leftFields={["Forma", "Visceromegalias (Si / No)", "Hernias (Si / No)"]}
+        leftTitle="Abdomen" leftFields={["Forma"]}
         leftSection={expAbdomen} leftSetter={setExpAbdomen}
+      />
+
+      <DescExpTableDouble
+        leftTitle="Abdomen" leftFields={["Visceromegalias (Si / No)", "Hernias (Si / No)"]}
+        leftSection={expAbdomen} leftSetter={setExpAbdomen}
+        posLabel="Si" negLabel="No"
       />
 
       <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
@@ -3373,19 +3541,25 @@ const Evaluacion: React.FC = () => {
             Radiografía
           </h2>
         </div>
-        <div className="my-4 flex items-center justify-between">
+      </div>
+
+      <DescExpTableDouble
+        leftTitle="Radiografía" leftFields={["R. Tórax", "Columna AP", "Lateral"]}
+        leftSection={expRadiografia} leftSetter={setExpRadiografia}
+      />
+
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
+        <div className="pl-6 my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-          <i className="mdi mdi-thermometer-low mr-4"></i>
+            <i className="mdi mdi-thermometer-low mr-4"></i>
             Hallazgos y Pruebas
           </h2>
         </div>
       </div>
 
-      <ExpTableDouble
-        leftTitle="Radiografía" leftFields={["R. Tórax", "Columna AP", "Lateral"]}
-        leftSection={expRadiografia} leftSetter={setExpRadiografia}
-        rightTitle="Hallazgos y pruebas" rightFields={["Lordosis", "Escoliosis", "Antidoping"]}
-        rightSection={expHallazgos} rightSetter={setExpHallazgos}
+      <DescExpTableDouble
+        leftTitle="Hallazgos y pruebas" leftFields={["Lordosis", "Escoliosis", "Antidoping"]}
+        leftSection={expHallazgos} leftSetter={setExpHallazgos}
       />
 
       <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4 bg-linear-to-r from-white to-gray-100">
@@ -3471,18 +3645,21 @@ const Evaluacion: React.FC = () => {
           <table className="w-full text-xs">
             <thead>
               <tr className="bg-linear-to-r from-white to-gray-100">
-                <th className="px-6 py-2 text-left font-medium text-gray-700 w-[50%]">
+                <th className="px-6 py-2 text-left font-medium text-gray-700 w-1/3">
+                  Resultado <b className="text-red-400">*</b>
+                </th>
+                <th className="px-3 py-2 text-left font-medium text-gray-700 w-1/3">
                   Grado de salud <b className="text-red-400">*</b>
                 </th>
-                <th className="px-3 py-2 text-left font-medium text-gray-700 w-[50%]">
-                  Resultado <b className="text-red-400">*</b>
+                <th className="px-3 py-2 text-left font-medium text-gray-700 w-1/3">
+                  Observaciones <b className="text-red-400">*</b>
                 </th>
               </tr>
             </thead>
             <tbody>
               <tr>
                 <td className="px-6 py-2 font-medium text-gray-700 space-y-2 align-top">
-                  {(["Sano", "Riesgo moderado", "Riesgo alto"] as const).map((opcion) => (
+                  {(["Bueno", "Regular", "Malo"] as const).map((opcion) => (
                     <div key={opcion} className="flex items-center gap-2">
                       <CkCell
                         checked={conclusiones.resultado === opcion}
@@ -3493,7 +3670,18 @@ const Evaluacion: React.FC = () => {
                   ))}
                 </td>
                 <td className="px-3 py-2 font-medium text-left text-gray-700 space-y-2 align-top">
-                  {(["Optimo", "Bueno", "Regular", "Malo"] as const).map((opcion) => (
+                  {(["Sano", "R. Moderado", "R. Alto"] as const).map((opcion) => (
+                    <div key={opcion} className="flex items-center gap-2">
+                      <CkCell
+                        checked={conclusiones.gradoSalud === opcion}
+                        onChange={() => setConclusiones((c) => ({ ...c, gradoSalud: c.gradoSalud === opcion ? "" : opcion }))}
+                      />
+                      <span>{opcion}</span>
+                    </div>
+                  ))}
+                </td>
+                <td className="px-3 py-2 font-medium text-left text-gray-700 space-y-2 align-top">
+                  {(["Apto", "No Apto"] as const).map((opcion) => (
                     <div key={opcion} className="flex items-center gap-2">
                       <CkCell
                         checked={conclusiones.observaciones === opcion}
@@ -3502,7 +3690,7 @@ const Evaluacion: React.FC = () => {
                       <span>{opcion}</span>
                     </div>
                   ))}
-                </td>           
+                </td>
               </tr>
             </tbody>
           </table>
@@ -3530,7 +3718,7 @@ const Evaluacion: React.FC = () => {
       </div>
     </div>,
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  ], [currentStep, patientData, ficha, loadingMat, matriculaNotFound, matriculaNotRegis, edadInicioLaboral, antLaborales, agentes, antFamiliares, antPatologicos, vacunas, antNoPatologico, gineco, incapacidadRiesgo, incapacidadValuacion, incapacidadEG, incapacidadComentario, enfermedadActual, manoDominante, vitalSigns, expCabeza, expOidos, expOjos, agudezaOD, agudezaOI, usaLentes, expBoca, expNariz, expCuello, expPrecordial, expMTor, expMPel, expAbdomen, expGenitales, expPiel, expColCervical, expColLumbar, labs, expRadiografia, expHallazgos, expGabinete, conclusiones]);
+  ], [currentStep, patientData, ficha, loadingMat, matriculaNotFound, matriculaNotRegis, edadInicioLaboral, antLaborales, agentes, otrosAgentes, antFamiliares, antPatologicos, vacunas, antNoPatologico, gineco, incapacidadRiesgo, incapacidadValuacion, incapacidadEG, incapacidadComentario, enfermedadActual, manoDominante, vitalSigns, expCabeza, expOidos, expOjos, agudezaOD, agudezaOI, usaLentes, expBoca, expNariz, expCuello, expPrecordial, expMTor, expMPel, expAbdomen, expGenitales, expPiel, expColCervical, expColLumbar, labs, expRadiografia, expHallazgos, expGabinete, conclusiones]);
 
   return (
     <div className="relative flex w-full overflow-hidden">
