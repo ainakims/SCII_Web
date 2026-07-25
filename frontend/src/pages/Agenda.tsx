@@ -1,6 +1,6 @@
 import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useAuth } from "../context/AuthToken";
 import {
   Calendar as CalendarIcon,
@@ -96,6 +96,8 @@ const Agenda: React.FC = () => {
 
   const [weekOffset, setWeekOffset] = useState<number>(0);
   const gridScrollRef = useRef<HTMLDivElement>(null);
+  const pageContainerRef = useRef<HTMLDivElement>(null);
+  const [pageHeight, setPageHeight] = useState<number>(() => Math.max(window.innerHeight - 150, 400));
   const [selectedDate, setSelectedDate] = useState<Date>(now);
   const [miniMonthOffset, setMiniMonthOffset] = useState<number>(0);
   const [miniView, setMiniView] = useState<"days" | "months">("days");
@@ -376,6 +378,22 @@ const Agenda: React.FC = () => {
     if (gridScrollRef.current) {
       gridScrollRef.current.scrollTop = 7 * 64;
     }
+  }, []);
+
+  // Mide el espacio real disponible hasta el borde inferior de la ventana,
+  // en vez de adivinarlo con un número fijo (evita cortes/espacios en blanco
+  // al cambiar el zoom o el alto del navegador).
+  useLayoutEffect(() => {
+    const updateHeight = () => {
+      if (!pageContainerRef.current) return;
+      const top = pageContainerRef.current.getBoundingClientRect().top;
+      const mainEl = pageContainerRef.current.closest("main");
+      const bottomPad = mainEl ? parseFloat(getComputedStyle(mainEl).paddingBottom) || 0 : 0;
+      setPageHeight(Math.max(Math.floor(window.innerHeight - top - bottomPad), 400));
+    };
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
   }, []);
 
   useEffect(() => {
@@ -1157,8 +1175,12 @@ const Agenda: React.FC = () => {
         className="flex-1 mt-14 transition-all duration-300 ease-in-out"
         // style={{ marginRight: isPanelOpen ? 420 : 0 }}
       >
-        <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4">
+        <div
+          // ref={pageContainerRef}
+          className="max-w-7xl mx-auto px-4 pb-6 flex flex-col gap-6"
+          style={{ height: pageHeight }}
+        >
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4 shrink-0">
             <div>
               <h1 className="text-2xl font-bold text-sea-blue flex items-center">
                 Agenda de Citas
@@ -1196,9 +1218,9 @@ const Agenda: React.FC = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             // className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
-            className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col "
+            className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col flex-1 min-h-0"
           >
-            <div className="flex flex-1 overflow-hidden transition-all duration-300 ease-in-out">
+            <div className="flex flex-1 min-h-0 overflow-hidden transition-all duration-300 ease-in-out">
               <aside className="w-56 shrink-0 bg-white flex flex-col mt-0 p-3 gap-4 overflow-y-auto">
                 <div className="select-none">
                   <div className="flex items-center justify-between mb-4 px-1">
@@ -1321,7 +1343,7 @@ const Agenda: React.FC = () => {
                 </div>
               </aside>
 
-              <div className="flex-1 flex flex-col overflow-hidden bg-white">
+              <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-white">
                 <div className="flex items-center gap-3 p-6 bg-linear-to-r from-white to-gray-100 shrink-0 rounded-t-xl">
                   <div className="flex items-center gap-1">
                     <h2 className="text-sm font-bold text-gray-800 flex items-center">
@@ -1347,7 +1369,7 @@ const Agenda: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="flex flex-col overflow-hidden" style={{ height: "calc(100vh - 370px)" }}>
+                <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
                   <div className="flex bg-linear-to-r from-white to-gray-100 shrink-0 relative">
                     {/* border-b border-gray-100 */}
                     {/* shadow-md */}

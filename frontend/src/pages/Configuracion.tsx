@@ -1,6 +1,6 @@
 import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
-import React, { useRef, useEffect, useState, ChangeEvent, FormEvent } from "react";
+import React, { useRef, useEffect, useLayoutEffect, useState, ChangeEvent, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Search,
@@ -84,9 +84,27 @@ const Configuracion: React.FC = () => {
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const correoRef = useRef<HTMLInputElement>(null);
+  const pageContainerRef = useRef<HTMLDivElement>(null);
+  const [pageHeight, setPageHeight] = useState<number>(() => Math.max(window.innerHeight - 150, 400));
 
   useEffect(() => {
     ObtenerUsuarios();
+  }, []);
+
+  // Mide el espacio real disponible hasta el borde inferior de la ventana,
+  // en vez de adivinarlo con un número fijo (evita cortes/espacios en blanco
+  // al cambiar el zoom o el alto del navegador).
+  useLayoutEffect(() => {
+    const updateHeight = () => {
+      if (!pageContainerRef.current) return;
+      const top = pageContainerRef.current.getBoundingClientRect().top;
+      const mainEl = pageContainerRef.current.closest("main");
+      const bottomPad = mainEl ? parseFloat(getComputedStyle(mainEl).paddingBottom) || 0 : 0;
+      setPageHeight(Math.max(Math.floor(window.innerHeight - top - bottomPad), 400));
+    };
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
   }, []);
 
   const ObtenerUsuarios = async () => {
@@ -478,8 +496,12 @@ const Configuracion: React.FC = () => {
         className="flex-1 mt-14 transition-all duration-300 ease-in-out"
         // style={{ marginRight: isPanelOpen ? 420 : 0 }}
       >
-        <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4">
+        <div
+          // ref={pageContainerRef}
+          className="max-w-7xl mx-auto px-4 pb-6 flex flex-col gap-6"
+          style={{ height: pageHeight }}
+        >
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4 shrink-0">
             <div>
               <h1 className="text-2xl font-bold text-sea-blue flex items-center">
                 Gestión de Perfiles
@@ -500,9 +522,9 @@ const Configuracion: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col min-h-125"
+            className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col flex-1 min-h-0"
           >
-            <div className="flex items-center justify-between px-6 py-[21px] bg-linear-to-r from-white to-gray-100 rounded-t-xl">
+            <div className="flex items-center justify-between px-6 py-[21px] bg-linear-to-r from-white to-gray-100 rounded-t-xl shrink-0">
               <div className="relative w-92">
                 <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <input
@@ -518,8 +540,8 @@ const Configuracion: React.FC = () => {
               </span>
             </div>
 
-            <div className="space-y-4">
-              <div className="rounded-lg h-[541px] flex flex-col">
+            <div className="flex-1 min-h-0 flex flex-col">
+              <div className="rounded-lg flex-1 min-h-0 flex flex-col">
                 <div className="flex-1 overflow-y-auto">
                   <table className="table-fixed w-full text-xs">
                     <thead className="sticky top-0 z-10">

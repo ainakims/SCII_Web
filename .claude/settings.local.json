@@ -25,7 +25,15 @@
       "Bash(python -)",
       "Bash(node --check \"backend/services/aiService.js\")",
       "Bash(node -e ' *)",
-      "Bash(node --check \"/c/Users/soporte.desarrollo2/Documents/Visual Studio Code/tng-medical/backend/services/aiService.js\")"
+      "Bash(node --check \"/c/Users/soporte.desarrollo2/Documents/Visual Studio Code/tng-medical/backend/services/aiService.js\")",
+      "Bash(git checkout *)",
+      "Bash(./node_modules/.bin/esbuild src/pages/Indicadores.tsx --loader=tsx --bundle=false --outfile=/tmp/out_indicadores.js)",
+      "Bash(echo \"EXIT:$?\")",
+      "Bash(npx --yes tailwindcss@latest -i src/index.css -o /tmp/test_out.css --content /tmp/test.html)",
+      "Bash(node -e \"console.log\\(require\\('./node_modules/tailwindcss/package.json'\\).version\\)\")",
+      "Bash(timeout 90 npm run build)",
+      "Bash(python3 -c ' *)",
+      "Bash(node check.mjs)"
     ]
   }
 }

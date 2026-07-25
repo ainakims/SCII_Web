@@ -523,6 +523,40 @@ const Consultas: React.FC = () => {
     finally { setLoadingHistory(false); }
   };
 
+  const fetchAlergias = async (idPaciente: number | null, matricula: string) => {
+    try {
+      const res = await fetchWithAuth(`${API_BASE_URL}/Consultas/ObtenerAlergias`, {
+        method: "POST",
+        body: JSON.stringify({ idPaciente, matricula })
+      });
+      const json = await res.json();
+      const data = json?.ok ? json.data : null;
+      setPatientData(p => ({
+        ...p,
+        alergias: data?.Alergias?.trim() || null,
+        alergiasMedicamentos: data?.AlergiasMedicamento?.trim() || null,
+      }));
+    } catch (err) {
+      console.error("Error obteniendo alergias:", err);
+    }
+  };
+
+  // Normaliza texto (minúsculas, sin acentos) para comparar alergias contra el fármaco recetado
+  const normalizarTexto = (s: string) =>
+    s.normalize("NFD").split("").filter(ch => { const c = ch.charCodeAt(0); return c < 0x0300 || c > 0x036f; }).join("").toLowerCase().trim();
+
+  const listaAlergias = (): string[] => {
+    const raw = `${patientData.alergias ?? ""}, ${patientData.alergiasMedicamentos ?? ""}`;
+    return raw.split(/[,;\n]|(?:\sy\s)/i).map(normalizarTexto).filter(s => s.length > 2);
+  };
+
+  // Coincidencia tipo "LIKE" entre el fármaco capturado y las alergias del paciente
+  const medicamentoEsAlergeno = (nombreFarmaco: string): boolean => {
+    const termino = normalizarTexto(nombreFarmaco);
+    if (termino.length < 3) return false;
+    return listaAlergias().some(a => termino.includes(a) || a.includes(termino));
+  };
+
   const handleOpenExp  = (c: Consulta) => {
     setSelectedExp(c); setIsDetailOpen(true);
   };
@@ -830,6 +864,32 @@ const Consultas: React.FC = () => {
       return;
     }
 
+    const farmacosAlergenos = medicamentosReceta
+      .filter(m => m.medicamento.trim() && medicamentoEsAlergeno(m.medicamento))
+      .map(m => m.medicamento.trim());
+
+    if (farmacosAlergenos.length > 0) {
+      const result = await Swal.fire({
+        title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Alerta de alergia</p>`,
+        html: `<p style="font-size: 16px; padding: 0 40px">Se está prescribiendo <b>${farmacosAlergenos.join(", ")}</b>, y el paciente reporta alergia a un fármaco/sustancia relacionado. ¿Desea registrar la consulta de todas formas?</p>`,
+        iconHtml: `<i class="mdi mdi-alert-circle-outline" style="color:#d97706;font-size:90px"></i>`,
+        didOpen: (p) => {
+          const el = p.querySelector(".swal2-icon") as HTMLElement;
+          if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" });
+        },
+        buttonsStyling: false,
+        confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> Registrar de todas formas`,
+        cancelButtonText: `<i class="mdi mdi-close-thick mr-1"></i> Cancelar`,
+        showCancelButton: true,
+        customClass: {
+          confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
+          cancelButton: "flex items-center bg-gray-50 hover:bg-gray-100/80 hover:-translate-y-1 text-gray-800 px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-gray-500/30 transition-all cursor-pointer ml-3"
+        },
+      });
+
+      if (!result.isConfirmed) return;
+    }
+
     try {
       setSaving(true);
       await new Promise(r => setTimeout(r, 2000));
@@ -976,10 +1036,11 @@ const Consultas: React.FC = () => {
               setPatientData(p => ({ ...p, id: res.data[0].IdPaciente, nombre: res.data[0].Nombre, especialidad: res.data[0].Especialidad, estatus: res.data[0].Empl_status, tipoPaciente: "I" }));
               setMatriculaNotRegis(res.data[0].IdPaciente == null);
               if (res.data[0].IdPaciente != null) verificarCitaPendiente(val);
+              fetchAlergias(res.data[0].IdPaciente, val);
             } else {
               setMatriculaNotFound(true);
               setMatriculaNotRegis(false);
-              setPatientData(p => ({ ...p, id: null, nombre: "", especialidad: "", estatus: "", tipoPaciente: null }));
+              setPatientData(p => ({ ...p, id: null, nombre: "", especialidad: "", estatus: "", tipoPaciente: null, alergias: null, alergiasMedicamentos: null }));
             }
           } else {
             const cons = await fetchWithAuth(`${API_BASE_URL}/Consultas/BuscarProveedor`, {
@@ -995,10 +1056,11 @@ const Consultas: React.FC = () => {
               setMatriculaNotRegis(res.data[0].IdPaciente == null);
               setPatientData(p => ({ ...p, id: res.data[0].IdPaciente, nombre: res.data[0].Nombre, especialidad: res.data[0].Especialidad, estatus: null, tipoPaciente: res.data[0].TipoPaciente }));
               if (res.data[0].IdPaciente != null) verificarCitaPendiente(val);
+              fetchAlergias(res.data[0].IdPaciente, val);
             } else {
               setMatriculaNotFound(true);
               setMatriculaNotRegis(false);
-              setPatientData(p => ({ ...p, id: null, nombre: "", especialidad: "", estatus: "", tipoPaciente: null }));
+              setPatientData(p => ({ ...p, id: null, nombre: "", especialidad: "", estatus: "", tipoPaciente: null, alergias: null, alergiasMedicamentos: null }));
             }
           }
         } catch (err) {
@@ -1341,6 +1403,37 @@ const Consultas: React.FC = () => {
                   >
                     <i className="mdi mdi-close-thick text-lg"></i>
                   </button>
+                </motion.div>
+              )}
+
+              {(patientData.alergias || patientData.alergiasMedicamentos) && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  // className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start shadow-sm"
+                  className={`flex items-center bg-gradient-to-b from-yellow-50 to-white rounded-xl border-yellow-100 shadow-lg shadow-gray-200 px-4 py-3 gap-3`}
+                >
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-yellow-100 shrink-0">
+                    <i className="mdi mdi-alert text-yellow-800 text-base"></i>
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-yellow-800 uppercase tracking-wide">
+                      Alerta de Farmacovigilancia
+                    </p>
+                    <p className="text-[10px] text-yellow-700 font-medium uppercase">
+                    {patientData.alergias && (
+                      <span className="font-medium uppercase">
+                        Alergias: <strong>{patientData.alergias}</strong>
+                      </span>
+                    )}
+                    {patientData.alergias && patientData.alergiasMedicamentos && <i className="mdi mdi-vector-point px-1"></i>}
+                    {patientData.alergiasMedicamentos && (
+                      <>
+                        Alergias a medicamentos: <strong>{patientData.alergiasMedicamentos}</strong>
+                      </>
+                    )}
+                    </p>
+                  </div>
                 </motion.div>
               )}
 
@@ -2015,25 +2108,6 @@ const Consultas: React.FC = () => {
                   Guardar
                 </button>
               </div>
-
-              {patientData.alergiasMedicamentos && (
-                <motion.div
-                  initial={{opacity:0, scale:0.95}} 
-                  animate={{opacity:1,scale:1}} 
-                  className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start shadow-sm"
-                >
-                  <AlertTriangle className="h-6 w-6 text-yellow-600 flex-shrink-0 mt-0.5 mr-3" />
-                  <div>
-                    <h4 className="text-sm font-bold text-yellow-800">
-                      Alerta de Farmacovigilancia
-                    </h4>
-                    <p className="text-sm text-yellow-700 mt-1">
-                      El paciente reporta alergias: 
-                      <strong>{patientData.alergiasMedicamentos}</strong>.
-                    </p>
-                  </div>
-                </motion.div>
-              )}
             </div>
 
             {/* Panel IA */}
