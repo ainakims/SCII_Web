@@ -33,7 +33,9 @@
       "Bash(node -e \"console.log\\(require\\('./node_modules/tailwindcss/package.json'\\).version\\)\")",
       "Bash(timeout 90 npm run build)",
       "Bash(python3 -c ' *)",
-      "Bash(node check.mjs)"
+      "Bash(node check.mjs)",
+      "Bash(git config *)",
+      "Bash(powershell -Command \"Test-NetConnection -ComputerName 10.133.8.221 -Port 3128 -InformationLevel Quiet\")"
     ]
   }
 }
