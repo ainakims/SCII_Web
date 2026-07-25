@@ -35,7 +35,9 @@
       "Bash(python3 -c ' *)",
       "Bash(node check.mjs)",
       "Bash(git config *)",
-      "Bash(powershell -Command \"Test-NetConnection -ComputerName 10.133.8.221 -Port 3128 -InformationLevel Quiet\")"
+      "Bash(powershell -Command \"Test-NetConnection -ComputerName 10.133.8.221 -Port 3128 -InformationLevel Quiet\")",
+      "PowerShell(Test-NetConnection -ComputerName 10.133.8.221 -Port 3128 -InformationLevel Detailed)",
+      "Bash(cmdkey /list)"
     ]
   }
 }
