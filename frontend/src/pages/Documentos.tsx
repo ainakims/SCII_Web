@@ -57,9 +57,9 @@ const formatDate = (d: string | number | Date) => {
   return new Date(d).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 };
 
-const VisorPDFInline = ({ pdfId, pdfName, pdfDate, pdfUrl, onClose, onDelete }: { pdfId: number; pdfName: string; pdfDate: string; pdfUrl: string; onClose: () => void, onDelete: (id: number) => void; }) => {
+const VisorPDFInline = ({ pdfId, pdfName, pdfDate, pdfUrl, isFullscreen, onClose, onDelete, onToggleFullscreen }: { pdfId: number; pdfName: string; pdfDate: string; pdfUrl: string; isFullscreen: boolean; onClose: () => void, onDelete: (id: number) => void; onToggleFullscreen: () => void; }) => {
   const { user } = useAuth() as { user: { rol?: string; matricula?: string } };
-  
+
   const esPrivilegiado = ["admin", "médico", "medico"].includes(
     (user?.rol ?? "").toLowerCase().trim()
   );
@@ -79,16 +79,25 @@ const VisorPDFInline = ({ pdfId, pdfName, pdfDate, pdfUrl, onClose, onDelete }: 
               {pdfName}
             </p>
           </div>
-          {esPrivilegiado &&
-            <button 
-              title="Eliminar"
-              // onClick={onClose} 
-              onClick={(e) => { e.stopPropagation(); onDelete(pdfId); }}
-              className="w-10 h-10 text-gray-400 hover:text-red-500 bg-linear-to-b hover:from-red-100 hover:to-red-50 rounded-xl flex items-center justify-center transition-all group cursor-pointer"
+          <div className="flex items-center gap-1 shrink-0">
+            <button
+              title={isFullscreen ? "Salir de pantalla completa" : "Ampliar"}
+              onClick={(e) => { e.stopPropagation(); onToggleFullscreen(); }}
+              className="w-10 h-10 text-gray-400 hover:text-sea-blue bg-linear-to-b hover:from-sea-blue/10 hover:to-gray-50 rounded-xl flex items-center justify-center transition-all group cursor-pointer"
             >
-              <i className="mdi mdi-trash-can-outline"></i>
+              <i className={`mdi ${isFullscreen ? "mdi-fullscreen-exit" : "mdi-fullscreen"} text-xl`}></i>
             </button>
-          }
+            {esPrivilegiado &&
+              <button
+                title="Eliminar"
+                // onClick={onClose}
+                onClick={(e) => { e.stopPropagation(); onDelete(pdfId); }}
+                className="w-10 h-10 text-gray-400 hover:text-red-500 bg-linear-to-b hover:from-red-100 hover:to-red-50 rounded-xl flex items-center justify-center transition-all group cursor-pointer"
+              >
+                <i className="mdi mdi-trash-can-outline"></i>
+              </button>
+            }
+          </div>
         </div>
       </div>
       <div className="flex-1 bg-slate-100">
@@ -128,6 +137,7 @@ const Documentos: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
   const [selectedPdf, setSelectedPdf] = useState<{ id: number; nombre: string; date: string; url: string } | null>(null);
   const [isPdfOpen, setIsPdfOpen] = useState(false);
+  const [isPdfFullscreen, setIsPdfFullscreen] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -468,6 +478,7 @@ const Documentos: React.FC = () => {
     if (selectedPdf?.url?.startsWith("blob:")) URL.revokeObjectURL(selectedPdf.url);
     setIsPdfOpen(false);
     setSelectedPdf(null);
+    setIsPdfFullscreen(false);
   };
 
   const handleCloseAside = () => {
@@ -479,6 +490,8 @@ const Documentos: React.FC = () => {
       setActiveCategory(null);
     }
   };
+
+  const handleToggleFullscreen = () => setIsPdfFullscreen((prev) => !prev);
 
   const formatSize = (bytes: number): string => {
     if (bytes === 0) return "0 Bytes";
@@ -779,9 +792,9 @@ const Documentos: React.FC = () => {
       </div>
 
       <aside
-        className={`fixed top-[64px] right-0 h-[calc(100vh-64px)] bg-white border-l border-gray-200 transition-all duration-300 ease-in-out z-40 ${ isAsideOpen ? "" : "translate-x-full" }`}
+        className={`fixed top-[64px] h-[calc(100vh-64px)] bg-white border-l border-gray-200 transition-all duration-300 ease-in-out z-40 ${ isPdfFullscreen ? "left-0 md:left-64 right-0" : "right-0" } ${ isAsideOpen ? "" : "translate-x-full" }`}
         // style={{ width: isAsideOpen ? (isPdfOpen ? 300 + 420 : 300) : 300 }}
-        style={{ width: isAsideOpen ? (isPdfOpen ? 300 + 650 : 300) : 300 }}
+        style={isPdfFullscreen ? undefined : { width: isAsideOpen ? (isPdfOpen ? 300 + 650 : 300) : 300 }}
       >
         <div className="flex h-full w-full">
           <div className="flex flex-col bh-full shrink-0" style={{ width: 300 }}>
@@ -843,15 +856,17 @@ const Documentos: React.FC = () => {
             </div>
           </div>
 
-          <div className={`flex-1 bg-slate-50 transition-all duration-300 overflow-hidden ${isPdfOpen ? 'w-[650px] opacity-100' : 'w-0 opacity-0'}`}>
+          <div className={`flex-1 bg-slate-50 transition-all duration-300 overflow-hidden ${isPdfOpen ? (isPdfFullscreen ? 'w-full opacity-100' : 'w-[650px] opacity-100') : 'w-0 opacity-0'}`}>
             {isPdfOpen && selectedPdf && (
               <VisorPDFInline
                 pdfId={selectedPdf.id}
                 pdfUrl={selectedPdf.url}
                 pdfName={selectedPdf.nombre}
                 pdfDate={selectedPdf.date}
+                isFullscreen={isPdfFullscreen}
                 onClose={handleClosePdf}
                 onDelete={handleDelete}
+                onToggleFullscreen={handleToggleFullscreen}
               />
             )}
           </div>

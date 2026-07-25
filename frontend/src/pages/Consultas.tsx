@@ -870,15 +870,28 @@ const Consultas: React.FC = () => {
 
     if (farmacosAlergenos.length > 0) {
       const result = await Swal.fire({
-        title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Alerta de alergia</p>`,
-        html: `<p style="font-size: 16px; padding: 0 40px">Se está prescribiendo <b>${farmacosAlergenos.join(", ")}</b>, y el paciente reporta alergia a un fármaco/sustancia relacionado. ¿Desea registrar la consulta de todas formas?</p>`,
-        iconHtml: `<i class="mdi mdi-alert-circle-outline" style="color:#d97706;font-size:90px"></i>`,
+        title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Alerta de fármaco</p>`,
+        html: `<p style="font-size: 16px; padding: 0 40px">Se está prescribiendo <b class='uppercase'>${farmacosAlergenos.join(", ")}</b>, el cual se reportó como alergia del paciente.</p>`,
+        iconHtml: `
+        <i class="mdi mdi-alert-circle-outline success-icon"></i>
+        <style>
+          .success-icon {
+            font-size: 90px;
+            animation: pop 0.4s ease-out forwards;
+          }
+          @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); }
+          }
+        </style>
+        `,
         didOpen: (p) => {
           const el = p.querySelector(".swal2-icon") as HTMLElement;
           if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" });
         },
         buttonsStyling: false,
-        confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> Registrar de todas formas`,
+        confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> Permitir`,
         cancelButtonText: `<i class="mdi mdi-close-thick mr-1"></i> Cancelar`,
         showCancelButton: true,
         customClass: {
