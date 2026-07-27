@@ -2448,20 +2448,20 @@ const Consultas: React.FC = () => {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -12, scale: 0.97 }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
-                    className="bg-linear-to-b from-rose-50 to-white rounded-xl border border-rose-100 shadow-xl shadow-red-200/60 p-6 overflow-hidden"
+                    className={`bg-linear-to-b from-blue-50 to-white rounded-xl border-horz-blue shadow-lg shadow-horz-blue p-6`}
                   >
 
                     <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center text-red-500 font-bold text-lg">
+                      <div className="flex items-center text-sea-blue font-bold text-lg">
                         <i className="mdi mdi-heart-outline mr-2"></i>
                         Toma de Signos Vitales
                       </div>
-                      {!aiResult&&!analyzing&&(
+                      {/* {!aiResult&&!analyzing&&(
                         <span className="flex h-3 w-3 relative">
                           <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                           <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                         </span>
-                      )}
+                      )} */}
                     </div>
 
                     
@@ -2506,9 +2506,9 @@ const Consultas: React.FC = () => {
                         {/* <div className="flex items-center font-bold mb-1">
                           Medición de dispositivos detectada
                         </div> */}
-                        <p className="text-xs text-gray-400 mb-4">
+                        <p className="relative z-0 text-sm text-gray-500 mb-4">
                           <i className="mdi mdi-calendar-blank mr-1"></i>
-                          Fecha de medición: {formatFechaMedicion(medicionEquipo.Fecha_medicion)}
+                          Fecha medición: {formatFechaMedicion(medicionEquipo.Fecha_medicion)}
                         </p>
 
                         <div className="grid grid-cols-1 gap-2">
