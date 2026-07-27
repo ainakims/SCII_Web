@@ -117,6 +117,41 @@ const formatDate = (d: string | number | Date) => {
   });
 };
 
+// El backend (SOAP) puede devolver la fecha en distintos formatos de texto según el origen del dato
+// (ISO, "dd/mm/yyyy hh:mm:ss", etc.), por lo que se intenta parsear de forma tolerante antes de formatear.
+const parseFechaFlexible = (val: string | number | Date | null | undefined): Date | null => {
+  if (!val) return null;
+  if (val instanceof Date) return isNaN(val.getTime()) ? null : val;
+
+  const str = String(val).trim();
+
+  const nativo = new Date(str);
+  if (!isNaN(nativo.getTime())) return nativo;
+
+  const match = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ T](\d{1,2}):(\d{2})(?::(\d{2}))?)?$/);
+  if (match) {
+    const [, d, m, y, h = "0", mi = "0", s = "0"] = match;
+    const fecha = new Date(Number(y), Number(m) - 1, Number(d), Number(h), Number(mi), Number(s));
+    if (!isNaN(fecha.getTime())) return fecha;
+  }
+
+  return null;
+};
+
+const formatFechaMedicion = (val: string | number | Date | null | undefined) => {
+  const fecha = parseFechaFlexible(val);
+  if (!fecha) return val ? String(val) : "-";
+
+  return fecha.toLocaleString("es-MX", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false
+  });
+};
+
 const CkCell = memo(({ checked, onChange }: { checked: boolean | null; onChange: (v: boolean | null) => void }) => (
   <button
     type="button"
@@ -404,6 +439,8 @@ const Consultas: React.FC = () => {
   const medicionMostradaRef = useRef<string | null>(null);
   const [medicionEquipo, setMedicionEquipo] = useState<any | null>(null);
   const [medicionCargando, setMedicionCargando] = useState(false);
+  const [camposCargados, setCamposCargados] = useState({ sistolica: false, diastolica: false, fc: false, spo2: false });
+  const signosCargados = camposCargados.sistolica || camposCargados.diastolica || camposCargados.fc || camposCargados.spo2;
 
   const [pacienteExterno, setPacienteExterno] = useState(false);
 
@@ -496,7 +533,8 @@ const Consultas: React.FC = () => {
   // const dayNames = ["Dom", "Lun", "Mar", "Mié", "Jue", "Vie", "Sáb"];
   
   const handleSearchPatient = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setPatientData(prev => ({ ...prev, id: null, matricula: e.target.value, nombre: "", embarcacion: "", edad: "", especialidad: "", alergiasMedicamentos: null, alergias: null }));
+    const val = e.target.value;
+    setPatientData(prev => ({ ...prev, id: null, matricula: val, nombre: "", embarcacion: "", edad: "", especialidad: "", alergiasMedicamentos: null, alergias: null }));
     setHistoryData([]);
     setShowHistory(false);
     setIsDetailOpen(false);
@@ -505,6 +543,7 @@ const Consultas: React.FC = () => {
     medicionMostradaRef.current = null;
     setMedicionEquipo(null);
     setMedicionCargando(false);
+    if (!val.trim()) setCamposCargados({ sistolica: false, diastolica: false, fc: false, spo2: false });
   };
 
   const fetchHistory = async (_tipo: string | null, patientId: number | string | null) => {
@@ -547,18 +586,27 @@ const Consultas: React.FC = () => {
     }
   };
 
+  // Un indicador se considera "no tomado" si viene null, "", 0 o 0.00
+  const esIndicadorValido = (v: any) => {
+    if (v === null || v === undefined || v === "") return false;
+    const num = parseFloat(v);
+    if (!isNaN(num) && num === 0) return false;
+    return true;
+  };
+
+  // La columna de frecuencia cardiaca puede venir con distinta capitalización/ortografía según el origen del dato
+  // (p.ej. frecuencia_cargada, frecuencia_cardiaca), así que se busca de forma tolerante en vez de una llave fija.
+  const obtenerFrecuenciaCardiaca = (med: any) => {
+    const key = Object.keys(med ?? {}).find(k => /frecuenc/i.test(k));
+    return key ? med[key] : undefined;
+  };
+
   // Arma la lista de indicadores a mostrar en la card, omitiendo los que no se tomaron (0, 0.00, "" o null)
   const indicadoresMedicion = (med: any) => {
-    const esValido = (v: any) => {
-      if (v === null || v === undefined || v === "") return false;
-      const num = parseFloat(v);
-      if (!isNaN(num) && num === 0) return false;
-      return true;
-    };
     const items: { label: string; value: string; Icon: any; color: string; bg: string; border: string }[] = [];
 
-    const sisValida = esValido(med.presion_sistolica);
-    const diaValida = esValido(med.presion_diastolica);
+    const sisValida = esIndicadorValido(med.presion_sistolica);
+    const diaValida = esIndicadorValido(med.presion_diastolica);
     if (sisValida || diaValida) {
       items.push({
         label: "Presión arterial",
@@ -567,17 +615,54 @@ const Consultas: React.FC = () => {
         color: "text-red-500", bg: "bg-red-50", border: "border-red-100"
       });
     }
-    if (esValido(med.nivel_glucosa)) {
-      items.push({ label: "Nivel de glucosa", value: `${med.nivel_glucosa} mg/dL${esValido(med.momento_glucosa) ? ` · ${med.momento_glucosa}` : ""}`, Icon: Beaker, color: "text-purple-500", bg: "bg-purple-50", border: "border-purple-100" });
+    if (esIndicadorValido(med.nivel_glucosa)) {
+      items.push({ label: "Nivel de glucosa", value: `${med.nivel_glucosa} mg/dL${esIndicadorValido(med.momento_glucosa) ? ` · ${med.momento_glucosa}` : ""}`, Icon: Beaker, color: "text-red-500", bg: "bg-red-50", border: "border-red-100" });
     }
-    if (esValido(med.saturacion_oxigeno)) {
+    if (esIndicadorValido(med.saturacion_oxigeno)) {
       items.push({ label: "Saturación de oxígeno", value: `${med.saturacion_oxigeno} %`, Icon: Bubbles, color: "text-sky-500", bg: "bg-sky-50", border: "border-sky-100" });
     }
-    if (esValido(med.frecuencia_cargada)) {
-      items.push({ label: "Frecuencia cardiaca", value: `${med.frecuencia_cargada} lpm`, Icon: HeartPulse, color: "text-rose-500", bg: "bg-rose-50", border: "border-rose-100" });
+
+    const frecuencia = obtenerFrecuenciaCardiaca(med);
+    if (esIndicadorValido(frecuencia)) {
+      items.push({ label: "Frecuencia cardiaca", value: `${frecuencia} lpm`, Icon: HeartPulse, color: "text-rose-500", bg: "bg-rose-50", border: "border-rose-100" });
     }
 
     return items;
+  };
+
+  // Copia los valores detectados por Bluetooth a los inputs de Exploración Física y bloquea únicamente
+  // los campos que sí trajeron un dato válido (los demás quedan libres para captura manual).
+  const handleCargarResultados = () => {
+    if (!medicionEquipo) return;
+
+    const frecuencia = obtenerFrecuenciaCardiaca(medicionEquipo);
+    const sisValida = esIndicadorValido(medicionEquipo.presion_sistolica);
+    const diaValida = esIndicadorValido(medicionEquipo.presion_diastolica);
+    const fcValida = esIndicadorValido(frecuencia);
+    const spo2Valida = esIndicadorValido(medicionEquipo.saturacion_oxigeno);
+
+    setVitalSigns(v => {
+      const s = sisValida ? String(medicionEquipo.presion_sistolica) : v.Sistolica;
+      const d = diaValida ? String(medicionEquipo.presion_diastolica) : v.Diastolica;
+      const fc = fcValida ? String(frecuencia) : v.FC;
+      const spo2 = spo2Valida ? String(medicionEquipo.saturacion_oxigeno) : v.SpO2;
+
+      return {
+        ...v,
+        Sistolica: s,
+        Diastolica: d,
+        TA: `${s ? Math.round(parseFloat(s) / 10) : 0} / ${d ? Math.round(parseFloat(d) / 10) : 0}`,
+        FC: fc,
+        SpO2: spo2,
+      };
+    });
+
+    setCamposCargados(c => ({
+      sistolica: c.sistolica || sisValida,
+      diastolica: c.diastolica || diaValida,
+      fc: c.fc || fcValida,
+      spo2: c.spo2 || spo2Valida,
+    }));
   };
 
   // Verifica en [SCII_Mediciones_Equipo] si hay una medición reciente sin ligar para el usuario/paciente actual
@@ -1887,13 +1972,14 @@ const Consultas: React.FC = () => {
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       T/A (mmHg)
                     </label>
-                    <div className="relative flex items-center bg-white border border-gray-100 shadow-md rounded-lg focus-within:ring-1 focus-within:ring-clinical-blue focus-within:border-clinical-blue">
+                    <div className={`relative flex items-center border shadow-md rounded-lg focus-within:ring-1 focus-within:ring-clinical-blue focus-within:border-clinical-blue ${(camposCargados.sistolica || camposCargados.diastolica) ? "bg-gray-100 border-gray-100" : "bg-white border-gray-100"}`}>
                       <Activity className="h-3.5 w-3.5 absolute left-3 text-gray-400 pointer-events-none z-10" />
                       <div className="flex items-center w-full pl-9 pr-2 py-2">
                         <input
                           ref={sistolicaRef}
                           type="number"
                           value={vitalSigns.Sistolica}
+                          disabled={camposCargados.sistolica}
                           onChange={(e) => {
                             const r = e.target.value;
                             if (r.length > 3) return;
@@ -1907,7 +1993,7 @@ const Consultas: React.FC = () => {
                               diastolicaRef.current?.focus();
                             }
                           }}
-                          className="w-6 text-xs outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className={`w-6 text-xs outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${camposCargados.sistolica ? "text-gray-400 cursor-not-allowed" : ""}`}
                           placeholder="120"
                         />
                         <span className="text-gray-400 font-medium text-xs px-1">/</span>
@@ -1915,6 +2001,7 @@ const Consultas: React.FC = () => {
                           ref={diastolicaRef}
                           type="number"
                           value={vitalSigns.Diastolica}
+                          disabled={camposCargados.diastolica}
                           onChange={(e) => {
                             const r = e.target.value;
                             if (r.length > 3) return;
@@ -1933,7 +2020,7 @@ const Consultas: React.FC = () => {
                               }
                             }
                           }}
-                          className="w-6 text-xs outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                          className={`w-6 text-xs outline-none bg-transparent [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${camposCargados.diastolica ? "text-gray-400 cursor-not-allowed" : ""}`}
                           placeholder="80"
                         />
                       </div>
@@ -1966,11 +2053,12 @@ const Consultas: React.FC = () => {
                     </label>
                     <div className="relative flex items-center">
                       <HeartPulse className="h-3.5 w-3.5 absolute left-3 top-2.5 text-gray-400" />
-                      <input 
-                        type="number" 
-                        value={vitalSigns.FC} 
+                      <input
+                        type="number"
+                        value={vitalSigns.FC}
+                        disabled={camposCargados.fc}
                         onChange={(e) => { if (e.target.value.length > 3) {  return; } setVitalSigns(v => ({ ...v, FC: e.target.value })); }}
-                        className="w-full p-2 pl-9 pr-10 bg-white border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                        className={`w-full p-2 pl-9 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${camposCargados.fc ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white"}`}
                         placeholder="70"
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">lpm</span>
@@ -2009,21 +2097,22 @@ const Consultas: React.FC = () => {
                     <label className="block text-xs font-medium text-gray-700 mb-1">SpO2 (%)</label>
                     <div className="relative flex items-center">
                       <Bubbles className="h-3.5 w-3.5 absolute left-3 top-2.5 text-gray-400" />
-                      <input 
-                        type="number" 
-                        value={vitalSigns.SpO2} 
+                      <input
+                        type="number"
+                        value={vitalSigns.SpO2}
+                        disabled={camposCargados.spo2}
                         onChange={(e) => {
                           const r=e.target.value;
-                          
+
                           if(r === "") {
                             setVitalSigns( v => ({ ...v, SpO2: "" }));
                             return
                           }
-                          
+
                           if (parseInt(r) > 100 || r.length > 3)
                             return;setVitalSigns(v => ({ ...v, SpO2: r }));
                         }}
-                        className="w-full p-2 pl-9 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                        className={`w-full p-2 pl-9 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${camposCargados.spo2 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}
                         placeholder="98"
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">%</span>
@@ -2359,33 +2448,23 @@ const Consultas: React.FC = () => {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -12, scale: 0.97 }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
-                    className="bg-linear-to-b from-rose-50 to-white rounded-xl border border-rose-100 shadow-lg shadow-rose-100/60 p-6 overflow-hidden"
+                    className="bg-linear-to-b from-rose-50 to-white rounded-xl border border-rose-100 shadow-xl shadow-red-200/60 p-6 overflow-hidden"
                   >
-                    
+
                     <div className="flex items-center justify-between mb-6">
-                      <div className="flex items-center text-clinical-darkBlue font-bold text-lg">
+                      <div className="flex items-center text-red-500 font-bold text-lg">
                         <i className="mdi mdi-heart-outline mr-2"></i>
                         Toma de Signos Vitales
                       </div>
                       {!aiResult&&!analyzing&&(
                         <span className="flex h-3 w-3 relative">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-clinical-blue"></span>
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
                         </span>
                       )}
                     </div>
 
-                    <div className="flex items-center mb-4">
-                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-100 text-rose-600 text-[10px] font-bold uppercase tracking-wide">
-                        
-                        Transmisión de Bluetooth recibida
-                      </span>
-
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
-                      </span>
-                    </div>
+                    
 
                     
 
@@ -2424,15 +2503,12 @@ const Consultas: React.FC = () => {
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.4 }}
                       >
-                        Nivel de riesgo:
-
-
-                        <div className="flex items-center font-bold mb-1">
+                        {/* <div className="flex items-center font-bold mb-1">
                           Medición de dispositivos detectada
-                        </div>
+                        </div> */}
                         <p className="text-xs text-gray-400 mb-4">
                           <i className="mdi mdi-calendar-blank mr-1"></i>
-                          Fecha de medición: {formatDate(medicionEquipo.Fecha_medicion)}
+                          Fecha de medición: {formatFechaMedicion(medicionEquipo.Fecha_medicion)}
                         </p>
 
                         <div className="grid grid-cols-1 gap-2">
@@ -2453,6 +2529,15 @@ const Consultas: React.FC = () => {
                             </div>
                           ))}
                         </div>
+
+                        <button
+                          onClick={handleCargarResultados}
+                          disabled={signosCargados}
+                          className="mt-4 w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+                        >
+                          <i className={`mdi ${signosCargados ? "mdi-check-bold" : "mdi-tray-arrow-down"} mr-2`}></i>
+                          {signosCargados ? "Resultados cargados" : "Cargar Resultados"}
+                        </button>
                       </motion.div>
                     )}
                   </motion.div>
