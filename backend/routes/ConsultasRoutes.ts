@@ -11,6 +11,7 @@ export default function ConsultasRoutes(db: DB): Router {
   router.post('/BuscarProveedor', ValidarToken, con.BuscarProveedor);
   router.post('/BuscarHistorial', ValidarToken, con.BuscarHistorial);
   router.post('/ObtenerAlergias', ValidarToken, con.ObtenerAlergias);
+  router.post('/BuscarMedicionEquipo', ValidarToken, con.BuscarMedicionEquipo);
   router.post('/BuscarRecetaMed', ValidarToken, con.BuscarRecetaMed);
   router.post('/AgregarConsulta', ValidarToken, con.AgregarConsulta);
 

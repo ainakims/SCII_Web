@@ -37,7 +37,10 @@
       "Bash(git config *)",
       "Bash(powershell -Command \"Test-NetConnection -ComputerName 10.133.8.221 -Port 3128 -InformationLevel Quiet\")",
       "PowerShell(Test-NetConnection -ComputerName 10.133.8.221 -Port 3128 -InformationLevel Detailed)",
-      "Bash(cmdkey /list)"
+      "Bash(cmdkey /list)",
+      "Bash(xargs grep -l \"BuscarMatricula\\\\|BuscarProveedor\")",
+      "Bash(xargs grep -l \"Mediciones_Equipo\\\\|RegistroLigado\\\\|Id_Usuario\\\\|Matricula_Curp\")",
+      "Bash(xargs grep -l \"Mediciones_Equipo\\\\|RegistroLigado\")"
     ]
   }
 }

@@ -14,7 +14,7 @@ import {
   Dumbbell,
 } from "lucide-react";
 import Swal from "sweetalert2";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthToken";
 import { useNavigate } from "react-router-dom";
 
@@ -401,6 +401,9 @@ const Consultas: React.FC = () => {
   const [selectedExp, setSelectedExp]   = useState<Consulta | null>(null);
   const [saving, setSaving] = useState(false);
   const [citaLigada, setCitaLigada] = useState<{ id: number; fecha: string; hora: string; motivo?: string } | null>(null);
+  const medicionMostradaRef = useRef<string | null>(null);
+  const [medicionEquipo, setMedicionEquipo] = useState<any | null>(null);
+  const [medicionCargando, setMedicionCargando] = useState(false);
 
   const [pacienteExterno, setPacienteExterno] = useState(false);
 
@@ -499,6 +502,9 @@ const Consultas: React.FC = () => {
     setIsDetailOpen(false);
     setSelectedExp(null);
     setCitaLigada(null);
+    medicionMostradaRef.current = null;
+    setMedicionEquipo(null);
+    setMedicionCargando(false);
   };
 
   const fetchHistory = async (_tipo: string | null, patientId: number | string | null) => {
@@ -538,6 +544,70 @@ const Consultas: React.FC = () => {
       }));
     } catch (err) {
       console.error("Error obteniendo alergias:", err);
+    }
+  };
+
+  // Arma la lista de indicadores a mostrar en la card, omitiendo los que no se tomaron (0, 0.00, "" o null)
+  const indicadoresMedicion = (med: any) => {
+    const esValido = (v: any) => {
+      if (v === null || v === undefined || v === "") return false;
+      const num = parseFloat(v);
+      if (!isNaN(num) && num === 0) return false;
+      return true;
+    };
+    const items: { label: string; value: string; Icon: any; color: string; bg: string; border: string }[] = [];
+
+    const sisValida = esValido(med.presion_sistolica);
+    const diaValida = esValido(med.presion_diastolica);
+    if (sisValida || diaValida) {
+      items.push({
+        label: "Presión arterial",
+        value: `${sisValida ? med.presion_sistolica : "-"} / ${diaValida ? med.presion_diastolica : "-"} mmHg`,
+        Icon: Activity,
+        color: "text-red-500", bg: "bg-red-50", border: "border-red-100"
+      });
+    }
+    if (esValido(med.nivel_glucosa)) {
+      items.push({ label: "Nivel de glucosa", value: `${med.nivel_glucosa} mg/dL${esValido(med.momento_glucosa) ? ` · ${med.momento_glucosa}` : ""}`, Icon: Beaker, color: "text-purple-500", bg: "bg-purple-50", border: "border-purple-100" });
+    }
+    if (esValido(med.saturacion_oxigeno)) {
+      items.push({ label: "Saturación de oxígeno", value: `${med.saturacion_oxigeno} %`, Icon: Bubbles, color: "text-sky-500", bg: "bg-sky-50", border: "border-sky-100" });
+    }
+    if (esValido(med.frecuencia_cargada)) {
+      items.push({ label: "Frecuencia cardiaca", value: `${med.frecuencia_cargada} lpm`, Icon: HeartPulse, color: "text-rose-500", bg: "bg-rose-50", border: "border-rose-100" });
+    }
+
+    return items;
+  };
+
+  // Verifica en [SCII_Mediciones_Equipo] si hay una medición reciente sin ligar para el usuario/paciente actual
+  const checkMedicionEquipo = async (matriculaCurp: string) => {
+    if (!user?.id || !matriculaCurp) return;
+
+    try {
+      const cons = await fetchWithAuth(`${API_BASE_URL}/Consultas/BuscarMedicionEquipo`, {
+        method: "POST",
+        body: JSON.stringify({ idUsuario: user.id, matriculaCurp })
+      });
+
+      const res = await cons.json();
+      const med = res?.ok ? res.data : null;
+
+      if (med) {
+        const firma = `${med.Fecha_medicion}`;
+        if (medicionMostradaRef.current !== firma) {
+          medicionMostradaRef.current = firma;
+          setMedicionEquipo(med);
+          setMedicionCargando(true);
+          setTimeout(() => setMedicionCargando(false), 2000);
+        }
+      } else if (medicionMostradaRef.current) {
+        medicionMostradaRef.current = null;
+        setMedicionEquipo(null);
+        setMedicionCargando(false);
+      }
+    } catch (err) {
+      console.error("Error verificando medición de equipo:", err);
     }
   };
 
@@ -1031,6 +1101,7 @@ const Consultas: React.FC = () => {
       (async () => {
         try {
           setLoadingMat(true);
+          checkMedicionEquipo(val);
           await new Promise(r => setTimeout(r, 1000));
 
           // let res: any[] | null = null;
@@ -1085,6 +1156,23 @@ const Consultas: React.FC = () => {
     }, 1000);
     return () => clearTimeout(delay);
   }, [patientData.matricula]);
+
+  // Mientras la sesión esté abierta en esta pantalla y haya una matrícula/CURP válida capturada,
+  // se sondea periódicamente [SCII_Mediciones_Equipo] en busca de mediciones de equipo sin ligar.
+  useEffect(() => {
+    const val = patientData.matricula?.trim() ?? "";
+    if (!val) return;
+
+    const isMatricula = val.length >= 1 && val.length <= 5;
+    const isCurp = val.length >= 16 || (val.length >= 6 && val.length <= 9);
+    if (!isMatricula && !isCurp) return;
+
+    const interval = setInterval(() => {
+      checkMedicionEquipo(val);
+    }, 20000);
+
+    return () => clearInterval(interval);
+  }, [patientData.matricula, user?.id]);
 
   const getImcInput = (imc: string) => {
     const v = parseFloat(imc);
@@ -2134,7 +2222,7 @@ const Consultas: React.FC = () => {
                 <div className="flex items-center justify-between mb-6">
                   <div className="flex items-center text-clinical-darkBlue font-bold text-lg">
                     <i className="mdi mdi-robot-excited-outline mr-2"></i>
-                    SCII-AI Assistant
+                    TNG Sano-AI Assistant
                   </div>
                   {!aiResult&&!analyzing&&(
                     <span className="flex h-3 w-3 relative">
@@ -2260,9 +2348,116 @@ const Consultas: React.FC = () => {
                     >
                       Descartar análisis
                     </button>
-                  </motion.div>                  
+                  </motion.div>
                 )}
               </motion.div>
+
+              <AnimatePresence>
+                {medicionEquipo && (
+                  <motion.div
+                    initial={{ opacity: 0, y: 24, scale: 0.96 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -12, scale: 0.97 }}
+                    transition={{ duration: 0.4, ease: "easeOut" }}
+                    className="bg-linear-to-b from-rose-50 to-white rounded-xl border border-rose-100 shadow-lg shadow-rose-100/60 p-6 overflow-hidden"
+                  >
+                    
+                    <div className="flex items-center justify-between mb-6">
+                      <div className="flex items-center text-clinical-darkBlue font-bold text-lg">
+                        <i className="mdi mdi-heart-outline mr-2"></i>
+                        Toma de Signos Vitales
+                      </div>
+                      {!aiResult&&!analyzing&&(
+                        <span className="flex h-3 w-3 relative">
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-clinical-blue"></span>
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="flex items-center mb-4">
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-100 text-rose-600 text-[10px] font-bold uppercase tracking-wide">
+                        
+                        Transmisión de Bluetooth recibida
+                      </span>
+
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500"></span>
+                      </span>
+                    </div>
+
+                    
+
+                    {medicionCargando ? (
+                      <div className="flex flex-col items-center justify-center py-6">
+                        <svg viewBox="0 0 200 60" className="w-full h-14 text-rose-400" style={{ overflow: "visible" }}>
+                          <polyline
+                            points="0,30 55,30 65,8 75,52 85,30 200,30"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="3"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className="ekg-line"
+                          />
+                        </svg>
+                        <p className="text-xs text-gray-400 mt-2">
+                          Procesando medición recibida...
+                        </p>
+                        <style>{`
+                          .ekg-line {
+                            stroke-dasharray: 340;
+                            stroke-dashoffset: 340;
+                            animation: ekgDraw 1.4s ease-in-out infinite;
+                          }
+                          @keyframes ekgDraw {
+                            0%   { stroke-dashoffset: 340; }
+                            50%  { stroke-dashoffset: 0; }
+                            100% { stroke-dashoffset: -340; }
+                          }
+                        `}</style>
+                      </div>
+                    ) : (
+                      <motion.div
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ duration: 0.4 }}
+                      >
+                        Nivel de riesgo:
+
+
+                        <div className="flex items-center font-bold mb-1">
+                          Medición de dispositivos detectada
+                        </div>
+                        <p className="text-xs text-gray-400 mb-4">
+                          <i className="mdi mdi-calendar-blank mr-1"></i>
+                          Fecha de medición: {formatDate(medicionEquipo.Fecha_medicion)}
+                        </p>
+
+                        <div className="grid grid-cols-1 gap-2">
+                          {indicadoresMedicion(medicionEquipo).map((ind, i) => (
+                            <div
+                              key={i}
+                              className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${ind.border} ${ind.bg}`}
+                            >
+                              <ind.Icon className={`h-4 w-4 shrink-0 ${ind.color}`} />
+                              <div className="overflow-hidden">
+                                <p className="text-[9px] uppercase font-semibold text-gray-400 truncate">
+                                  {ind.label}
+                                </p>
+                                <p className={`text-xs font-bold truncate ${ind.color}`}>
+                                  {ind.value}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </motion.div>
+                    )}
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </div>
         </div>

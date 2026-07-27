@@ -88,6 +88,41 @@ export function ConsultasController(db: DB) {
     }
   };
 
+  const BuscarMedicionEquipo = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const { idUsuario, matriculaCurp } = req.body;
+      const idUser = idUsuario ? String(idUsuario) : "0";
+      const matCurp = matriculaCurp ? String(matriculaCurp).trim() : "";
+
+      const sql = `
+        SELECT TOP 1 *
+        FROM [TNGCORE].[dbo].[SCII_Mediciones_Equipo]
+        WHERE Id_Usuario = @IdUsuario
+          AND RTRIM(LTRIM(Matricula_Curp)) = @MatriculaCurp
+          AND Tipo_Registro = 1
+          AND RegistroLigado = 0
+        ORDER BY Fecha_medicion DESC`;
+      const params: Parametros[] = [
+        { Nombre: "@IdUsuario",     Valor: idUser },
+        { Nombre: "@MatriculaCurp", Valor: matCurp },
+      ];
+
+      const result = await executeConnection<any>(sql, TipoConsulta.Consulta, params);
+
+      return res.json({
+        ok: true,
+        data: result?.[0] ?? null
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        ok: false,
+        error: "Error interno",
+        message: error.message,
+        stack: error.stack
+      });
+    }
+  };
+
   const BuscarHistorial = async (req: Request, res: Response): Promise<Response> => {
     try {
       const { idEmpleado } = req.body;
@@ -230,5 +265,5 @@ export function ConsultasController(db: DB) {
     }
   };
 
-  return { BuscarMatricula, BuscarProveedor, BuscarHistorial, BuscarRecetaMed, AgregarConsulta, ObtenerAlergias };
+  return { BuscarMatricula, BuscarProveedor, BuscarHistorial, BuscarRecetaMed, AgregarConsulta, ObtenerAlergias, BuscarMedicionEquipo };
 }
