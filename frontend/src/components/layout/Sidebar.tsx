@@ -11,8 +11,9 @@ import {
   LogOut,
   FileText,
 } from "lucide-react";
-import { motion } from "framer-motion";
-import tngsano from "../../assets/img/logo-tngsano.svg";
+import { motion, AnimatePresence } from "framer-motion";
+import tngsanoLogo from "../../assets/img/logo_tngsano.png";
+import tngsanoIcono from "../../assets/img/icono_tgnsano.png";
 import { useAuth } from "../../context/AuthToken";
 
 type Rol = "admin" | "médico" | "usuario";
@@ -94,11 +95,20 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
 
         {/* <i className="fa fa-star-of-life ml-0.5 text-2xl text-aqua-green mr-2 flex-shrink-0"></i> */}
         
-        <img
-          src={tngsano}
-          draggable={false}
-          className="w-full h-auto ml-0 max-w-20 mx-auto drop-shadow-2xl rounded-2xl mb-1"
-        />
+        <div className="h-10 flex items-center mb-1">
+          <AnimatePresence mode="wait" initial={false}>
+            <motion.img
+              key={isCollapsed ? "icono" : "logo"}
+              src={isCollapsed ? tngsanoIcono : tngsanoLogo}
+              draggable={false}
+              initial={{ opacity: 0, scale: 0.85 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.85 }}
+              transition={{ duration: 0.2, ease: "easeInOut" }}
+              className="h-8 w-auto max-w-20 object-contain drop-shadow-2xl rounded-2xl"
+            />
+          </AnimatePresence>
+        </div>
         {/* {!isCollapsed && (
           <span className="font-black text-primary italic tracking-tighter text-xl transition-opacity duration-300">
             Integrapp

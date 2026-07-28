@@ -8,7 +8,7 @@ import { motion } from "framer-motion";
 // import { ConexionSql } from "../services/Conexion";
 import hphLogo from "../assets/img/hph-logo.png";
 import hospital from "../assets/img/hospital.png";
-import tngsano from "../assets/img/logo-tngsano.svg";
+import tngsano from "../assets/img/logo_tngsano.png";
 import microsoft from "../assets/img/microsoft.png";
 // import appStore from "../assets/img/app-store.png";
 import google from "../assets/img/google.png";
@@ -355,21 +355,18 @@ const Login: React.FC = () => {
           //   backgroundPosition: "center",
           // }}
         >
-          <div className="absolute inset-0 bg-sea-blue opacity-90"></div>
+          <div className="absolute inset-0  bg-radial from-sky-blue to-sea-blue opacity-90"></div>
           <div className="relative z-10 text-center text-white">
             <img
               src={tngsano}
               draggable={false}
-              className="w-full h-auto bg-gray-100 shadow-2xl max-w-100 mx-auto drop-shadow-2xl rounded-2xl mb-4"
+              className="w-full h-auto max-w-100 mx-auto rounded-2xl mb-4"
             />
-            <div className="h-20 flex flex-col items-center justify-center relative overflow-hidden shrink-0">
-              <h1 className="text-[40px] font-bold italic tracking-tighter">
-                Integrapp
-              </h1>
-              <p className="italic text-blue-100 text-sm">
-                Agenda, gestiona y controla tus <b>citas médicas</b>.
-              </p>
-            </div>
+            <p className="italic text-blue-100 text-sm mt-9">
+              Agenda, gestiona y controla tus <b>citas médicas</b>.
+            </p>
+            {/* <div className="h-20 flex flex-col items-center justify-center relative overflow-hidden shrink-0">
+            </div> */}
           </div>
         </div>
 
