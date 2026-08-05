@@ -47,6 +47,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
     { name: "Agenda",        icon: "calendar-clock",          path: "/Agenda",        roles: ["admin", "médico", "usuario"] },
     { name: "Consultas",     icon: "clipboard-pulse-outline", path: "/Consultas",     roles: ["admin", "médico"] },
     { name: "Indicadores",   icon: "heart-pulse",             path: "/Indicadores",   roles: ["admin", "médico"] },
+    { name: "Salud Poblacional", icon: "chart-box-outline",   path: "/SaludPoblacional", roles: ["admin", "médico"] },
     { name: "Evaluación",    icon: "clipboard-check-outline", path: "/Evaluacion",    roles: ["admin", "médico"] },
     { name: "Recetas",       icon: "pill",                    path: "/Recetas",       roles: ["admin", "médico"] },
     // { name: "Inventario",    icon: "package-variant-closed",  path: "/Inventario",    roles: ["admin", "médico"] },

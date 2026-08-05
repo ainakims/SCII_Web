@@ -19,6 +19,7 @@ import RecetasRouter from './routes/RecetasRoutes';
 import DocumentosRouter from './routes/DocumentosRoutes';
 import Pacientes from './routes/PacientesRoutes';
 import Configuracion from './routes/ConfigRoutes';
+import SaludPoblacionalRouter from './routes/SaludPoblacionalRoutes';
 // import GruposRouter from './routes/GruposRoutes';
 
 const app = express();
@@ -56,6 +57,7 @@ app.use('/Recetas', RecetasRouter(db));
 app.use('/Documentos', DocumentosRouter(db));
 app.use('/Pacientes', Pacientes(db));
 app.use('/Configuracion', Configuracion(db));
+app.use('/SaludPoblacional', SaludPoblacionalRouter(db));
 // app.use('/Grupos', GruposRouter(db));
 // app.use('/Stats', require('./routes/statsRoutes'));
 // app.use('/api/Inventario', require('./routes/inventoryRoutes'));
