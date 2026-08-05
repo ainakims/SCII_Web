@@ -2,6 +2,8 @@ import React from 'react'
 import ReactDOM from 'react-dom/client'
 import App from './App'
 import { AuthProvider } from "./context/AuthToken";
+import '@fortawesome/fontawesome-free/css/all.min.css'
+import '@mdi/font/css/materialdesignicons.min.css'
 import './index.css'
 
 ReactDOM.createRoot(document.getElementById('root') as HTMLElement).render(

@@ -3,7 +3,7 @@ import { fetchWithAuth } from "../services/api";
 import React, { useState, useEffect, useRef, memo } from "react";
 import {
   Scale, Ruler, Weight, ShieldAlert, Sparkles, Search,
-  Activity, X, FileText, Bubbles, HeartPulse, AudioWaveform,
+  Activity, X, FileText, HeartPulse,
   Wind, AlertTriangle,
   Pill,
   Calendar,
@@ -12,11 +12,14 @@ import {
   RulerDimensionLine,
   CircleAlert,
   Dumbbell,
+  Radio,
+  Sparkle,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthToken";
 import { useNavigate } from "react-router-dom";
+import MciIcon from "../components/MciIcon";
 
 interface PatientData {
   id: number | null;
@@ -50,7 +53,6 @@ interface VitalSigns {
   ICT: string;
   Sistolica: string;
   Diastolica: string;
-  TA: string;
   FC: string;
   FR: string;
   SpO2: string;
@@ -87,7 +89,6 @@ interface Consulta {
   Procedimiento: string;
   Recomendacion: string;
   SpO2?: number;
-  TA?: string;
   Talla?: number;
   Recetas: string;
   TipoAtencion?: string;
@@ -102,6 +103,7 @@ interface AIResult {
   diagnosticoDiferencial?: string[];
   diferencial?: string[];
   antecedentesRelevantes?: string[];
+  fuente?: "ia" | "reglas";
 }
 
 const formatDate = (d: string | number | Date) => {
@@ -254,7 +256,7 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onClose: () => void }> = (
           </div>
         </div>
       )}
-      {(consulta.PA && consulta.TA && consulta.FC && consulta.FR && consulta.SpO2 && consulta.Peso && consulta.Talla && consulta.Abdomen && consulta.IMC) && (
+      {(consulta.PA && consulta.FC && consulta.FR && consulta.SpO2 && consulta.Peso && consulta.Talla && consulta.Abdomen && consulta.IMC) && (
         <div>
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Exploración fisica
@@ -314,15 +316,6 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onClose: () => void }> = (
                 <p>{consulta.PA}</p>
               </div>
             }
-            {/* {consulta.TA &&
-              <div className="flex justify-between w-full px-3 py-2 border border-gray-300 rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
-                <span className="flex items-center gap-1">
-                  <AudioWaveform className="h-3 w-3 mr-1 text-gray-400" />
-                  T/A
-                </span>
-                <p className="font-medium">{consulta.TA}</p>
-              </div>
-            } */}
             {consulta.FC &&
               <div className="flex justify-between w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
                 <span className="flex items-center gap-1">
@@ -415,15 +408,23 @@ const Consultas: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if ((user?.rol ?? "").toLowerCase().trim() !== "admin" && (user?.rol ?? "").toLowerCase().trim() !== "médico") {
+    const rolActual = (user?.rol ?? "").toLowerCase().trim();
+    if (rolActual !== "admin" && rolActual !== "médico" && rolActual !== "enfermero") {
       navigate("/Agenda");
     }
   }, [user, navigate]);
+
+  // Enfermero tiene los mismos permisos que Médico en esta página, salvo que no ve el
+  // Asistente de IA ni la Receta Médica (ambas quedan reservadas a Médico/Admin).
+  const esEnfermero = (user?.rol ?? "").toLowerCase().trim() === "enfermero";
 
   // puesto?: string; matricula?: string
 
   const [analyzing, setAnalyzing] = useState(false);
   const [aiResult, setAiResult] = useState<AIResult | null>(null);
+  // Análisis que el médico marcó como no útiles (botón "Descartar análisis"). Se envían al
+  // Asistente IA en el siguiente intento para que no repita el mismo resultado y lo mejore.
+  const [analisisDescartados, setAnalisisDescartados] = useState<AIResult[]>([]);
   const [showHistory, setShowHistory] = useState(false);
   const [historyData, setHistoryData] = useState<Consulta[]>([]);
   // const [recetaData, setRecetaData] = useState<Receta[]>([]);
@@ -479,7 +480,6 @@ const Consultas: React.FC = () => {
     ICT: "",
     Sistolica: "",
     Diastolica: "",
-    TA: "",
     FC: "",
     FR: "",
     SpO2: "",
@@ -603,7 +603,7 @@ const Consultas: React.FC = () => {
 
   // Arma la lista de indicadores a mostrar en la card, omitiendo los que no se tomaron (0, 0.00, "" o null)
   const indicadoresMedicion = (med: any) => {
-    const items: { label: string; value: string; Icon: any; color: string; bg: string; border: string }[] = [];
+    const items: { label: string; value: string; icon: string; color: string; bg: string; border: string }[] = [];
 
     const sisValida = esIndicadorValido(med.presion_sistolica);
     const diaValida = esIndicadorValido(med.presion_diastolica);
@@ -611,21 +611,23 @@ const Consultas: React.FC = () => {
       items.push({
         label: "Presión arterial",
         value: `${sisValida ? med.presion_sistolica : "-"} / ${diaValida ? med.presion_diastolica : "-"} mmHg`,
-        Icon: Activity,
+        icon: "mdi mdi-gauge",
         color: "text-red-500", bg: "bg-red-50", border: "border-red-100"
       });
-    }
-    if (esIndicadorValido(med.nivel_glucosa)) {
-      items.push({ label: "Nivel de glucosa", value: `${med.nivel_glucosa} mg/dL${esIndicadorValido(med.momento_glucosa) ? ` · ${med.momento_glucosa}` : ""}`, Icon: Beaker, color: "text-red-500", bg: "bg-red-50", border: "border-red-100" });
-    }
-    if (esIndicadorValido(med.saturacion_oxigeno)) {
-      items.push({ label: "Saturación de oxígeno", value: `${med.saturacion_oxigeno} %`, Icon: Bubbles, color: "text-sky-500", bg: "bg-sky-50", border: "border-sky-100" });
     }
 
     const frecuencia = obtenerFrecuenciaCardiaca(med);
     if (esIndicadorValido(frecuencia)) {
-      items.push({ label: "Frecuencia cardiaca", value: `${frecuencia} lpm`, Icon: HeartPulse, color: "text-rose-500", bg: "bg-rose-50", border: "border-rose-100" });
+      items.push({ label: "Frecuencia cardiaca", value: `${frecuencia} lpm`, icon: "mdi mdi-heart-pulse", color: "text-rose-500", bg: "bg-rose-50", border: "border-rose-100" });
     }
+
+    if (esIndicadorValido(med.saturacion_oxigeno)) {
+      items.push({ label: "Saturación de oxígeno", value: `${med.saturacion_oxigeno}% SpO2`, icon: "mdi mdi-lungs", color: "text-sky-500", bg: "bg-sky-50", border: "border-sky-100" });
+    }
+
+    if (esIndicadorValido(med.nivel_glucosa)) {
+      items.push({ label: "Glucosa", value: `${med.nivel_glucosa} mg/dL${esIndicadorValido(med.momento_glucosa) ? ` · ${med.momento_glucosa}` : ""}`, icon: "mdi mdi-water", color: "text-red-500", bg: "bg-red-50", border: "border-red-100" });
+    }    
 
     return items;
   };
@@ -651,7 +653,6 @@ const Consultas: React.FC = () => {
         ...v,
         Sistolica: s,
         Diastolica: d,
-        TA: `${s ? Math.round(parseFloat(s) / 10) : 0} / ${d ? Math.round(parseFloat(d) / 10) : 0}`,
         FC: fc,
         SpO2: spo2,
       };
@@ -743,12 +744,12 @@ const Consultas: React.FC = () => {
           Abdomen: parseFloat(vitalSigns.Abdomen) || null,
           ICT: parseFloat(vitalSigns.ICT) || null,
           PA: vitalSigns.Sistolica + "/" + vitalSigns.Diastolica || null,
-          TA: vitalSigns.TA || "",
           FC: parseInt(vitalSigns.FC) || null,
           FR: parseFloat(vitalSigns.FR) || null,
           SpO2: parseInt(vitalSigns.SpO2) || null,
           IMC: parseFloat(vitalSigns.IMC) || null
         },
+        AnalisisDescartados: analisisDescartados,
         // Laboratorios:
         // {
         //   Colesterol: parseFloat(labs.colesterol) || null, 
@@ -1089,9 +1090,8 @@ const Consultas: React.FC = () => {
                 Abdomen: parseFloat(vitalSigns.Abdomen), 
                 ICT: parseFloat(vitalSigns.ICT),
                 SpO2: parseFloat(vitalSigns.SpO2), 
-                PA: `${vitalSigns.Sistolica} / ${vitalSigns.Diastolica}`, 
-                TA: vitalSigns.TA, 
-                FC: vitalSigns.FC, 
+                PA: `${vitalSigns.Sistolica} / ${vitalSigns.Diastolica}`,
+                FC: vitalSigns.FC,
                 FR: vitalSigns.FR
               }, 
               Diagnostico: formData.Diagnostico, 
@@ -1131,7 +1131,7 @@ const Consultas: React.FC = () => {
         setSelectedExp(null);
         setCitaLigada(null);
         setFormData({ TipoAtencion: "", TipoEnfermedad: "", ProtocoloAtencion: "", Procedimiento: "", PadecimientoActual: "", Diagnostico: "", Recomendaciones: "", RecetaMedica: "" });
-        setVitalSigns({ Peso: "", Talla: "", IMC: "", Abdomen: "", ICT: "", Sistolica: "", Diastolica: "", TA: "", FC: "", FR: "", SpO2: "" });
+        setVitalSigns({ Peso: "", Talla: "", IMC: "", Abdomen: "", ICT: "", Sistolica: "", Diastolica: "", FC: "", FR: "", SpO2: "" });
         setMedicamentosReceta([]);
       }
     } catch (err) {
@@ -1596,17 +1596,16 @@ const Consultas: React.FC = () => {
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  // className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start shadow-sm"
-                  className={`flex items-center bg-gradient-to-b from-yellow-50 to-white rounded-xl border-yellow-100 shadow-lg shadow-gray-200 px-4 py-3 gap-3`}
+                  className={`flex items-center bg-gradient-to-b from-sunray-yellow/20 to-white rounded-xl shadow-lg shadow-gray-200 px-4 py-3 gap-3`}
                 >
-                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-yellow-100 shrink-0">
-                    <i className="mdi mdi-alert text-yellow-800 text-base"></i>
+                  <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sunray-yellow/30 shrink-0">
+                    <i className="mdi mdi-alert text-yellow-700 text-base"></i>
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-yellow-800 uppercase tracking-wide">
+                    <p className="text-xs font-bold text-yellow-700 uppercase tracking-wide">
                       Alerta de Farmacovigilancia
                     </p>
-                    <p className="text-[10px] text-yellow-700 font-medium uppercase">
+                    <p className="text-[10px] text-yellow-600 font-medium uppercase">
                     {patientData.alergias && (
                       <span className="font-medium uppercase">
                         Alergias: <strong>{patientData.alergias}</strong>
@@ -1878,7 +1877,7 @@ const Consultas: React.FC = () => {
                   <i className="mdi mdi-human mr-4"></i>
                   Exploración Física
                 </h2>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-4">
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4 mb-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       Peso (kg)
@@ -1966,8 +1965,6 @@ const Consultas: React.FC = () => {
                       />
                     </div>
                   </div>
-                </div>
-                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       T/A (mmHg)
@@ -1984,7 +1981,7 @@ const Consultas: React.FC = () => {
                             const r = e.target.value;
                             if (r.length > 3) return;
                             const s = r, d = vitalSigns.Diastolica;
-                            setVitalSigns(v => ({ ...v, Sistolica: s, PA: `${s} / ${d}`, TA: `${s ? Math.round(parseFloat(s) / 10) : 0} / ${d ? Math.round(parseFloat(d) / 10) : 0}` }));
+                            setVitalSigns(v => ({ ...v, Sistolica: s, PA: `${s} / ${d}` }));
                             if (r.length === 3) diastolicaRef.current?.focus();
                           }}
                           onKeyDown={(e) => {
@@ -2006,7 +2003,7 @@ const Consultas: React.FC = () => {
                             const r = e.target.value;
                             if (r.length > 3) return;
                             const d = r, s = vitalSigns.Sistolica;
-                            setVitalSigns(v => ({ ...v, Diastolica: d, PA: `${s} / ${d}`, TA: `${s ? Math.round(parseFloat(s) / 10) : 0} / ${d ? Math.round(parseFloat(d) / 10) : 0}` }));
+                            setVitalSigns(v => ({ ...v, Diastolica: d, PA: `${s} / ${d}` }));
                           }}
                           onKeyDown={(e) => {
                             if (e.key === "Backspace" && vitalSigns.Diastolica === "") {
@@ -2016,7 +2013,7 @@ const Consultas: React.FC = () => {
                               if (s.length > 0) {
                                 const newS = s.slice(0, -1);
                                 const d = vitalSigns.Diastolica;
-                                setVitalSigns(v => ({ ...v, Sistolica: newS, PA: `${newS} / ${d}`, TA: `${newS ? Math.round(parseFloat(newS) / 10) : 0} / ${d ? Math.round(parseFloat(d) / 10) : 0}` }));
+                                setVitalSigns(v => ({ ...v, Sistolica: newS, PA: `${newS} / ${d}` }));
                               }
                             }
                           }}
@@ -2024,24 +2021,6 @@ const Consultas: React.FC = () => {
                           placeholder="80"
                         />
                       </div>
-                    </div>
-                    <p className="text-xs text-gray-400 mt-1">
-                      Tensión arterial
-                    </p>
-                  </div>
-                  <div className="hidden">
-                    <label className="block text-xs font-medium text-gray-700 mb-1">
-                      T/A
-                    </label>
-                    <div className="relative flex items-center">
-                      <AudioWaveform className="h-3.5 w-3.5 absolute left-3 text-gray-400 pointer-events-none z-10" />
-                      <input 
-                        type="text" 
-                        value={vitalSigns.TA} 
-                        disabled 
-                        className="w-full px-3 py-2 pl-9 border border-gray-300 rounded-lg text-xs bg-gray-50 text-gray-700 font-medium outline-none" 
-                        placeholder="12 / 8"
-                      />
                     </div>
                     <p className="text-xs text-gray-400 mt-1">
                       Tensión arterial
@@ -2096,7 +2075,7 @@ const Consultas: React.FC = () => {
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">SpO2 (%)</label>
                     <div className="relative flex items-center">
-                      <Bubbles className="h-3.5 w-3.5 absolute left-3 top-2.5 text-gray-400" />
+                      <MciIcon name="lungs" size={14} className="absolute left-3 top-2.5 text-gray-400" />
                       <input
                         type="number"
                         value={vitalSigns.SpO2}
@@ -2162,6 +2141,7 @@ const Consultas: React.FC = () => {
                 </div>
               </motion.div>
               
+              {!esEnfermero && (
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
@@ -2287,6 +2267,7 @@ const Consultas: React.FC = () => {
                   </div>
                 )}
               </motion.div>
+              )}
 
               <div className="mt-4 flex items-center justify-end">
                 <button
@@ -2302,30 +2283,36 @@ const Consultas: React.FC = () => {
 
             {/* Panel IA */}
             <div className="col-span-1 space-y-6">
+              {!esEnfermero && (
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 className={`bg-linear-to-b from-blue-50 to-white rounded-xl border-horz-blue shadow-lg shadow-horz-blue p-6`}
                 // sticky top-55 z-1
               >
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center text-clinical-darkBlue font-bold text-lg">
-                    <i className="mdi mdi-robot-excited-outline mr-2"></i>
-                    TNG Sano-AI Assistant
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <div className="flex items-center text-clinical-darkBlue font-bold text-lg">
+                      <i className="mdi mdi-creation mr-2"></i>
+                      Asistente de IA
+                    </div>
+                    {aiResult && (
+                      <p className="text-[10px] text-gray-400 font-medium ml-6">
+                        {aiResult.fuente === "ia" ? "Powered by OpenAI" : "Respaldo Local"}
+                      </p>
+                    )}
                   </div>
-                  {!aiResult&&!analyzing&&(
-                    <span className="flex h-3 w-3 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-3 w-3 bg-clinical-blue"></span>
-                    </span>
-                  )}
+                  <span className="flex h-3 w-3 relative">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                    <span className="relative inline-flex rounded-full h-3 w-3 bg-clinical-blue"></span>
+                  </span>
                 </div>
                 {!aiResult ? (
                   <div className="relative text-center py-4">
                     <div className="relative z-0 flex items-center justify-center mt-4 mb-8">
                       {analyzing &&
                         [0, 0.5, 1, 1.5, 2].map((d, i) => (
-                          <Sparkles
+                          <Sparkle
                             key={i}
                             className="absolute text-horz-blue/30"
                             style={{
@@ -2338,7 +2325,7 @@ const Consultas: React.FC = () => {
                         ))
                       }
 
-                      <Sparkles className={`relative h-12 w-12 ${analyzing ? "text-horz-blue animate-pulse" : "text-gray-300"}`} />
+                      <Sparkle className={`relative h-12 w-12 ${analyzing ? "text-horz-blue animate-pulse" : "text-gray-300"}`} />
                     </div>
                       
                     <p className="relative z-0 text-sm text-gray-500 mb-10">
@@ -2347,8 +2334,10 @@ const Consultas: React.FC = () => {
                       
                     <button
                       onClick={handleAIAnalysis}
-                      disabled={analyzing}
-                      className="relative z-0 w-full items-center bg-linear-to-r from-sea-blue to-sky-blue disabled:from-sea-blue/80 disabled:to-sky-blue/80 disabled:cursor-default disabled:hover:-translate-0 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+                      disabled={analyzing || (!pacienteExterno && (loadingMat || matriculaNotFound || !patientData.nombre?.trim()))}
+                      title={!pacienteExterno && (loadingMat || matriculaNotFound || !patientData.nombre?.trim()) ? "Ingresa una matrícula o CURP válida y espera a que se valide para poder analizar la consulta" : undefined}
+                      // className="relative z-0 w-full items-center bg-linear-to-r from-sea-blue to-sky-blue disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed disabled:hover:-translate-0 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+                      className="mt-4 w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
                     >
                       {analyzing ? "Procesando..." : "Analizar Consulta Actual"}
                     </button>
@@ -2374,7 +2363,7 @@ const Consultas: React.FC = () => {
                     animate={{opacity:1,scale:1}} 
                     className="space-y-5"
                   >
-                    <div className={`p-4 rounded-lg shadow-md bg-linear-to-r ${aiResult.riesgo === "Alto" ? "from-red-100 to-red-50/50 text-red-700" : aiResult.riesgo === "Moderado" ? "from-sunray-yellow/20 to-sunray-yellow/5 text-yellow-700" : "from-horz-blue/30 to-horz-blue/5"}`}>
+                    <div className={`p-4 rounded-lg shadow-md bg-linear-to-r ${aiResult.riesgo === "Alto" ? "from-red-100 to-red-50/50 text-red-700" : aiResult.riesgo === "Moderado" ? "from-sunray-yellow/20 to-white text-yellow-700" : "from-horz-blue/30 to-horz-blue/5"}`}>
                       <div className="flex items-center font-bold mb-1">
                         {/* {aiResult.riesgo === "Alto" && 
                           <ShieldAlert className="h-5 w-5 mr-2"/>
@@ -2382,7 +2371,7 @@ const Consultas: React.FC = () => {
                         <i className="mdi mdi-security mr-2"></i>
                         Nivel de riesgo: {aiResult.riesgo}
                       </div>
-                      <p className="text-xs opacity-90">
+                      <p className="text-xs text-justify opacity-90">
                         {aiResult.inconsistencias[0]}
                       </p>
                     </div>
@@ -2391,11 +2380,12 @@ const Consultas: React.FC = () => {
                         <label className="block text-xs font-semibold text-gray-400 tracking-wider mb-1">
                           Antecedentes Relevantes
                         </label>
-                        <ul className="space-y-2">
+                        <ul className="space-y-2 w-full text-justify border-l-2 border-horz-blue pl-3 mt-2 text-xs outline-none">
                           {aiResult.antecedentesRelevantes.map((a, i) => (
                             <li
                               key={i}
-                              className="w-full px-3 py-2 border border-yellow-200 shadow-md rounded-lg text-xs bg-yellow-50 text-yellow-800 font-medium outline-none"
+                              // className="w-full px-3 py-2 shadow-md rounded-lg text-xs bg-linear-to-r from-sunray-yellow/20 to-sunray-yellow/5 text-yellow-700 font-medium outline-none"
+                              // className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-sm bg-white text-gray-800 font-medium outline-none focus:ring-1 focus:ring-sea-blue"
                             >
                               {a}
                             </li>
@@ -2403,36 +2393,49 @@ const Consultas: React.FC = () => {
                         </ul>
                       </div>
                     )}
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-400 uppercasetracking-wider mb-1">
-                        {/* <i className="mdi mdi-information mr-2"></i> */}
-                        Diagnóstico Diferencial
-                      </label>
-                      <ul className="space-y-2">
-                        {(aiResult.diagnosticoDiferencial || aiResult.diferencial || []).map((d,i)=>(
-                          <li
-                            key={i} 
-                            // className="text-sm bg-white border border-gray-100 p-2 rounded-md font-medium text-gray-700"
-                            className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-sm bg-white text-gray-800 font-medium outline-none focus:ring-1 focus:ring-sea-blue"
-                          >
-                            {d}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-semibold text-gray-400 tracking-wider mb-1">
-                        {/* <i className="mdi mdi-chat mr-2"></i> */}
-                        Sugerencias (AI)
-                      </label>
-                      <ul className="space-y-2 text-sm text-justify mt-2">
-                        {(aiResult.sugerenciasTratamiento || aiResult.sugerencias || []).map((s, i) => (
-                          <li key={i}>{s}</li>
-                        ))}
-                      </ul>
-                    </div>
+                    {(() => {
+                      const diagnosticos = aiResult.diagnosticoDiferencial || aiResult.diferencial || [];
+                      return diagnosticos.length > 0 && (
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-400 tracking-wider mb-1">
+                            {/* <i className="mdi mdi-information mr-2"></i> */}
+                            Diagnóstico Diferencial
+                          </label>
+                          <ul className="space-y-2 w-full text-justify border-l-2 border-horz-blue pl-3 mt-2 text-xs outline-none">
+                            {diagnosticos.map((d,i)=>(
+                              <li
+                                key={i}
+                                // className="text-sm bg-white border border-gray-100 p-2 rounded-md font-medium text-gray-700"
+                                // className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-sm bg-white text-gray-800 font-medium outline-none focus:ring-1 focus:ring-sea-blue"
+                              >
+                                {d}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    })()}
+                    {(() => {
+                      const sugerencias = aiResult.sugerenciasTratamiento || aiResult.sugerencias || [];
+                      return sugerencias.length > 0 && (
+                        <div>
+                          <label className="block text-xs font-semibold text-gray-400 tracking-wider mb-1">
+                            {/* <i className="mdi mdi-chat mr-2"></i> */}
+                            Sugerencias (IA)
+                          </label>
+                          <ul className="space-y-2 w-full text-justify border-l-2 border-horz-blue pl-3 mt-2 text-xs outline-none">
+                            {sugerencias.map((s, i) => (
+                              <li key={i}>{s}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      );
+                    })()}
                     <button
-                      onClick={() => setAiResult(null)}
+                      onClick={() => {
+                        if (aiResult) setAnalisisDescartados(prev => [...prev, aiResult]);
+                        setAiResult(null);
+                      }}
                       className="mt-4 text-xs font-semibold text-gray-400 hover:text-sea-blue text-center w-full cursor-pointer"
                     >
                       Descartar análisis
@@ -2440,34 +2443,32 @@ const Consultas: React.FC = () => {
                   </motion.div>
                 )}
               </motion.div>
+              )}
 
               <AnimatePresence>
                 {medicionEquipo && (
                   <motion.div
-                    initial={{ opacity: 0, y: 24, scale: 0.96 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    // initial={{ opacity: 0, y: 24, scale: 0.96 }}
+                    // animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -12, scale: 0.97 }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
                     className={`bg-linear-to-b from-blue-50 to-white rounded-xl border-horz-blue shadow-lg shadow-horz-blue p-6`}
                   >
-
-                    <div className="flex items-center justify-between mb-6">
+                    <div className="flex items-center justify-between mb-4">
                       <div className="flex items-center text-sea-blue font-bold text-lg">
-                        <i className="mdi mdi-heart-outline mr-2"></i>
-                        Toma de Signos Vitales
+                        <i className="mdi mdi-pulse mr-2"></i>
+                        Signos Vitales
                       </div>
-                      {/* {!aiResult&&!analyzing&&(
+                      {/* aiResult */}
+                      {!analyzing && (
                         <span className="flex h-3 w-3 relative">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-3 w-3 bg-red-500"></span>
+                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
+                          <span className="relative inline-flex rounded-full h-3 w-3 bg-clinical-blue"></span>
                         </span>
-                      )} */}
+                      )}
                     </div>
-
-                    
-
-                    
-
                     {medicionCargando ? (
                       <div className="flex flex-col items-center justify-center py-6">
                         <svg viewBox="0 0 200 60" className="w-full h-14 text-rose-400" style={{ overflow: "visible" }}>
@@ -2506,27 +2507,25 @@ const Consultas: React.FC = () => {
                         {/* <div className="flex items-center font-bold mb-1">
                           Medición de dispositivos detectada
                         </div> */}
-                        <p className="relative z-0 text-sm text-gray-500 mb-4">
-                          <i className="mdi mdi-calendar-blank mr-1"></i>
-                          Fecha medición: {formatFechaMedicion(medicionEquipo.Fecha_medicion)}
-                        </p>
+                        <label className="block text-xs font-semibold text-gray-400 tracking-wider mb-1">
+                          {/* <i className="mdi mdi-calendar-blank mr-1"></i> */}
+                          Fecha de medición: {formatFechaMedicion(medicionEquipo.Fecha_medicion)}
+                        </label>
 
                         <div className="grid grid-cols-1 gap-2">
                           {indicadoresMedicion(medicionEquipo).map((ind, i) => (
-                            <div
-                              key={i}
-                              className={`flex items-center gap-2 px-3 py-2 rounded-lg border ${ind.border} ${ind.bg}`}
-                            >
-                              <ind.Icon className={`h-4 w-4 shrink-0 ${ind.color}`} />
+                            <ul className="space-y-2 text-sm text-justify border-l-2 border-horz-blue pl-3 mt-2">
                               <div className="overflow-hidden">
-                                <p className="text-[9px] uppercase font-semibold text-gray-400 truncate">
+                                <p>
+                                  <i className={`${ind.icon} text-[12px] mr-1 shrink-0`}></i>
+                                  {/* ${ind.color} */}
                                   {ind.label}
                                 </p>
-                                <p className={`text-xs font-bold truncate ${ind.color}`}>
+                                <label className="block text-xs font-semibold text-gray-400 tracking-wider mb-1">
                                   {ind.value}
-                                </p>
+                                </label>
                               </div>
-                            </div>
+                            </ul>
                           ))}
                         </div>
 
@@ -2535,8 +2534,8 @@ const Consultas: React.FC = () => {
                           disabled={signosCargados}
                           className="mt-4 w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
                         >
-                          <i className={`mdi ${signosCargados ? "mdi-check-bold" : "mdi-tray-arrow-down"} mr-2`}></i>
-                          {signosCargados ? "Resultados cargados" : "Cargar Resultados"}
+                          {/* <i className={`mdi ${signosCargados ? "mdi-check-bold" : "mdi-tray-arrow-down"} mr-2`}></i> */}
+                          {signosCargados ? "Resultados Cargados" : "Cargar Resultados"}
                         </button>
                       </motion.div>
                     )}

@@ -40,7 +40,18 @@
       "Bash(cmdkey /list)",
       "Bash(xargs grep -l \"BuscarMatricula\\\\|BuscarProveedor\")",
       "Bash(xargs grep -l \"Mediciones_Equipo\\\\|RegistroLigado\\\\|Id_Usuario\\\\|Matricula_Curp\")",
-      "Bash(xargs grep -l \"Mediciones_Equipo\\\\|RegistroLigado\")"
+      "Bash(xargs grep -l \"Mediciones_Equipo\\\\|RegistroLigado\")",
+      "Bash(npm ls *)",
+      "Bash(node --check services/aiService.js)",
+      "Bash(env)",
+      "Bash(grep -rn \"https_proxy\\\\|HTTPS_PROXY\\\\|HTTP_PROXY\" ~/.bashrc ~/.bash_profile ~/.profile ~/.bash_login 2>/dev/null)",
+      "PowerShell([Environment]::GetEnvironmentVariable\\(\"HTTPS_PROXY\",\"User\"\\); [Environment]::GetEnvironmentVariable\\(\"HTTPS_PROXY\",\"Machine\"\\); [Environment]::GetEnvironmentVariable\\(\"HTTP_PROXY\",\"User\"\\); [Environment]::GetEnvironmentVariable\\(\"HTTP_PROXY\",\"Machine\"\\))",
+      "Bash(node -e \"require\\('@otp-lib/authenticator'\\); console.log\\('OK: otp-lib carga bien'\\)\")",
+      "Bash(npx eslint *)",
+      "Bash(node -e \"JSON.parse\\(require\\('fs'\\).readFileSync\\('src/assets/mci-mobile-glyphmap.json','utf8'\\)\\); console.log\\('glyphmap JSON válido'\\)\")",
+      "Bash(npx esbuild *)",
+      "Bash(node -e \"const g=require\\('./src/assets/mci-mobile-glyphmap.json'\\); console.log\\('lungs' in g, g['lungs']\\);\")",
+      "Bash(awk 'NR==2282,NR==2470{print NR\": \"$0}' frontend/src/pages/Consultas.tsx)"
     ]
   }
 }

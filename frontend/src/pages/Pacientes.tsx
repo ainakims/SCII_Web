@@ -126,7 +126,8 @@ const Pacientes: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    if ((user?.rol ?? "").toLowerCase().trim() !== "admin" && (user?.rol ?? "").toLowerCase().trim() !== "médico") {
+    const rolActual = (user?.rol ?? "").toLowerCase().trim();
+    if (rolActual !== "admin" && rolActual !== "médico" && rolActual !== "enfermero") {
       navigate("/Agenda");
     }
   }, [user, navigate]);

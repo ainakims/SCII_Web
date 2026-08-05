@@ -787,7 +787,8 @@ const Configuracion: React.FC = () => {
                         <option value="" disabled hidden>Seleccionar</option>
                         <option value="1">Admin</option>
                         <option value="2">Médico</option>
-                        {/*<option value="3">Enfermero</option>*/}
+                        <option value="3">Enfermero</option>
+                        <option value="4">Paramédico</option>
                         <option value="4">Usuario</option>
                       </select>
                     </div>

@@ -60,7 +60,7 @@ const formatDate = (d: string | number | Date) => {
 const VisorPDFInline = ({ pdfId, pdfName, pdfDate, pdfUrl, isFullscreen, onClose, onDelete, onToggleFullscreen }: { pdfId: number; pdfName: string; pdfDate: string; pdfUrl: string; isFullscreen: boolean; onClose: () => void, onDelete: (id: number) => void; onToggleFullscreen: () => void; }) => {
   const { user } = useAuth() as { user: { rol?: string; matricula?: string } };
 
-  const esPrivilegiado = ["admin", "médico", "medico"].includes(
+  const esPrivilegiado = ["admin", "médico", "medico", "enfermero"].includes(
     (user?.rol ?? "").toLowerCase().trim()
   );
 
@@ -113,7 +113,7 @@ const VisorPDFInline = ({ pdfId, pdfName, pdfDate, pdfUrl, isFullscreen, onClose
 const Documentos: React.FC = () => {
   const { user } = useAuth() as { user: { id: number; rol?: string; matricula?: string } };
 
-  const esPrivilegiado = ["admin", "médico", "medico"].includes(
+  const esPrivilegiado = ["admin", "médico", "medico", "enfermero"].includes(
     (user?.rol ?? "").toLowerCase().trim()
   );
 

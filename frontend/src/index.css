@@ -1,5 +1,16 @@
 @import "tailwindcss";
 
+/* Fuente MaterialCommunityIcons vendorizada desde @expo/vector-icons@15.0.3, para que los
+   iconos se vean idénticos a los de la app mobile (más nuevos que los de @mdi/font, que está
+   detenido en la versión 7.4.47 en npm). Úsala vía el componente <MciIcon name="..." />. */
+@font-face {
+  font-family: "MaterialCommunityIconsMobile";
+  src: url("./assets/fonts/MaterialCommunityIconsMobile.ttf") format("truetype");
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
 @theme {
   --color-sea-blue: #002E6D;
   --color-sky-blue: #009BDE;

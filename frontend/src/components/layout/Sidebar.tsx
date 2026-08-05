@@ -16,7 +16,7 @@ import tngsanoLogo from "../../assets/img/logo_tngsano.png";
 import tngsanoIcono from "../../assets/img/icono_tgnsano.png";
 import { useAuth } from "../../context/AuthToken";
 
-type Rol = "admin" | "médico" | "usuario";
+type Rol = "admin" | "médico" | "enfermero" | "usuario";
 
 interface MenuItem {
   name: string;
@@ -43,14 +43,14 @@ const ROLES_PRIVILEGIADOS = ["admin", "médico", "medico"];
 const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
   const menuItems: MenuItem[] = [
     // { name: "Dashboard",     icon: "view-dashboard",          path: "/Dashboard",     roles: ["admin", "médico"] }, //compass
-    { name: "Pacientes",     icon: "account-multiple",        path: "/Pacientes",     roles: ["admin", "médico"] },
-    { name: "Agenda",        icon: "calendar-clock",          path: "/Agenda",        roles: ["admin", "médico", "usuario"] },
-    { name: "Consultas",     icon: "clipboard-pulse-outline", path: "/Consultas",     roles: ["admin", "médico"] },
-    { name: "Indicadores",   icon: "heart-pulse",             path: "/Indicadores",   roles: ["admin", "médico"] },
-    { name: "Evaluación",    icon: "clipboard-check-outline", path: "/Evaluacion",    roles: ["admin", "médico"] },
+    { name: "Pacientes",     icon: "account-multiple",        path: "/Pacientes",     roles: ["admin", "médico", "enfermero"] },
+    { name: "Agenda",        icon: "calendar-clock",          path: "/Agenda",        roles: ["admin", "médico", "enfermero", "usuario"] },
+    { name: "Consultas",     icon: "clipboard-pulse-outline", path: "/Consultas",     roles: ["admin", "médico", "enfermero"] },
+    { name: "Indicadores",   icon: "heart-pulse",             path: "/Indicadores",   roles: ["admin", "médico", "enfermero"] },
+    { name: "Evaluación",    icon: "clipboard-check-outline", path: "/Evaluacion",    roles: ["admin", "médico", "enfermero"] },
     { name: "Recetas",       icon: "pill",                    path: "/Recetas",       roles: ["admin", "médico"] },
     // { name: "Inventario",    icon: "package-variant-closed",  path: "/Inventario",    roles: ["admin", "médico"] },
-    { name: "Documentos",    icon: "file-outline",            path: "/Documentos",    roles: ["admin", "médico", "usuario"] },
+    { name: "Documentos",    icon: "file-outline",            path: "/Documentos",    roles: ["admin", "médico", "enfermero", "usuario"] },
     { name: "Configuración", icon: "cog",                     path: "/Configuracion", roles: ["admin"] },
   ];
 
@@ -58,7 +58,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
 
   // const userRol = (user?.puesto ?? "").toLowerCase().trim() as Rol;
   // const userRol = ((user?.puesto ?? "usuario").toLowerCase().trim() || "usuario") as Rol;
-  const rolesValidos: Rol[] = ["admin", "médico", "usuario"];
+  const rolesValidos: Rol[] = ["admin", "médico", "enfermero", "usuario"];
   const puestoNorm = (user?.rol ?? "").toLowerCase().trim() as Rol;
   const userRol: Rol = rolesValidos.includes(puestoNorm) ? puestoNorm : "usuario";
 

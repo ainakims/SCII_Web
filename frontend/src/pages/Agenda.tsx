@@ -76,7 +76,7 @@ interface SelectedPatient {
 interface SavedGroup { id: number; name: string; patients: SelectedPatient[]; }
 
 
-const ROLES_PRIVILEGIADOS_AGENDA = ["admin", "médico", "medico"];
+const ROLES_PRIVILEGIADOS_AGENDA = ["admin", "médico", "medico", "enfermero"];
 
 const Agenda: React.FC = () => {
   const now = new Date();
@@ -1169,6 +1169,40 @@ const Agenda: React.FC = () => {
   // const selectedDiaIndex = parseInt(String(formData.dia));
   const isDiaPasado = weekDates[parseInt(String(formData.dia))] < new Date(now.getFullYear(), now.getMonth(), now.getDate());
 
+  const MOTIVO_LABELS: Record<string, string> = {
+    IND: "Indicadores TNG sano",
+    SEG: "Seguimiento",
+    PER: "Periódico",
+    VAC: "Campaña de vacunación",
+    IMSS: "Jornada PrevenIMSS",
+  };
+
+  const handleAddToTeams = (): void => {
+    const diaIndex = parseInt(String(formData.dia));
+    const diaDate = weekDates[diaIndex];
+    if (!diaDate) return;
+
+    const hora24 = toHora24(formData.hora, formData.periodo) + formData.minutos / 60;
+    const start = new Date(diaDate);
+    start.setHours(Math.floor(hora24), Math.round((hora24 % 1) * 60), 0, 0);
+    const end = new Date(start.getTime() + Number(formData.duracion) * 60 * 60 * 1000);
+
+    const motivoLabel = MOTIVO_LABELS[formData.motivo] ?? formData.motivo;
+    const pacientesNombres = selectedPatients.length > 0
+      ? selectedPatients.map(p => p.nombre).join(", ")
+      : formData.patientName;
+    const subject = `${motivoLabel}${pacientesNombres ? ` - ${pacientesNombres}` : ""}`;
+
+    const params = new URLSearchParams({
+      subject,
+      startTime: start.toISOString(),
+      endTime: end.toISOString(),
+      content: formData.notas || "",
+    });
+
+    window.open(`https://teams.microsoft.com/l/meeting/new?${params.toString()}`, "_blank", "noopener,noreferrer");
+  };
+
   return (
     <div className="relative flex w-full overflow-hidden">
       <div
@@ -2140,11 +2174,22 @@ const Agenda: React.FC = () => {
                 )}
               </div>
             )}
+            {!esPrivilegiado && isViewMode && (
+              <div className="px-5 py-4 shrink-0 flex justify-between items-center gap-3">
+                <button
+                  type="button"
+                  onClick={handleAddToTeams}
+                  className="w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
+                >
+                  <i className="mdi mdi-microsoft-teams mr-2"></i>
+                  Agregar a Teams
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </aside>
 
-      {/* ─── Modal independiente de Grupos ─── */}
       <AnimatePresence>
         {gruposModalOpen && (
           <motion.div
