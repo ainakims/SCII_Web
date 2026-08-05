@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "@otp-lib/authenticator": "^0.2.1",
+    "@otp-lib/core": "^0.2.0",
     "axios": "^1.15.0",
     "bcrypt": "^5.1.1",
     "cookie-parser": "^1.4.7",
@@ -16,6 +17,7 @@
     "docxtemplater": "^3.68.3",
     "dotenv": "^16.4.5",
     "express": "^4.19.2",
+    "https-proxy-agent": "^9.1.0",
     "jsonwebtoken": "^9.0.3",
     "mssql": "^12.2.0",
     "multer": "^2.0.2",
