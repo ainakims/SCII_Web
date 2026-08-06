@@ -17,6 +17,8 @@ import Documentos from './pages/Documentos';
 import Pacientes from './pages/Pacientes';
 import Configuracion from './pages/Configuracion';
 import SaludPoblacional from './pages/SaludPoblacional';
+import Expediente from './pages/Expediente';
+import ExpedienteDepartamento from './pages/ExpedienteDepartamento';
 
 import { AuthProvider } from './context/AuthToken';
 import TitleManager from './components/layout/TitleManager';
@@ -51,6 +53,8 @@ function App() {
             <Route path="Pacientes" element={<Pacientes />} />
             <Route path="Configuracion" element={<Configuracion />} />
             <Route path="SaludPoblacional" element={<SaludPoblacional />} />
+            <Route path="Expediente" element={<Expediente />} />
+            <Route path="Expediente/Departamento/:nombre" element={<ExpedienteDepartamento />} />
             <Route path="*" element={<div className="p-8 text-center text-gray-500">Módulo en construcción</div>} />
           </Route>
         </Routes>

@@ -1,30 +1,35 @@
 import React, { useMemo, useState } from "react";
-import { BarChart, Bar, AreaChart, Area, ScatterChart, Scatter, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, ComposedChart, Scatter, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ReferenceArea, ResponsiveContainer, Cell } from "recharts";
 import { RegistroValidado } from "../types";
-import { estadisticasIndicador, evolucionComposicion } from "../analytics";
-import { clasificarIMC, clasificarIMCSimplificado, clasificarICT, CATEGORIAS_IMC_OMS, Nivel } from "../clinicalRules";
+import { estadisticasIndicador } from "../analytics";
+import { clasificarIMC, clasificarIMCSimplificado, clasificarICT, NIVEL_ESTILOS, Nivel } from "../clinicalRules";
 import SectionCard from "./shared/SectionCard";
 import KpiCard from "./shared/KpiCard";
 
 const BANDA_IMC_NORMAL: [number, number] = [18.5, 25];
 
-const OPCIONES_CANTIDAD_DEPTOS = [5, 10, 15, 20] as const;
-type CantidadDeptos = typeof OPCIONES_CANTIDAD_DEPTOS[number] | "todos";
-
 // Paleta categórica por departamento (identidad, no severidad clínica) — se repite
 // si hay más departamentos que colores.
 const PALETA_DEPTO = [
-  "#002E6D", "#009BDE", "#10b981", "#f59e0b", "#8b5cf6",
-  "#ef4444", "#0d9488", "#eab308", "#6366f1", "#ec4899",
-  "#14b8a6", "#f97316", "#3b82f6", "#84cc16", "#a855f7",
+  "#002E6D",
+  "#009BDE",
+  "#9ACAEB",
+  // "#002E6D", "#009BDE", "#1f3461", "#278cc3", "#599AC8", "#434c73",
+  // "#9ACAEB", "#7daacf", "#666786", "#8db2cc", "#9ebbd6", "#9fbcd1",
+  // "#8a8aa2", "#b1c7d7", "#b3b3c1", "#c2cfde", "#c3d1db", "#d5dbe1"
 ];
 
-function truncar(texto: string, max: number): string {
-  return texto.length > max ? `${texto.slice(0, max - 1)}…` : texto;
-}
+// Mismo estilo que los selects de filtro de las tablas (Departamentos/Pacientes).
+const filtroSelectCls = "text-xs border border-gray-200 rounded-md px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer";
 
-const selectCls =
-  "w-full appearance-none bg-linear-to-r from-gray-50 to-gray-100 text-sea-blue pl-3 pr-8 py-2 rounded-lg text-xs font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer";
+// Pendiente: aún no filtra nada (ver TIPOS_EMPLEADO en DepartamentoTabla.tsx),
+// solo deja el control listo para cuando el dato esté disponible.
+type TipoEmpleado = "" | "confianza" | "sindicalizado";
+const TIPOS_EMPLEADO: { value: TipoEmpleado; label: string }[] = [
+  { value: "", label: "Todos" },
+  { value: "confianza", label: "Confianza" },
+  { value: "sindicalizado", label: "Sindicalizados" },
+];
 
 interface AntropometriaSectionProps {
   estadoActual: RegistroValidado[];
@@ -32,73 +37,66 @@ interface AntropometriaSectionProps {
 }
 
 const NIVEL_COLOR: Record<Nivel, string> = {
-  bajo: "#009BDE",
-  normal: "#22c55e",
-  leve: "#eab308",
-  alto: "#ef4444",
-  critico: "#991b1b",
-  sin_dato: "#9ca3af",
+  // bajo: "#009BDE",
+  normal: "#54BBAB",
+  leve: "#FFC627",
+  alto: "#EE7523",
+  // ef4444
+  // critico: "#991b1b",
+  // sin_dato: "#9ca3af",
 };
 
-// Colores por categoría OMS simplificada, usados en la gráfica de composición.
-const COLOR_CATEGORIA_IMC: Record<string, string> = {
-  "Bajo peso": NIVEL_COLOR.bajo,
-  "Normopeso": NIVEL_COLOR.normal,
-  "Sobrepeso": NIVEL_COLOR.leve,
-  "Obesidad": NIVEL_COLOR.alto,
-};
-
-// Umbrales OMS explicados para la leyenda de "Clasificación IMC" — qué significa
-// cada categoría y cuál es el rango saludable (mejora solicitada).
-const UMBRALES_IMC_LEYENDA: { categoria: string; rango: string; nivel: Nivel; sano: boolean }[] = [
-  { categoria: "Bajo peso", rango: "< 18.5 kg/m²", nivel: "bajo", sano: false },
-  { categoria: "Normopeso", rango: "18.5 – 24.9 kg/m² (saludable)", nivel: "normal", sano: true },
-  { categoria: "Sobrepeso", rango: "25 – 29.9 kg/m²", nivel: "leve", sano: false },
-  { categoria: "Obesidad", rango: "≥ 30 kg/m²", nivel: "alto", sano: false },
+const ORDEN_IMC: { label: string; nivel: Nivel; color: string }[] = [
+  { label: "Normal", nivel: "normal", color: "#54BBAB" },
+  { label: "Sobrepeso", nivel: "leve", color: "#FFC627" },
+  { label: "Obesidad I", nivel: "alto", color: "#EE7523" },
+  { label: "Obesidad II", nivel: "alto", color: "#EF4444" },
+  { label: "Obesidad III", nivel: "critico", color: "#991b1b" },
 ];
 
-// Tooltip personalizado que replica el formato "Periodo (Total: N) / categoría: n (pct%)".
-const TooltipComposicion: React.FC<any> = ({ active, payload, label }) => {
-  if (!active || !payload || !payload.length) return null;
-  const total = payload[0]?.payload?.total ?? 0;
-  return (
-    <div className="bg-white shadow-lg rounded-lg p-3 text-xs border border-gray-100 min-w-40">
-      <p className="font-bold text-gray-700 mb-1.5">{label} (Total: {total.toLocaleString("es-MX")})</p>
-      {[...payload].reverse().map((p: any) => (
-        <p key={p.dataKey} className="flex justify-between gap-3" style={{ color: p.color }}>
-          <span>{p.dataKey}</span>
-          <span className="font-semibold">{p.value} ({total ? ((p.value / total) * 100).toFixed(0) : 0}%)</span>
-        </p>
-      ))}
-    </div>
-  );
-};
+function clasificarIctCalculado(ratio: number | null): { label: string; nivel: Nivel } {
+  if (ratio == null) return { label: "Sin dato", nivel: "sin_dato" };
+  if (ratio < 0.5) return { label: "Saludable", nivel: "normal" };
+  if (ratio < 0.6) return { label: "Sobrepeso", nivel: "leve" };
+  return { label: "Riesgo alto", nivel: "alto" };
+}
 
-const TooltipImcPorDepto: React.FC<any> = ({ active, payload }) => {
+const tooltipCls = "bg-white shadow-lg rounded-lg p-2.5 text-[11px]";
+
+const TooltipImcCategoria: React.FC<any> = ({ active, payload }) => {
   if (!active || !payload || !payload.length) return null;
-  const p = payload[0].payload;
+  const d = payload[0].payload;
   return (
-    <div className="bg-white shadow-lg rounded-lg p-2.5 text-xs border border-gray-100">
-      <p className="font-bold text-gray-700 flex items-center gap-1.5">
-        <span className="size-2 rounded-full inline-block" style={{ backgroundColor: p.color }}></span>
-        {p.depto}
+    <div className={tooltipCls}>
+      <p className="font-bold text-gray-700 mb-1">Categoría de la OMS</p>
+      <p className="flex items-center gap-1.5 text-gray-500">
+        <span className="w-2.5 h-2 inline-block" style={{ backgroundColor: d.color }}></span>
+        {d.label}: <span className="font-bold text-gray-700">{d.count}</span>
       </p>
-      <p className="text-gray-500">IMC: <span className="font-semibold text-gray-700">{p.y}</span></p>
     </div>
   );
 };
 
-// Sección 24 del documento, con comparación por sexo, umbral OMS y composición en
-// el tiempo (mejoras solicitadas). La composición en el tiempo usa Fecha (siempre
-// disponible en el estado actual) en vez de FechaNacimiento (frecuentemente
-// ausente), evitando que la falta de edad deje gráficas vacías.
-const AntropometriaSection: React.FC<AntropometriaSectionProps> = ({ estadoActual, historico }) => {
-  // Cantidad/Mes por defecto: es la vista que más interesa en el día a día.
-  const [periodicidad, setPeriodicidad] = useState<"anio" | "mes">("mes");
-  const [modo, setModo] = useState<"cantidad" | "porcentaje">("cantidad");
-  // "Todos" por defecto: se pueden filtrar a n departamentos cuando se necesite
-  // enfocar la vista (mejora solicitada).
-  const [cantidadDeptos, setCantidadDeptos] = useState<CantidadDeptos>("todos");
+export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ estadoActual }) => {
+  const [filtroTipoEmpleado, setFiltroTipoEmpleado] = useState<TipoEmpleado>("");
+  const [categoriasImcOcultas, setCategoriasImcOcultas] = useState<Set<string>>(new Set());
+  const toggleCategoriaImc = (label: string) => {
+    setCategoriasImcOcultas((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label); else next.add(label);
+      return next;
+    });
+  };
+
+  // Categorías de ICT ocultas por clic en la leyenda (mismo toggle que IMC).
+  const [categoriasIctOcultas, setCategoriasIctOcultas] = useState<Set<string>>(new Set());
+  const toggleCategoriaIct = (label: string) => {
+    setCategoriasIctOcultas((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label); else next.add(label);
+      return next;
+    });
+  };
 
   const imc = useMemo(() => estadisticasIndicador(estadoActual, "IMC"), [estadoActual]);
   const peso = useMemo(() => estadisticasIndicador(estadoActual, "Peso"), [estadoActual]);
@@ -106,38 +104,45 @@ const AntropometriaSection: React.FC<AntropometriaSectionProps> = ({ estadoActua
   const ict = useMemo(() => estadisticasIndicador(estadoActual, "ICT"), [estadoActual]);
 
   const distribucionImc = useMemo(() => {
-    const conteo = new Map<string, { count: number; nivel: Nivel }>();
+    const conteo = new Map<string, number>();
     estadoActual.forEach((r) => {
       if (r.IMC.estado === "FALTANTE") return;
-      const { label, nivel } = clasificarIMC(r.IMC.usado);
+      const { label } = clasificarIMC(r.IMC.usado);
+      conteo.set(label, (conteo.get(label) ?? 0) + 1);
+    });
+    return ORDEN_IMC.map((o) => ({ ...o, count: conteo.get(o.label) ?? 0 }));
+  }, [estadoActual]);
+
+  // Datos que realmente se dibujan: las categorías ocultas por la leyenda se
+  // fuerzan a 0 (la barra desaparece) sin perder el conteo real en `distribucionImc`.
+  const distribucionImcVisible = useMemo(
+    () => distribucionImc.map((d) => (categoriasImcOcultas.has(d.label) ? { ...d, count: 0 } : d)),
+    [distribucionImc, categoriasImcOcultas]
+  );
+
+  // Distribución del ICT (índice cintura-talla) por nivel de riesgo, para
+  // acompañar la distribución de IMC con la misma unidad de análisis (estado
+  // actual). Calculado con PA (cintura, cm) / Altura (convertida a cm).
+  const distribucionIct = useMemo(() => {
+    const conteo = new Map<string, { count: number; nivel: Nivel }>();
+    estadoActual.forEach((r) => {
+      const cinturaCm = r.PA.numerico;
+      const alturaM = r.Altura.numerico;
+      if (cinturaCm == null || alturaM == null || alturaM <= 0) return;
+      const alturaCm = alturaM * 100;
+      const { label, nivel } = clasificarIctCalculado(cinturaCm / alturaCm);
       const actual = conteo.get(label);
       conteo.set(label, { count: (actual?.count ?? 0) + 1, nivel });
     });
     return Array.from(conteo.entries()).map(([label, v]) => ({ label, ...v }));
   }, [estadoActual]);
+  const totalConIct = distribucionIct.reduce((acc, d) => acc + d.count, 0);
 
-  // Clasificación IMC (bandas OMS simplificadas), con el umbral saludable resaltado.
-  const clasificacionImc = useMemo(() => {
-    const conteo = new Map<string, number>();
-    estadoActual.forEach((r) => {
-      if (r.IMC.estado === "FALTANTE") return;
-      const categoria = clasificarIMCSimplificado(r.IMC.usado);
-      if (!categoria) return;
-      conteo.set(categoria, (conteo.get(categoria) ?? 0) + 1);
-    });
-    return CATEGORIAS_IMC_OMS.map((categoria) => ({ categoria, count: conteo.get(categoria) ?? 0 }));
-  }, [estadoActual]);
-
-  // Evolución de la composición de IMC en el tiempo (área apilada / porcentual).
-  // Reemplaza los antiguos gráficos "por grupo etario", que dependían de
-  // FechaNacimiento — un dato frecuentemente ausente — y quedaban vacíos.
-  const composicionImc = useMemo(
-    () => evolucionComposicion(
-      historico,
-      (r) => (r.IMC.estado === "FALTANTE" ? null : clasificarIMCSimplificado(r.IMC.usado)),
-      periodicidad
-    ),
-    [historico, periodicidad]
+  // Igual que distribucionImcVisible: las categorías ocultas por la leyenda
+  // se fuerzan a 0 para que su porción desaparezca de la dona.
+  const distribucionIctVisible = useMemo(
+    () => distribucionIct.map((d) => (categoriasIctOcultas.has(d.label) ? { ...d, count: 0 } : d)),
+    [distribucionIct, categoriasIctOcultas]
   );
 
   // IMC por departamento (departamento es un dato mucho más confiable que la
@@ -146,15 +151,16 @@ const AntropometriaSection: React.FC<AntropometriaSectionProps> = ({ estadoActua
   // promedio. Los puntos se distribuyen (jitter) dentro de la columna de su
   // departamento para que no se sobrepongan exactamente. El color identifica al
   // departamento (no la severidad clínica del punto).
-  const { puntosImcPorDepto, departamentos, coloresDepto } = useMemo(() => {
+  const { puntosImcPorDepto, departamentos, statsPorDepto } = useMemo(() => {
     const conteoPorDepto = new Map<string, number>();
+    const sumaImcPorDepto = new Map<string, number>();
     estadoActual.forEach((r) => {
       if (r.IMC.estado === "FALTANTE" || !r.Depto_nombre) return;
       conteoPorDepto.set(r.Depto_nombre, (conteoPorDepto.get(r.Depto_nombre) ?? 0) + 1);
+      sumaImcPorDepto.set(r.Depto_nombre, (sumaImcPorDepto.get(r.Depto_nombre) ?? 0) + (r.IMC.usado as number));
     });
 
-    const ordenados = Array.from(conteoPorDepto.entries()).sort((a, b) => b[1] - a[1]);
-    const deptos = (cantidadDeptos === "todos" ? ordenados : ordenados.slice(0, cantidadDeptos)).map(([depto]) => depto);
+    const deptos = Array.from(conteoPorDepto.entries()).sort((a, b) => b[1] - a[1]).map(([depto]) => depto);
     const indexPorDepto = new Map(deptos.map((d, i) => [d, i]));
     const colores = new Map(deptos.map((d, i) => [d, PALETA_DEPTO[i % PALETA_DEPTO.length]]));
 
@@ -177,8 +183,17 @@ const AntropometriaSection: React.FC<AntropometriaSectionProps> = ({ estadoActua
       });
     });
 
-    return { puntosImcPorDepto: puntos, departamentos: deptos, coloresDepto: colores };
-  }, [estadoActual, cantidadDeptos]);
+    // Un solo tooltip por departamento (no por punto): total de personas y el
+    // IMC promedio calculado sobre esas mismas personas.
+    const stats = new Map<string, { count: number; promedio: number }>();
+    deptos.forEach((d) => {
+      const count = conteoPorDepto.get(d) ?? 0;
+      const suma = sumaImcPorDepto.get(d) ?? 0;
+      stats.set(d, { count, promedio: count ? suma / count : 0 });
+    });
+
+    return { puntosImcPorDepto: puntos, departamentos: deptos, statsPorDepto: stats };
+  }, [estadoActual]);
 
   // Métricas nutricionales adicionales (mejora solicitada).
   const metricas = useMemo(() => {
@@ -196,189 +211,210 @@ const AntropometriaSection: React.FC<AntropometriaSectionProps> = ({ estadoActua
   }, [estadoActual]);
 
   return (
-    <SectionCard icon="human" title="Antropometría" subtitle="Peso, altura, IMC e ICT (estado actual)">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-3">
-        <KpiCard icon="scale-bathroom" label="IMC" value={imc.media ?? "Sin dato"} sub={imc.n ? `mediana ${imc.mediana} · n=${imc.n}` : undefined} />
-        <KpiCard icon="weight-kilogram" label="Peso (kg)" value={peso.media ?? "Sin dato"} sub={peso.n ? `n=${peso.n}` : undefined} />
-        <KpiCard icon="human-male-height" label="Altura (m)" value={altura.media ?? "Sin dato"} sub={altura.n ? `n=${altura.n}` : undefined} />
-        <KpiCard icon="ruler-square" label="ICT promedio" value={ict.media ?? "Sin dato"} sub={ict.n ? `n=${ict.n}` : undefined} />
-      </div>
-
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <KpiCard icon="check-decagram-outline" label="% Normopeso" value={metricas.pctNormopeso != null ? `${metricas.pctNormopeso}%` : "Sin dato"} />
-        <KpiCard icon="alert-circle-outline" label="ICT elevado (>50)" value={metricas.pctIctElevado != null ? `${metricas.pctIctElevado}%` : "Sin dato"} sub={metricas.nConIct ? `n=${metricas.nConIct}` : undefined} />
-        <KpiCard icon="swap-horizontal-circle-outline" label="Inconsistencias IMC" value={metricas.inconsistenciasImc} sub="IMC reportado vs. calculado" />
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div>
-          <h3 className="text-xs font-bold text-gray-600 mb-2">Distribución por categoría de IMC</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={distribucionImc} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+    <>
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-lg border border-gray-200 p-4">
+          <h3 className="text-xs font-bold text-gray-600 mb-2">
+            <i className="fa-solid fa-chart-simple mr-2"></i>Categoría de la OMS
+          </h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={distribucionImcVisible} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={0} angle={-20} textAnchor="end" height={50} />
               <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-              <Tooltip />
-              <Bar dataKey="count" name="Personas" radius={[4, 4, 0, 0]}>
-                {distribucionImc.map((d, i) => <Cell key={i} fill={NIVEL_COLOR[d.nivel]} />)}
+              <Tooltip content={<TooltipImcCategoria />} cursor={{ fill: "#f8fafc" }} />
+              <Bar dataKey="count" name="Personas" radius={[4, 4, 0, 0]} animationDuration={900} animationEasing="ease-out">
+                {distribucionImcVisible.map((d, i) => <Cell key={i} fill={d.color} />)}
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          <div className="flex flex-wrap gap-1.5 justify-center mt-2">
+            {distribucionImc.map((d) => {
+              const oculto = categoriasImcOcultas.has(d.label);
+              return (
+                <button
+                  key={d.label}
+                  type="button"
+                  onClick={() => toggleCategoriaImc(d.label)}
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-semibold bg-gray-50 transition-opacity cursor-pointer hover:opacity-80 ${oculto ? "text-gray-300 opacity-50" : "text-gray-600"}`}
+                >
+                  <span className="w-3 h-2 inline-block" style={{ backgroundColor: oculto ? "#d1d5db" : d.color }}></span>
+                  {d.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div>
-          <h3 className="text-xs font-bold text-gray-600 mb-2">Clasificación IMC</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <AreaChart data={clasificacionImc} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-              <defs>
-                <linearGradient id="gradienteImc" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#0070BD" stopOpacity={0.6} />
-                  <stop offset="95%" stopColor="#0070BD" stopOpacity={0.05} />
-                </linearGradient>
-              </defs>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="categoria" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-              <Tooltip formatter={(value: any) => [`${value} personas`, "Cantidad"]} />
-              <Area
-                type="monotone"
-                dataKey="count"
-                name="Personas"
-                stroke="#0070BD"
-                strokeWidth={2}
-                fill="url(#gradienteImc)"
-                dot={(props: any) => {
-                  const { cx, cy, payload, index } = props;
-                  const info = UMBRALES_IMC_LEYENDA.find((u) => u.categoria === payload.categoria);
-                  return <circle key={`dot-${index}`} cx={cx} cy={cy} r={5} fill={NIVEL_COLOR[info?.nivel ?? "sin_dato"]} stroke="#fff" strokeWidth={1.5} />;
-                }}
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-          <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2">
-            {UMBRALES_IMC_LEYENDA.map((u) => (
-              <div key={u.categoria} className="flex items-center gap-1.5 text-[10px] text-gray-500">
-                <span className="size-2 rounded-full flex-shrink-0" style={{ backgroundColor: NIVEL_COLOR[u.nivel] }}></span>
-                <span className={u.sano ? "font-semibold text-gray-700" : ""}>{u.categoria}: {u.rango}</span>
+        <div className="rounded-lg border border-gray-200 p-4">
+          <h3 className="text-xs font-bold text-gray-600 mb-2">
+            <i className="fa-solid fa-chart-pie mr-2"></i>Distribución de ICT
+          </h3>
+          {totalConIct > 0 ? (
+            <>
+              <ResponsiveContainer width="100%" height={200}>
+                <PieChart>
+                  <Pie
+                    data={distribucionIctVisible}
+                    dataKey="count"
+                    nameKey="label"
+                    innerRadius={45}
+                    outerRadius={75}
+                    paddingAngle={2}
+                    animationBegin={0}
+                    animationDuration={900}
+                    animationEasing="ease-out"
+                  >
+                    {distribucionIctVisible.map((d, i) => <Cell key={i} fill={NIVEL_COLOR[d.nivel]} />)}
+                  </Pie>
+                  <Tooltip
+                    content={({ active, payload }: any) => {
+                      if (!active || !payload || !payload.length) return null;
+                      const d = payload[0].payload;
+                      const pct = totalConIct ? ((d.count / totalConIct) * 100).toFixed(1) : "0";
+                      return (
+                        <div className={tooltipCls}>
+                          <p className="font-bold text-gray-700 mb-1">Distribución de ICT</p>
+                          <p className="flex items-center gap-1.5 text-gray-500">
+                            <span className="size-2 rounded-full inline-block" style={{ backgroundColor: NIVEL_COLOR[d.nivel] }}></span>
+                            {d.label}: <span className="font-bold text-gray-700">{d.count} ({pct}%)</span>
+                          </p>
+                        </div>
+                      );
+                    }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+              <div className="flex flex-wrap gap-1.5 justify-center mt-2">
+                {distribucionIct.map((d) => {
+                  const oculto = categoriasIctOcultas.has(d.label);
+                  return (
+                    <button
+                      key={d.label}
+                      type="button"
+                      onClick={() => toggleCategoriaIct(d.label)}
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-semibold bg-gray-50 transition-opacity cursor-pointer hover:opacity-80 ${oculto ? "text-gray-300 opacity-50" : "text-gray-600"}`}
+                    >
+                      <span className="size-2 rounded-full inline-block" style={{ backgroundColor: oculto ? "#d1d5db" : NIVEL_COLOR[d.nivel] }}></span>
+                      {d.label}
+                    </button>
+                  );
+                })}
               </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="lg:col-span-2">
-          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
-            <h3 className="text-xs font-bold text-gray-600">Evolución de la composición de IMC</h3>
-            <div className="flex items-center gap-1 text-[10px]">
-              <button
-                onClick={() => setModo("porcentaje")}
-                className={`px-2 py-1 rounded-md font-semibold transition-colors cursor-pointer ${modo === "porcentaje" ? "bg-sea-blue text-white" : "bg-gray-100 text-gray-500"}`}
-              >
-                Porcentaje
-              </button>
-              <button
-                onClick={() => setModo("cantidad")}
-                className={`px-2 py-1 rounded-md font-semibold transition-colors cursor-pointer ${modo === "cantidad" ? "bg-sea-blue text-white" : "bg-gray-100 text-gray-500"}`}
-              >
-                Cantidad
-              </button>
-              <span className="w-px h-4 bg-gray-200 mx-1"></span>
-              <button
-                onClick={() => setPeriodicidad("anio")}
-                className={`px-2 py-1 rounded-md font-semibold transition-colors cursor-pointer ${periodicidad === "anio" ? "bg-sea-blue text-white" : "bg-gray-100 text-gray-500"}`}
-              >
-                Por año
-              </button>
-              <button
-                onClick={() => setPeriodicidad("mes")}
-                className={`px-2 py-1 rounded-md font-semibold transition-colors cursor-pointer ${periodicidad === "mes" ? "bg-sea-blue text-white" : "bg-gray-100 text-gray-500"}`}
-              >
-                Por mes
-              </button>
-            </div>
-          </div>
-          {composicionImc.length > 0 ? (
-            <ResponsiveContainer width="100%" height={280}>
-              <AreaChart data={composicionImc} stackOffset={modo === "porcentaje" ? "expand" : "none"} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                <XAxis dataKey="periodo" tick={{ fontSize: 10 }} />
-                <YAxis tick={{ fontSize: 10 }} tickFormatter={(v) => (modo === "porcentaje" ? `${Math.round(v * 100)}%` : String(v))} />
-                <Tooltip content={<TooltipComposicion />} />
-                <Legend wrapperStyle={{ fontSize: 11 }} />
-                {CATEGORIAS_IMC_OMS.map((categoria) => (
-                  <Area key={categoria} type="monotone" dataKey={categoria} name={categoria} stackId="1" stroke={COLOR_CATEGORIA_IMC[categoria]} fill={COLOR_CATEGORIA_IMC[categoria]} fillOpacity={0.75} />
-                ))}
-              </AreaChart>
-            </ResponsiveContainer>
+            </>
           ) : (
-            <div className="h-[280px] flex items-center justify-center text-xs text-gray-400 text-center px-6">Sin datos suficientes para construir la serie histórica.</div>
+            <div className="h-[220px] flex items-center justify-center text-xs text-gray-400">Sin datos suficientes</div>
           )}
-          <p className="text-[10px] text-gray-400 mt-1">
-            Proporción de personas por categoría de IMC (OMS) en cada periodo, sobre el historial completo de evaluaciones filtradas.
-          </p>
         </div>
 
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 rounded-lg border border-gray-200 p-4">
           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
             <h3 className="text-xs font-bold text-gray-600">
-              IMC por departamento — banda normal ({BANDA_IMC_NORMAL[0]}–{BANDA_IMC_NORMAL[1]} kg/m²)
+              <i className="fa-solid fa-diagram-project mr-2"></i>Departamento IMC
             </h3>
-            <div className="w-40 relative">
-              <select className={selectCls} value={cantidadDeptos} onChange={(e) => setCantidadDeptos(e.target.value === "todos" ? "todos" : (Number(e.target.value) as CantidadDeptos))}>
-                <option value="todos">Todos los departamentos</option>
-                {OPCIONES_CANTIDAD_DEPTOS.map((n) => <option key={n} value={n}>Top {n} departamentos</option>)}
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] font-medium text-gray-500">Tipo</span>
+              <select
+                value={filtroTipoEmpleado}
+                onChange={(e) => setFiltroTipoEmpleado(e.target.value as TipoEmpleado)}
+                className={filtroSelectCls}
+              >
+                {TIPOS_EMPLEADO.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
               </select>
-              <i className="mdi mdi-chevron-down absolute right-2 top-1/2 -translate-y-1/2 text-sea-blue pointer-events-none"></i>
             </div>
           </div>
           {puntosImcPorDepto.length > 0 ? (
             <>
-              <div className="overflow-x-auto">
-                <div style={{ minWidth: Math.max(600, departamentos.length * 60) }}>
-                  <ResponsiveContainer width="100%" height={300}>
-                    <ScatterChart margin={{ top: 8, right: 16, left: 0, bottom: 40 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                      <XAxis
-                        type="number"
-                        dataKey="x"
-                        domain={[-0.6, departamentos.length - 0.4]}
-                        ticks={departamentos.map((_, i) => i)}
-                        tickFormatter={(v) => truncar(departamentos[v] ?? "", 16)}
-                        tick={{ fontSize: 9 }}
-                        interval={0}
-                        angle={-25}
-                        textAnchor="end"
-                        height={60}
-                      />
-                      <YAxis type="number" dataKey="y" name="IMC" tick={{ fontSize: 10 }} label={{ value: "IMC (kg/m²)", angle: -90, position: "insideLeft", fontSize: 11 }} />
-                      <Tooltip content={<TooltipImcPorDepto />} />
-                      <ReferenceLine y={BANDA_IMC_NORMAL[0]} stroke="#10b981" strokeDasharray="6 4" label={{ value: `${BANDA_IMC_NORMAL[0]}`, fontSize: 10, fill: "#10b981", position: "insideTopRight" }} />
-                      <ReferenceLine y={BANDA_IMC_NORMAL[1]} stroke="#10b981" strokeDasharray="6 4" label={{ value: `${BANDA_IMC_NORMAL[1]}`, fontSize: 10, fill: "#10b981", position: "insideTopRight" }} />
-                      <Scatter data={puntosImcPorDepto}>
-                        {puntosImcPorDepto.map((p, i) => <Cell key={i} fill={p.color} fillOpacity={0.8} />)}
-                      </Scatter>
-                    </ScatterChart>
-                  </ResponsiveContainer>
-                </div>
-              </div>
-              <p className="text-[10px] text-gray-400 mt-1 mb-2">
-                Cada punto es una persona (estado actual). El color identifica el departamento (ver leyenda). Líneas verdes: banda normal de IMC.
-              </p>
-              <div className="flex flex-wrap gap-1.5">
-                {departamentos.map((d) => (
-                  <span key={d} className="flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-semibold bg-gray-50 text-gray-600">
-                    <span className="size-2 rounded-full inline-block" style={{ backgroundColor: coloresDepto.get(d) }}></span>
-                    {truncar(d, 28)}
-                  </span>
-                ))}
-              </div>
+              <ResponsiveContainer width="100%" height={200}>
+                <ComposedChart margin={{ top: 8, right: 16, left: 0, bottom: -20 }}>
+                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                  <XAxis
+                    type="number"
+                    dataKey="x"
+                    domain={[-0.6, departamentos.length - 0.4]}
+                    tick={false}
+                    axisLine={false}
+                    tickLine={false}
+                  />
+                  <YAxis type="number" dataKey="y" name="IMC" tick={{ fontSize: 10 }} label={{ value: "", angle: -90, position: "insideLeft", fontSize: 11 }} />
+                  {/* Eje oculto 0–1, exclusivo de la barra invisible de abajo: le
+                      da altura completa al "carril" de cada departamento sin
+                      afectar la escala real de IMC que usa el Scatter. */}
+                  <YAxis yAxisId="hover" type="number" domain={[0, 1]} hide />
+                  <Tooltip
+                    cursor={{ fill: "#e2e8f0", fillOpacity: 0.5 }}
+                    content={({ active, payload }: any) => {
+                      if (!active || !payload || !payload.length) return null;
+                      const entry = payload.find((p: any) => p.dataKey === "total") ?? payload[0];
+                      const p = entry.payload;
+                      const s = statsPorDepto.get(p.depto);
+                      return (
+                        <div className={tooltipCls}>
+                          <p className="font-bold text-gray-700 mb-1 flex items-center gap-1.5">
+                            <span className="size-2 rounded-full inline-block" style={{ backgroundColor: p.color }}></span>
+                            {p.depto}
+                          </p>
+                          <p className="text-gray-500">Total: <span className="font-bold text-gray-700">{s?.count ?? 0}</span></p>
+                          <p className="text-gray-500">IMC promedio: <span className="font-bold text-gray-700">{s ? s.promedio.toFixed(1) : "-"}</span></p>
+                        </div>
+                      );
+                    }}
+                  />
+                  <ReferenceArea y1={BANDA_IMC_NORMAL[0]} y2={BANDA_IMC_NORMAL[1]} fill="#9ACAEB" fillOpacity={0.15} ifOverflow="extendDomain" />
+                  <ReferenceLine y={BANDA_IMC_NORMAL[0]} stroke="#9ACAEB" strokeDasharray="6 4" label={{ value: `${BANDA_IMC_NORMAL[0]}`, fontSize: 10, fontWeight: 700, fill: "#002E6D", position: "insideTopRight" }} />
+                  <ReferenceLine y={BANDA_IMC_NORMAL[1]} stroke="#9ACAEB" strokeDasharray="6 4" label={{ value: `${BANDA_IMC_NORMAL[1]}`, fontSize: 10, fontWeight: 700, fill: "#002E6D", position: "insideTopRight" }} />
+                  {/* Barra invisible por departamento: no se ve (fill transparente),
+                      pero le da al mouse un "carril" completo (todo el alto y el
+                      ancho de la columna) sobre el que activar el tooltip — igual
+                      que en una gráfica de barras, en vez de tener que apuntar a
+                      un punto exacto. */}
+                  <Bar
+                    yAxisId="hover"
+                    dataKey="total"
+                    data={departamentos.map((d, i) => ({ x: i, total: 1, depto: d, color: PALETA_DEPTO[i % PALETA_DEPTO.length] }))}
+                    fill="transparent"
+                    isAnimationActive={false}
+                  />
+                  <Scatter data={puntosImcPorDepto}>
+                    {puntosImcPorDepto.map((p, i) => <Cell key={i} fill={p.color} fillOpacity={0.8} />)}
+                  </Scatter>
+                </ComposedChart>
+              </ResponsiveContainer>
             </>
           ) : (
-            <div className="h-[300px] flex items-center justify-center text-xs text-gray-400 text-center px-6">Sin datos suficientes de IMC/departamento.</div>
+            <div className="h-[320px] flex items-center justify-center text-xs text-gray-400 text-center px-6">Sin datos suficientes de IMC/departamento.</div>
           )}
         </div>
       </div>
-    </SectionCard>
+      
+      {/* <div className="mt-6 flex items-center bg-gradient-to-b from-blue-50 to-white rounded-xl border-horz-blue shadow-lg shadow-horz-blue px-4 py-3 gap-3">
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-blue/10 shrink-0">
+          <i className="mdi mdi-creation text-sea-blue text-base"></i>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-sea-blue uppercase tracking-wide">
+            Análisis de IA
+          </p>
+        </div>
+      </div> */}
+      <div className="flex items-start gap-2 bg-horz-blue/15 text-yellow-700 text-[11px] px-3 py-2 rounded-lg mt-6">
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-blue/10 shrink-0">
+          <i className="mdi mdi-creation text-sea-blue text-base animate-pulse"></i>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-sea-blue uppercase tracking-wide">
+            Análisis de IA
+          </p>
+        </div>
+      </div>
+    </>
   );
 };
+
+const AntropometriaSection: React.FC<AntropometriaSectionProps> = (props) => (
+  <SectionCard icon="person" title="Antropometría" subtitle="Peso, altura, IMC e ICT (estado actual)">
+    <AntropometriaContenido {...props} />
+  </SectionCard>
+);
 
 export default AntropometriaSection;

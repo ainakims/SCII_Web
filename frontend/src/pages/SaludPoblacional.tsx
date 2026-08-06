@@ -8,17 +8,15 @@ import { aplicarFiltros, construirEstadoActual } from "../features/saludPoblacio
 
 import FiltersBar from "../features/saludPoblacional/components/FiltersBar";
 import TabNav, { TabDef } from "../features/saludPoblacional/components/TabNav";
-import KpiSection from "../features/saludPoblacional/components/KpiSection";
-import DemografiaSection from "../features/saludPoblacional/components/DemografiaSection";
+import SectionCard from "../features/saludPoblacional/components/shared/SectionCard";
+import KpiCards from "../features/saludPoblacional/components/KpiCards";
 import AntropometriaSection from "../features/saludPoblacional/components/AntropometriaSection";
 import CardiovascularSection from "../features/saludPoblacional/components/CardiovascularSection";
 import MetabolicoSection from "../features/saludPoblacional/components/MetabolicoSection";
-import RelacionesSection from "../features/saludPoblacional/components/RelacionesSection";
 import RiesgoMatrizSection from "../features/saludPoblacional/components/RiesgoMatrizSection";
 import EvolucionHistoricaSection from "../features/saludPoblacional/components/EvolucionHistoricaSection";
 import ResumenMedicoSection from "../features/saludPoblacional/components/ResumenMedicoSection";
 import ResumenMedicoIASection from "../features/saludPoblacional/components/ResumenMedicoIASection";
-import InspectorSection from "../features/saludPoblacional/components/InspectorSection";
 
 const errorModal = (title: string, message: string) => {
   Swal.fire({
@@ -34,16 +32,13 @@ const errorModal = (title: string, message: string) => {
 
 const TABS: TabDef[] = [
   { id: "resumen", label: "Resumen", icon: "view-dashboard-outline" },
-  { id: "demografia", label: "Demografía", icon: "account-multiple-outline" },
   { id: "antropometria", label: "Antropometría", icon: "human" },
   { id: "cardiovascular", label: "Cardiovascular", icon: "heart-pulse" },
   { id: "metabolico", label: "Metabólico", icon: "water-outline" },
-  { id: "relaciones", label: "Relaciones", icon: "chart-scatter-plot" },
   { id: "riesgo", label: "Matriz de riesgo", icon: "grid" },
   { id: "evolucion", label: "Evolución histórica", icon: "chart-timeline-variant" },
   { id: "resumenMedico", label: "Resumen médico", icon: "file-document-outline" },
   { id: "resumenMedicoIA", label: "Resumen médico (IA)", icon: "creation" },
-  { id: "auditoria", label: "Auditoría y calidad", icon: "database-search-outline" },
 ];
 
 // Dashboard de Análisis de Salud Poblacional.
@@ -114,17 +109,18 @@ const SaludPoblacional: React.FC = () => {
               <FiltersBar registros={registros} filtros={filtros} onChange={setFiltros} />
               <TabNav tabs={TABS} activo={tabActiva} onChange={setTabActiva} />
 
-              {tabActiva === "resumen" && <KpiSection estadoActual={estadoActualFiltrado} />}
-              {tabActiva === "demografia" && <DemografiaSection estadoActual={estadoActualFiltrado} />}
+              {tabActiva === "resumen" && (
+                <SectionCard icon="view-dashboard-outline" title="Resumen de población" subtitle={`Población seleccionada: ${estadoActualFiltrado.length.toLocaleString("es-MX")} personas`}>
+                  <KpiCards estadoActual={estadoActualFiltrado} />
+                </SectionCard>
+              )}
               {tabActiva === "antropometria" && <AntropometriaSection estadoActual={estadoActualFiltrado} historico={historicoFiltrado} />}
               {tabActiva === "cardiovascular" && <CardiovascularSection estadoActual={estadoActualFiltrado} />}
               {tabActiva === "metabolico" && <MetabolicoSection estadoActual={estadoActualFiltrado} />}
-              {tabActiva === "relaciones" && <RelacionesSection estadoActual={estadoActualFiltrado} />}
               {tabActiva === "riesgo" && <RiesgoMatrizSection estadoActual={estadoActualFiltrado} />}
               {tabActiva === "evolucion" && <EvolucionHistoricaSection historico={historicoFiltrado} />}
               {tabActiva === "resumenMedico" && <ResumenMedicoSection estadoActual={estadoActualFiltrado} />}
               {tabActiva === "resumenMedicoIA" && <ResumenMedicoIASection estadoActual={estadoActualFiltrado} historico={historicoFiltrado} />}
-              {tabActiva === "auditoria" && <InspectorSection historico={historicoFiltrado} />}
             </>
           )}
         </div>

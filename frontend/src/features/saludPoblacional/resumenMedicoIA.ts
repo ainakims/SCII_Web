@@ -112,7 +112,16 @@ function tendenciaDe(historicoDepto: RegistroValidado[], campo: IndicadorClave):
   return { direccion, cambioPct, n };
 }
 
-export function construirPayloadResumenIA(estadoActual: RegistroValidado[], historico: RegistroValidado[]): ResumenIAPayload {
+// `minPoblacion` es el umbral de "departamento reportable" para el resumen de
+// IA (por defecto MIN_POBLACION_DEPTO, sección de arriba): con N muy chico las
+// proporciones son ruido, no señal. La tabla de Departamentos del Expediente
+// quiere ver TODOS los departamentos reales aunque tengan pocas personas, así
+// que llama a esta función con minPoblacion=1 en vez de usar el default.
+export function construirPayloadResumenIA(
+  estadoActual: RegistroValidado[],
+  historico: RegistroValidado[],
+  minPoblacion: number = MIN_POBLACION_DEPTO
+): ResumenIAPayload {
   const poblacionTotal = estadoActual.length;
 
   // --- Promedios y totales de referencia de TODA la población filtrada ---------
@@ -140,7 +149,7 @@ export function construirPayloadResumenIA(estadoActual: RegistroValidado[], hist
   });
 
   const departamentos: DepartamentoResumen[] = Array.from(porDepto.entries())
-    .filter(([, filas]) => filas.length >= MIN_POBLACION_DEPTO)
+    .filter(([, filas]) => filas.length >= minPoblacion)
     .sort((a, b) => b[1].length - a[1].length)
     .map(([nombre, filas]) => {
       const edadesDepto = filas.map((r) => calcularEdad(r.FechaNacimiento.original, r.Fecha.original)).filter((e): e is number => e != null);

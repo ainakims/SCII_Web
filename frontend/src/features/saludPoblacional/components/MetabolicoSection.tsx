@@ -30,7 +30,7 @@ const ExploradorMetabolico: React.FC<{ estadoActual: RegistroValidado[] }> = ({ 
   const umbralesY = UMBRALES_LABORATORIO[varY];
 
   return (
-    <div className="p-4 rounded-xl shadow-md bg-linear-to-b from-white to-gray-50 mb-4">
+    <div className="p-4 rounded-xl border border-gray-200 shadow-md bg-linear-to-b from-white to-gray-50 mb-4">
       <h3 className="text-sm font-bold text-gray-800 flex items-center mb-3">
         <i className="mdi mdi-chart-scatter-plot text-sea-blue mr-2"></i>
         Explorador de dispersión metabólico
@@ -123,7 +123,7 @@ const BloqueIndicador: React.FC<BloqueProps> = ({ titulo, icono, campo, unidad, 
   }, [estadoActual, campo, clasificador]);
 
   return (
-    <div className="p-4 rounded-xl shadow-md bg-linear-to-b from-white to-gray-50">
+    <div className="p-4 rounded-xl border border-gray-200 shadow-md bg-linear-to-b from-white to-gray-50">
       <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
         <h3 className="text-sm font-bold text-gray-800 flex items-center">
           <i className={`mdi mdi-${icono} text-sea-blue mr-2`}></i>
@@ -145,12 +145,10 @@ const BloqueIndicador: React.FC<BloqueProps> = ({ titulo, icono, campo, unidad, 
         </div>
       )}
 
-      {/* Valores individuales: cada punto es una persona, con los umbrales de
-          laboratorio marcados como líneas horizontales sobre el valor. */}
-      <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">Valores individuales</h4>
+      {/* <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">Valores individuales</h4> */}
       {puntosIndividuales.length > 0 ? (
         <>
-          <ResponsiveContainer width="100%" height={220}>
+          <ResponsiveContainer width="100%" height={80}>
             <ScatterChart margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis type="number" dataKey="x" hide domain={[-1, puntosIndividuales.length]} />
@@ -183,14 +181,22 @@ const BloqueIndicador: React.FC<BloqueProps> = ({ titulo, icono, campo, unidad, 
 // Sección 26 del documento: Glucosa, Colesterol, Triglicéridos.
 // No se calcula ninguna media usando valores no numéricos (los estados
 // PENDIENTE/NO_APLICA/INVALIDO/FALTANTE quedan excluidos por analytics.ts).
-const MetabolicoSection: React.FC<MetabolicoSectionProps> = ({ estadoActual }) => (
-  <SectionCard icon="water-outline" title="Metabólico" subtitle="Glucosa, colesterol y triglicéridos (estado actual)">
+export const MetabolicoContenido: React.FC<MetabolicoSectionProps> = ({ estadoActual }) => (
+  <>
+    {/* Oculto (no eliminado): "Explorador de dispersión metabólico".
     <ExploradorMetabolico estadoActual={estadoActual} />
+    */}
     <div className="grid grid-cols-1 gap-4">
       <BloqueIndicador titulo="Glucosa" icono="water" campo="Glucosa" unidad="mg/dL" clasificador={clasificarGlucosa} estadoActual={estadoActual} />
       <BloqueIndicador titulo="Colesterol" icono="virus" campo="Colesterol" unidad="mg/dL" clasificador={clasificarColesterol} estadoActual={estadoActual} />
       <BloqueIndicador titulo="Triglicéridos" icono="atom-variant" campo="Trigliceridos" unidad="mg/dL" clasificador={clasificarTrigliceridos} estadoActual={estadoActual} />
     </div>
+  </>
+);
+
+const MetabolicoSection: React.FC<MetabolicoSectionProps> = (props) => (
+  <SectionCard icon="water-outline" title="Metabólico" subtitle="Glucosa, colesterol y triglicéridos (estado actual)">
+    <MetabolicoContenido {...props} />
   </SectionCard>
 );
 

@@ -6,8 +6,9 @@
 // repita inline.
 //
 // IMPORTANTE: los umbrales usados son referencias clínicas estándar (OMS para IMC,
-// AHA/ACC para presión arterial, ADA para glucosa en ayuno, ATP III para colesterol
-// y triglicéridos). El documento (sección 44) deja explícitamente pendiente la
+// ESH/ESC para presión arterial combinada —clasificarPresion—, AHA/ACC para el
+// valor único de sistólica —clasificarSistolica—, ADA para glucosa en ayuno, ATP III
+// para colesterol y triglicéridos). El documento (sección 44) deja explícitamente pendiente la
 // confirmación de un protocolo clínico oficial por parte del equipo médico — estos
 // valores deben tratarse como default editable, no como verdad definitiva.
 
@@ -37,19 +38,24 @@ export function clasificarIMC(valor: number | null): Clasificacion {
   return { label: "Obesidad III", nivel: "critico" };
 }
 
-// Clasificación combinada de presión arterial (AHA/ACC), a partir de Sistólica y Diastólica.
+// export function clasificarPresion(sistolica: number | null, diastolica: number | null): Clasificacion {
+//   if (sistolica == null || diastolica == null) return { label: "Sin dato", nivel: "sin_dato" };
+//   if (sistolica >= 180 || diastolica >= 120) return { label: "Crisis", nivel: "critico" };
+//   if ((sistolica >= 140) && (diastolica > 80 && diastolica >= 90)) return { label: "Etapa 2", nivel: "alto" };
+//   if ((sistolica >= 130 && sistolica <= 139) && (diastolica > 80 && diastolica < 89)) return { label: "Etapa 1", nivel: "alto" };
+//   if ((sistolica >= 120 && sistolica <= 129) && diastolica < 80) return { label: "Elevada", nivel: "alto" };
+//   return { label: "Normal", nivel: "bajo" };
+// }
+
 export function clasificarPresion(sistolica: number | null, diastolica: number | null): Clasificacion {
-  if (sistolica == null || diastolica == null) return { label: "Sin dato", nivel: "sin_dato" };
-  if (sistolica >= 180 || diastolica >= 120) return { label: "Crisis hipertensiva", nivel: "critico" };
-  if (sistolica >= 140 || diastolica >= 90) return { label: "Hipertensión etapa 2", nivel: "alto" };
-  if (sistolica >= 130 || diastolica >= 80) return { label: "Hipertensión etapa 1", nivel: "alto" };
-  if (sistolica >= 120) return { label: "Elevada", nivel: "leve" };
-  return { label: "Óptima", nivel: "normal" };
+  if (sistolica == null || diastolica == null) { return { label: "Sin dato", nivel: "sin_dato" }; }
+  if (sistolica >= 180 || diastolica >= 120) { return { label: "Crisis", nivel: "critico" }; }
+  if (sistolica >= 140 || diastolica >= 90) { return { label: "Etapa 2", nivel: "alto" }; }
+  if ((sistolica >= 130 && sistolica <= 139) || (diastolica >= 80 && diastolica <= 89) ) { return { label: "Etapa 1", nivel: "alto" }; }
+  if (sistolica >= 120 && sistolica <= 129 && diastolica < 80) { return { label: "Elevada", nivel: "alto" }; }
+  return { label: "Normal", nivel: "bajo" };
 }
 
-// Versión de un solo valor (solo sistólica), usada en la matriz de riesgo cuando se
-// analiza un único indicador a la vez. Para el detalle clínico completo usar
-// clasificarPresion(sistolica, diastolica).
 export function clasificarSistolica(valor: number | null): Clasificacion {
   if (valor == null) return { label: "Sin dato", nivel: "sin_dato" };
   if (valor >= 180) return { label: "Crisis hipertensiva", nivel: "critico" };
@@ -136,17 +142,6 @@ export function clasificarIMCSimplificado(valor: number | null): CategoriaImcOms
   if (valor < 30) return "Sobrepeso";
   return "Obesidad";
 }
-
-// Umbral saludable normativo por indicador, usado como referencia en el eje Y del
-// motor de regresión (sección "Relaciones y Tendencias") y en la tendencia IMC×edad.
-export const UMBRAL_SALUDABLE: Record<string, number> = {
-  IMC: 25,
-  Sistolica: 120,
-  Diastolica: 80,
-  Glucosa: 100,
-  Colesterol: 200,
-  Trigliceridos: 150,
-};
 
 // Umbrales de laboratorio (dos cortes) usados en el explorador de dispersión
 // metabólico: [alterado/límite, alto riesgo/diagnóstico].

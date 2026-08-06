@@ -9,6 +9,9 @@ interface SectionCardProps {
   children: React.ReactNode;
 }
 
+// `icon` acepta un nombre corto de Material Design Icons ("heart-pulse" ->
+// "mdi mdi-heart-pulse") o, si ya trae espacio, una clase completa de otro set
+// (p. ej. Font Awesome: "fa-solid fa-building") — mismo criterio que KpiCard.
 // Contenedor estándar de cada bloque del dashboard (Demografía, Antropometría, etc.),
 // mismo patrón visual (motion.div + card) usado en el resto del sistema.
 const SectionCard: React.FC<SectionCardProps> = ({ icon, title, subtitle, actions, children }) => (
@@ -20,7 +23,7 @@ const SectionCard: React.FC<SectionCardProps> = ({ icon, title, subtitle, action
     <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
       <div>
         <h2 className="text-sm font-bold text-gray-800 flex items-center">
-          <i className={`mdi mdi-${icon} text-sea-blue mr-3`}></i>
+          <i className={`${icon.includes(" ") ? icon : `fa-solid fa-${icon}`} text-sea-blue mr-3`}></i>
           {title}
         </h2>
         {subtitle && <p className="text-xs text-gray-400 mt-1 ml-7">{subtitle}</p>}

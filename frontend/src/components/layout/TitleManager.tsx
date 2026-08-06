@@ -43,7 +43,7 @@ const TitleManager: FC = () => {
       //   document.title = "SCII - Configuración";
       //   break;
       default:
-        document.title = "TNG Sano - Integrapp";
+        document.title = "TNG Sano +";
     }
   }, [location.pathname]);
 

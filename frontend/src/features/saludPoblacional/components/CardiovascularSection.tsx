@@ -1,8 +1,8 @@
-import React, { useMemo } from "react";
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ReferenceLine, ResponsiveContainer, ScatterChart, Scatter, PieChart, Pie, Cell } from "recharts";
+import React, { useMemo, useState } from "react";
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer, ScatterChart, Scatter, PieChart, Pie, Cell } from "recharts";
 import { RegistroValidado } from "../types";
-import { estadisticasIndicador, histogramaConjunto, obtenerValor, promedioPorGrupo, calcularEdad } from "../analytics";
-import { clasificarGrupoEtario, clasificarPresion, NIVEL_ESTILOS, Nivel } from "../clinicalRules";
+import { estadisticasIndicador, histogramaConjunto, obtenerValor, promedioPorGrupo } from "../analytics";
+import { clasificarPresion } from "../clinicalRules";
 import SectionCard from "./shared/SectionCard";
 import KpiCard from "./shared/KpiCard";
 
@@ -10,17 +10,72 @@ interface CardiovascularSectionProps {
   estadoActual: RegistroValidado[];
 }
 
-const NIVEL_COLOR: Record<Nivel, string> = {
-  bajo: "#009BDE",
-  normal: "#22c55e",
-  leve: "#eab308",
-  alto: "#ef4444",
-  critico: "#991b1b",
-  sin_dato: "#9ca3af",
+const COLOR_PRESION: Record<"Sistólica" | "Diastólica", string> = {
+  "Sistólica": "#002E6D",
+  "Diastólica": "#009BDE",
+};
+
+// Un color propio por estadio (no por `nivel`): "Etapa 1", "Etapa 2" y "Elevada"
+// comparten nivel "alto", pero deben distinguirse visualmente — degradado de
+// severidad creciente, verde a rojo oscuro.
+const COLOR_ESTADIO_PRESION: Record<string, string> = {
+  "Normal": "#54BBAB",
+  "Elevada": "#FFC627",
+  "Etapa 1": "#EE7523",
+  "Etapa 2": "#ef4444",
+  "Crisis": "#991b1b",
+  "Sin dato": "#9ca3af",
+};
+
+// Orden clínico fijo (no el orden de aparición en los datos): Normal, Elevada,
+// Etapa 1, Etapa 2, Crisis — mismas etiquetas que clasificarPresion.
+const ORDEN_PRESION = ["Normal", "Elevada", "Etapa 1", "Etapa 2", "Crisis"] as const;
+
+// Mismo estilo de tooltip que Antropometría: sin borde, con sombra y esquinas
+// redondeadas, título de la gráfica, color propio de cada serie y el valor en
+// negritas — letra pequeña para no saturar.
+const tooltipCls = "bg-white shadow-lg rounded-lg p-2.5 text-[11px]";
+
+const TooltipDistPresion: React.FC<any> = ({ active, payload, label }) => {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div className={tooltipCls}>
+      <p className="font-bold text-gray-700 mb-1">Distribución presión arterial</p>
+      <p className="text-gray-400 mb-1">{label}</p>
+      {payload.map((p: any) => (
+        <p key={p.dataKey} className="flex items-center gap-1.5 text-gray-500">
+          <span className="w-2.5 h-2 inline-block" style={{ backgroundColor: p.color }}></span>
+          {p.dataKey}: <span className="font-bold text-gray-700">{p.value}</span>
+        </p>
+      ))}
+    </div>
+  );
 };
 
 // Sección 25 del documento.
-const CardiovascularSection: React.FC<CardiovascularSectionProps> = ({ estadoActual }) => {
+export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ estadoActual }) => {
+  // Series ocultas por clic en la leyenda de "Distribución presión arterial"
+  // (mismo toggle mostrar/ocultar que las leyendas de Antropometría).
+  const [seriesPresionOcultas, setSeriesPresionOcultas] = useState<Set<string>>(new Set());
+  const toggleSeriePresion = (serie: string) => {
+    setSeriesPresionOcultas((prev) => {
+      const next = new Set(prev);
+      if (next.has(serie)) next.delete(serie); else next.add(serie);
+      return next;
+    });
+  };
+
+  // Estadios ocultos por clic en la leyenda de "Presión arterial (ACC/AHA)"
+  // (mismo toggle que la leyenda de Distribución de ICT en Antropometría).
+  const [estadiosPresionOcultos, setEstadiosPresionOcultos] = useState<Set<string>>(new Set());
+  const toggleEstadioPresion = (label: string) => {
+    setEstadiosPresionOcultos((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label); else next.add(label);
+      return next;
+    });
+  };
+
   const sistolica = useMemo(() => estadisticasIndicador(estadoActual, "Sistolica"), [estadoActual]);
   const diastolica = useMemo(() => estadisticasIndicador(estadoActual, "Diastolica"), [estadoActual]);
 
@@ -35,81 +90,138 @@ const CardiovascularSection: React.FC<CardiovascularSectionProps> = ({ estadoAct
     return histogramaConjunto({ "Sistólica": sist, "Diastólica": diast }, 10);
   }, [estadoActual]);
 
-  // Siempre por persona (estado actual): evaluamos el conjunto poblacional, no
-  // registros históricos individuales, que pueden repetir/duplicar a una misma
-  // persona varias veces y distorsionar la lectura del conjunto.
-  const scatterData = useMemo(() => {
-    return estadoActual
-      .map((r) => ({ x: obtenerValor(r, "Sistolica"), y: obtenerValor(r, "Diastolica") }))
-      .filter((p): p is { x: number; y: number } => p.x != null && p.y != null);
-  }, [estadoActual]);
+  // Datos que realmente se dibujan: la serie oculta por la leyenda se fuerza a
+  // 0 (la barra desaparece) sin perder el conteo real en `distPresion`.
+  const distPresionVisible = useMemo(
+    () => distPresion.map((d) => ({
+      ...d,
+      Sistólica: seriesPresionOcultas.has("Sistólica") ? 0 : d["Sistólica"],
+      Diastólica: seriesPresionOcultas.has("Diastólica") ? 0 : d["Diastólica"],
+    })),
+    [distPresion, seriesPresionOcultas]
+  );
+
+  // Oculto (no eliminado): datos de la gráfica "Sistólica × Diastólica", ver
+  // el bloque JSX comentado con el mismo nombre más abajo.
+  // const scatterData = useMemo(() => {
+  //   return estadoActual
+  //     .map((r) => ({ x: obtenerValor(r, "Sistolica"), y: obtenerValor(r, "Diastolica") }))
+  //     .filter((p): p is { x: number; y: number } => p.x != null && p.y != null);
+  // }, [estadoActual]);
 
   const sistolicaPorDepto = useMemo(
     () => promedioPorGrupo(estadoActual, "Sistolica", (r) => r.Depto_nombre).slice(0, 10),
     [estadoActual]
   );
 
-  const sistolicaPorGrupoEtario = useMemo(
-    () => promedioPorGrupo(estadoActual, "Sistolica", (r) => clasificarGrupoEtario(calcularEdad(r.FechaNacimiento.original, r.Fecha.original))),
-    [estadoActual]
-  );
-
   // Estadios de presión arterial (ACC/AHA), a partir de Sistólica + Diastólica combinadas.
   const estadiosPresion = useMemo(() => {
-    const conteo = new Map<string, { count: number; nivel: Nivel }>();
+    const conteo = new Map<string, number>();
     estadoActual.forEach((r) => {
       const sist = obtenerValor(r, "Sistolica");
       const diast = obtenerValor(r, "Diastolica");
       if (sist == null || diast == null) return;
-      const { label, nivel } = clasificarPresion(sist, diast);
-      const actual = conteo.get(label);
-      conteo.set(label, { count: (actual?.count ?? 0) + 1, nivel });
+      const { label } = clasificarPresion(sist, diast);
+      conteo.set(label, (conteo.get(label) ?? 0) + 1);
     });
-    return Array.from(conteo.entries()).map(([label, v]) => ({ label, ...v }));
+    return ORDEN_PRESION.map((label) => ({ label, count: conteo.get(label) ?? 0 }));
   }, [estadoActual]);
   const totalConPresion = estadiosPresion.reduce((acc, e) => acc + e.count, 0);
 
-  return (
-    <SectionCard icon="heart-pulse" title="Cardiovascular" subtitle="Presión sistólica y diastólica">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <KpiCard icon="heart-pulse" label="Sistólica" value={sistolica.media != null ? Math.round(sistolica.media) : "Sin dato"} sub={sistolica.n ? `mediana ${Math.round(sistolica.mediana as number)} · n=${sistolica.n}` : undefined} />
-        <KpiCard icon="heart-outline" label="Diastólica" value={diastolica.media != null ? Math.round(diastolica.media) : "Sin dato"} sub={diastolica.n ? `mediana ${Math.round(diastolica.mediana as number)} · n=${diastolica.n}` : undefined} />
-        <KpiCard icon="arrow-up-bold" label="Sistólica máx." value={sistolica.max ?? "Sin dato"} />
-        <KpiCard icon="arrow-down-bold" label="Diastólica mín." value={diastolica.min ?? "Sin dato"} />
-      </div>
+  // Igual que distribucionIctVisible: los estadios ocultos por la leyenda se
+  // fuerzan a 0 para que su porción desaparezca de la dona.
+  const estadiosPresionVisible = useMemo(
+    () => estadiosPresion.map((e) => (estadiosPresionOcultos.has(e.label) ? { ...e, count: 0 } : e)),
+    [estadiosPresion, estadiosPresionOcultos]
+  );
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="lg:col-span-2">
-          <h3 className="text-xs font-bold text-gray-600 mb-2">Distribución de presión arterial (sistólica y diastólica)</h3>
-          <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={distPresion} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
+  return (
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-2 lg:grid-flow-dense gap-6">
+        <div className="lg:col-span-2 rounded-lg border border-gray-200 p-4">
+          <h3 className="text-xs font-bold text-gray-600 mb-2">
+            <i className="fa-solid fa-chart-simple mr-2"></i>Distribución presión arterial
+          </h3>
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={distPresionVisible} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="label" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
-              <Tooltip />
-              <Legend wrapperStyle={{ fontSize: 11 }} />
-              <Bar dataKey="Sistólica" name="Sistólica" fill="#002E6D" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="Diastólica" name="Diastólica" fill="#009BDE" radius={[4, 4, 0, 0]} />
+              <Tooltip content={<TooltipDistPresion />} cursor={{ fill: "#f8fafc" }} />
+              <Bar dataKey="Sistólica" name="Sistólica" fill={COLOR_PRESION["Sistólica"]} radius={[4, 4, 0, 0]} animationDuration={900} animationEasing="ease-out" />
+              <Bar dataKey="Diastólica" name="Diastólica" fill={COLOR_PRESION["Diastólica"]} radius={[4, 4, 0, 0]} animationDuration={900} animationEasing="ease-out" />
             </BarChart>
           </ResponsiveContainer>
+          <div className="flex flex-wrap gap-1.5 justify-center mt-2">
+            {(["Sistólica", "Diastólica"] as const).map((serie) => {
+              const oculto = seriesPresionOcultas.has(serie);
+              return (
+                <button
+                  key={serie}
+                  type="button"
+                  onClick={() => toggleSeriePresion(serie)}
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-semibold bg-gray-50 transition-opacity cursor-pointer hover:opacity-80 ${oculto ? "text-gray-300 opacity-50" : "text-gray-600"}`}
+                >
+                  <span className="w-3 h-2 inline-block" style={{ backgroundColor: oculto ? "#d1d5db" : COLOR_PRESION[serie] }}></span>
+                  {serie}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
-        <div>
-          <h3 className="text-xs font-bold text-gray-600 mb-2">Estadios de presión arterial (ACC/AHA)</h3>
+        <div className="rounded-lg border border-gray-200 p-4">
+          <h3 className="text-xs font-bold text-gray-600 mb-2"><i className="fa-solid fa-chart-pie mr-2"></i>Presión arterial (ACC/AHA)</h3>
           {totalConPresion > 0 ? (
             <>
-              <ResponsiveContainer width="100%" height={220}>
+              <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
-                  <Pie data={estadiosPresion} dataKey="count" nameKey="label" innerRadius={45} outerRadius={75} paddingAngle={2}>
-                    {estadiosPresion.map((e, i) => <Cell key={i} fill={NIVEL_COLOR[e.nivel]} />)}
+                  <Pie
+                    data={estadiosPresionVisible}
+                    dataKey="count"
+                    nameKey="label"
+                    innerRadius={45}
+                    outerRadius={75}
+                    paddingAngle={2}
+                    animationBegin={0}
+                    animationDuration={900}
+                    animationEasing="ease-out"
+                  >
+                    {estadiosPresionVisible.map((e, i) => <Cell key={i} fill={COLOR_ESTADIO_PRESION[e.label]} />)}
                   </Pie>
-                  <Tooltip formatter={(value: any, name: any) => [`${value} (${((Number(value) / totalConPresion) * 100).toFixed(1)}%)`, name]} />
+                  <Tooltip
+                    content={({ active, payload }: any) => {
+                      if (!active || !payload || !payload.length) return null;
+                      const e = payload[0].payload;
+                      const pct = totalConPresion ? ((e.count / totalConPresion) * 100).toFixed(1) : "0";
+                      return (
+                        <div className={tooltipCls}>
+                          <p className="font-bold text-gray-700 mb-1">Presión arterial (ACC/AHA)</p>
+                          <p className="flex items-center gap-1.5 text-gray-500">
+                            <span className="size-2 rounded-full inline-block" style={{ backgroundColor: COLOR_ESTADIO_PRESION[e.label] }}></span>
+                            {e.label}: <span className="font-bold text-gray-700">{e.count} ({pct}%)</span>
+                          </p>
+                        </div>
+                      );
+                    }}
+                  />
                 </PieChart>
               </ResponsiveContainer>
-              <div className="flex flex-wrap gap-1.5 justify-center -mt-2">
-                {estadiosPresion.map((e) => (
-                  <span key={e.label} className={`px-2 py-1 rounded-lg text-[9px] font-semibold ${NIVEL_ESTILOS[e.nivel]}`}>{e.label}: {e.count}</span>
-                ))}
+              <div className="flex flex-wrap gap-1.5 justify-center mt-2">
+                {estadiosPresion.map((e) => {
+                  const oculto = estadiosPresionOcultos.has(e.label);
+                  return (
+                    <button
+                      key={e.label}
+                      type="button"
+                      onClick={() => toggleEstadioPresion(e.label)}
+                      className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-semibold bg-gray-50 transition-opacity cursor-pointer hover:opacity-80 ${oculto ? "text-gray-300 opacity-50" : "text-gray-600"}`}
+                    >
+                      <span className="size-2 rounded-full inline-block" style={{ backgroundColor: oculto ? "#d1d5db" : COLOR_ESTADIO_PRESION[e.label] }}></span>
+                      {e.label}
+                    </button>
+                  );
+                })}
               </div>
             </>
           ) : (
@@ -117,20 +229,9 @@ const CardiovascularSection: React.FC<CardiovascularSectionProps> = ({ estadoAct
           )}
         </div>
 
-        <div>
-          <h3 className="text-xs font-bold text-gray-600 mb-2">Sistólica promedio por grupo etario</h3>
-          <ResponsiveContainer width="100%" height={220}>
-            <BarChart data={sistolicaPorGrupoEtario} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="label" tick={{ fontSize: 10 }} />
-              <YAxis tick={{ fontSize: 10 }} />
-              <Tooltip />
-              <Bar dataKey="promedio" name="Sistólica promedio" fill="#0070BD" radius={[4, 4, 0, 0]} />
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-
-        <div className="lg:col-span-2">
+        {/* Oculto (no eliminado): "Sistólica × Diastólica". Ver `scatterData`
+            comentado más arriba.
+        <div className="lg:col-span-2 rounded-lg border border-gray-200 p-4">
           <h3 className="text-xs font-bold text-gray-600 mb-2">Sistólica × Diastólica ({estadoActual.length.toLocaleString("es-MX")} personas)</h3>
           <p className="text-[10px] text-gray-400 mb-2">
             Cada punto representa una persona (estado actual). Líneas verdes: límite normal (120/80). Línea roja: umbral HTA etapa 2 (140).
@@ -148,8 +249,9 @@ const CardiovascularSection: React.FC<CardiovascularSectionProps> = ({ estadoAct
             </ScatterChart>
           </ResponsiveContainer>
         </div>
+        */}
 
-        <div>
+        <div className="rounded-lg border border-gray-200 p-4">
           <h3 className="text-xs font-bold text-gray-600 mb-2">Sistólica promedio por departamento (top 10)</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={sistolicaPorDepto} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
@@ -162,8 +264,14 @@ const CardiovascularSection: React.FC<CardiovascularSectionProps> = ({ estadoAct
           </ResponsiveContainer>
         </div>
       </div>
-    </SectionCard>
+    </>
   );
 };
+
+const CardiovascularSection: React.FC<CardiovascularSectionProps> = (props) => (
+  <SectionCard icon="heart-pulse" title="Cardiovascular" subtitle="Presión sistólica y diastólica">
+    <CardiovascularContenido {...props} />
+  </SectionCard>
+);
 
 export default CardiovascularSection;

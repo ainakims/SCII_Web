@@ -211,39 +211,9 @@ export function construirSeguimientoLongitudinal(registros: RegistroValidado[]):
   return { unaEvaluacion, dosATresEvaluaciones, cuatroOMasEvaluaciones, totalPersonas, promedioEvaluacionesPorPersona };
 }
 
-// --- Demografía (sección 23) --------------------------------------------------
-
 export interface DistribucionItem {
   label: string;
   count: number;
-}
-
-export function distribucionPorCampo(
-  estadoActual: RegistroValidado[],
-  campo: "Depto_nombre" | "Especialidad" | "Categoria_desc" | "Sexo"
-): DistribucionItem[] {
-  const conteo = new Map<string, number>();
-  estadoActual.forEach((r) => {
-    const valor = (r[campo] ?? "").toString().trim();
-    if (!valor) return;
-    conteo.set(valor, (conteo.get(valor) ?? 0) + 1);
-  });
-  return Array.from(conteo.entries())
-    .map(([label, count]) => ({ label, count }))
-    .sort((a, b) => b.count - a.count);
-}
-
-export function distribucionEdad(estadoActual: RegistroValidado[]): DistribucionItem[] {
-  const conteo = new Map<string, number>(GRUPOS_ETARIOS.map((g) => [g.label, 0]));
-  conteo.set("No clasificado", 0);
-
-  estadoActual.forEach((r) => {
-    const edad = calcularEdad(r.FechaNacimiento.original, r.Fecha.original);
-    const grupo = clasificarGrupoEtario(edad);
-    conteo.set(grupo, (conteo.get(grupo) ?? 0) + 1);
-  });
-
-  return Array.from(conteo.entries()).map(([label, count]) => ({ label, count }));
 }
 
 // --- Matriz de riesgo (sección 28) --------------------------------------------
@@ -526,58 +496,6 @@ export function pivotConteo(
     cols.forEach((count, columna) => { row[columna] = count; });
     return row;
   });
-}
-
-// --- Regresión lineal (mínimos cuadrados) — sección "Relaciones y Tendencias" ---
-
-export interface ResultadoRegresion {
-  n: number;
-  m: number | null; // pendiente
-  b: number | null; // intersección
-  r: number | null; // correlación de Pearson
-  r2Pct: number | null; // % de varianza explicada
-}
-
-export function regresionLineal(puntosCrudos: { x: number; y: number }[]): ResultadoRegresion {
-  // Defensa adicional: un solo punto no numérico (NaN) contamina toda la suma.
-  const puntos = puntosCrudos.filter((p) => Number.isFinite(p.x) && Number.isFinite(p.y));
-  const n = puntos.length;
-  if (n < 2) return { n, m: null, b: null, r: null, r2Pct: null };
-
-  const meanX = puntos.reduce((acc, p) => acc + p.x, 0) / n;
-  const meanY = puntos.reduce((acc, p) => acc + p.y, 0) / n;
-
-  let ssXX = 0, ssYY = 0, ssXY = 0;
-  puntos.forEach((p) => {
-    const dx = p.x - meanX;
-    const dy = p.y - meanY;
-    ssXX += dx * dx;
-    ssYY += dy * dy;
-    ssXY += dx * dy;
-  });
-
-  if (ssXX === 0) return { n, m: null, b: null, r: null, r2Pct: null };
-
-  const m = ssXY / ssXX;
-  const b = meanY - m * meanX;
-  const r = ssYY === 0 ? null : ssXY / Math.sqrt(ssXX * ssYY);
-
-  return {
-    n,
-    m: Number(m.toFixed(4)),
-    b: Number(b.toFixed(2)),
-    r: r != null ? Number(r.toFixed(3)) : null,
-    r2Pct: r != null ? Number((r * r * 100).toFixed(1)) : null,
-  };
-}
-
-export function etiquetaCorrelacion(r: number | null): string {
-  if (r == null) return "Sin datos suficientes";
-  const abs = Math.abs(r);
-  if (abs >= 0.7) return "Fuerte";
-  if (abs >= 0.4) return "Moderada";
-  if (abs >= 0.2) return "Débil";
-  return "Muy débil / nula";
 }
 
 // --- Filtros -------------------------------------------------------------------

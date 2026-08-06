@@ -6,6 +6,7 @@ import { useAuth } from "../../context/AuthToken";
 interface PageTitle {
   label: string;
   icon: string;
+  subtitle?: string;
 }
 
 interface PageTitles {
@@ -34,6 +35,7 @@ const PAGE_TITLES: PageTitles = {
   '/Inventario':    { label: 'Inventario',    icon: 'mdi-package-variant-closed' },
   '/Documentos':    { label: 'Documentos',    icon: 'mdi-file-document-outline' },
   '/Configuracion': { label: 'Configuración', icon: 'mdi-cog-outline' },
+  '/Expediente': { label: 'Expediente', icon: 'mdi-folder-account-outline' },
 };
 
 const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
@@ -63,13 +65,14 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
           <i className="mdi mdi-menu text-[25px]"></i>
         </button>
 
-        {/* {page && (
-          <div className="flex items-center gap-2 text-gray-700">
-            <span className="text-md font-bold upper ml-2">
-              {page.label}
-            </span>
+        {page && (
+          <div className="ml-3 min-w-0">
+            <p className="text-sm font-bold text-sea-blue truncate">{page.label}</p>
+            {page.subtitle && (
+              <p className="text-xs text-gray-500 truncate hidden md:block max-w-md">{page.subtitle}</p>
+            )}
           </div>
-        )} */}
+        )}
 
         {/* <div className="ml-4 md:ml-0 flex-1 max-w-lg hidden sm:flex">
             <div className="relative w-full text-gray-400 focus-within:text-gray-600">
