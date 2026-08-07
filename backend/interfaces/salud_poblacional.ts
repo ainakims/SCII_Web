@@ -33,7 +33,12 @@ export interface RawIndicadorRow {
   Fecha: string | null;
   FechaNacimiento: string | null;
   Categoria_desc: string | null;
-  Depto_nombre: string | null;
+  // Alias real que regresa el SP: un CASE que agrupa varios Depto_nombre en
+  // categorías más amplias (PRODUCCION Y MANTENIMIENTO, PROYECTOS, VENTAS, ...).
+  Departamento: string | null;
+  // Nombre de departamento sin agrupar (más granular que Departamento), usado
+  // para desglosar por serie en gráficas como "Departamento IMC".
+  Depto_Series: string | null;
   Especialidad: string | null;
   // Confirmado por el SP real: 'M' | 'F' | NULL. Se normaliza a "Masculino" /
   // "Femenino" / null en poblacionValidacion.service.ts (normalizarSexo).
@@ -83,6 +88,7 @@ export interface RegistroValidado {
   Riesgo: number | null;
   Categoria_desc: string | null;
   Depto_nombre: string | null;
+  Depto_Series: string | null;
   Especialidad: string | null;
   Sexo: string | null;
 

@@ -41,11 +41,6 @@ export function SaludPoblacionalController(db: DB) {
     }
   };
 
-  // Genera el resumen médico con IA a partir de un payload de agregados ya
-  // calculado en el frontend (nunca datos crudos por persona — ver
-  // iaResumenPoblacional.service.ts). Es un prototipo (tab "Resumen médico (IA)")
-  // para evaluar el comportamiento antes de decidir si reemplaza al resumen
-  // basado en reglas (resumenMedico.ts en el frontend).
   const ResumenIA = async (req: Request, res: Response): Promise<Response> => {
     try {
       const { agregados } = req.body;

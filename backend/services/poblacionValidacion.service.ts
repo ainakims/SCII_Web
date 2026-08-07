@@ -203,7 +203,8 @@ export function normalizarRegistro(fila: RawIndicadorRow, esDuplicado: boolean):
 
     Riesgo: coerceNumeroFinito(fila.Riesgo),
     Categoria_desc: fila.Categoria_desc ?? null,
-    Depto_nombre: fila.Depto_nombre ?? null,
+    Depto_nombre: fila.Departamento ?? null,
+    Depto_Series: fila.Depto_Series ?? null,
     Especialidad: fila.Especialidad ?? null,
     Sexo: normalizarSexo(fila.Sexo),
 
