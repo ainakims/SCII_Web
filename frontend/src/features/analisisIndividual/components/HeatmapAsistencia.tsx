@@ -1,7 +1,7 @@
 import React from "react";
 import { HeatmapAsistenciaMes } from "../types";
 import { colorNivelRiesgo } from "../colores";
-import SectionCard from "../../saludPoblacional/components/shared/SectionCard";
+import Card from "./Card";
 
 interface HeatmapAsistenciaProps {
   meses: HeatmapAsistenciaMes[];
@@ -14,8 +14,8 @@ function estiloCelda(m: HeatmapAsistenciaMes) {
 }
 
 const HeatmapAsistencia: React.FC<HeatmapAsistenciaProps> = ({ meses }) => (
-  <SectionCard icon="calendar-check-outline" title="Matriz de riesgo mensual" subtitle="Ene - Dic">
-    <div className="grid grid-cols-4 sm:grid-cols-6 lg:grid-cols-12 gap-1.5">
+  <Card icon="mdi-calendar-month-outline" title="Matriz de riesgo mensual por indicadores" badge={<span className="text-[10px] text-gray-400 font-medium">Ene - Dic</span>}>
+    <div className="grid grid-cols-12 gap-1.5">
       {meses.map((m, i) => {
         const c = estiloCelda(m);
         return (
@@ -25,8 +25,8 @@ const HeatmapAsistencia: React.FC<HeatmapAsistenciaProps> = ({ meses }) => (
             style={c.fondo ? { backgroundColor: c.fondo } : undefined}
             title={`${m.Mes}: ${m.Estatus}${m.Riesgo ? ` · riesgo ${m.Riesgo}` : ""}`}
           >
-            <span className="text-[11px] font-bold">{m.Mes}</span>
-            <span className="text-[9px] opacity-80">{m.Riesgo ? `R${m.Riesgo}` : "-"}</span>
+            <span className="text-[10px] font-bold">{m.Mes}</span>
+            <span className="text-[8px] opacity-80">{m.Riesgo ? `R${m.Riesgo}` : "-"}</span>
           </div>
         );
       })}
@@ -37,7 +37,7 @@ const HeatmapAsistencia: React.FC<HeatmapAsistenciaProps> = ({ meses }) => (
       <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="size-2.5 rounded-sm inline-block" style={{ backgroundColor: colorNivelRiesgo(3) }}></span>Riesgo 3 (Alto)</span>
       <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="size-2.5 rounded-sm inline-block bg-gray-200"></span>Sin registro</span>
     </div>
-  </SectionCard>
+  </Card>
 );
 
 export default HeatmapAsistencia;

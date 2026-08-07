@@ -1,12 +1,12 @@
 import React from "react";
-import SectionCard from "../../saludPoblacional/components/shared/SectionCard";
+import Card from "./Card";
 
 interface EnfermedadesBadgesProps {
   enfermedades: string[];
 }
 
 const EnfermedadesBadges: React.FC<EnfermedadesBadgesProps> = ({ enfermedades }) => (
-  <SectionCard icon="virus-outline" title="Enfermedades registradas">
+  <Card icon="mdi-virus-outline" iconColorClass="text-red-400" title="Enfermedades registradas">
     {enfermedades.length > 0 ? (
       <div className="flex flex-wrap gap-1.5">
         {enfermedades.map((e, i) => (
@@ -16,7 +16,7 @@ const EnfermedadesBadges: React.FC<EnfermedadesBadgesProps> = ({ enfermedades })
     ) : (
       <p className="text-xs text-gray-400">Sin enfermedades registradas.</p>
     )}
-  </SectionCard>
+  </Card>
 );
 
 export default EnfermedadesBadges;

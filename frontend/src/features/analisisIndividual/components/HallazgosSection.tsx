@@ -1,13 +1,13 @@
 import React from "react";
 import { HallazgoRelevante } from "../types";
-import SectionCard from "../../saludPoblacional/components/shared/SectionCard";
+import Card from "./Card";
 
 interface HallazgosSectionProps {
   hallazgos: HallazgoRelevante[];
 }
 
 const HallazgosSection: React.FC<HallazgosSectionProps> = ({ hallazgos }) => (
-  <SectionCard icon="clipboard-text-search-outline" title="Hallazgos relevantes">
+  <Card icon="mdi-magnify-scan" title="Hallazgos relevantes">
     {hallazgos.length > 0 ? (
       <div className="flex flex-col gap-2.5">
         {hallazgos.map((h, i) => (
@@ -29,7 +29,7 @@ const HallazgosSection: React.FC<HallazgosSectionProps> = ({ hallazgos }) => (
     ) : (
       <p className="text-xs text-gray-400">Sin hallazgos relevantes registrados.</p>
     )}
-  </SectionCard>
+  </Card>
 );
 
 export default HallazgosSection;

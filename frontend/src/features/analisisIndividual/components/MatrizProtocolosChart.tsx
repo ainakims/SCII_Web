@@ -1,6 +1,6 @@
 import React, { useMemo } from "react";
 import { MatrizProtocoloItem } from "../types";
-import SectionCard from "../../saludPoblacional/components/shared/SectionCard";
+import Card from "./Card";
 
 interface MatrizProtocolosChartProps {
   meses: string[];
@@ -20,10 +20,10 @@ const MatrizProtocolosChart: React.FC<MatrizProtocolosChartProps> = ({ meses, pr
   }, [meses, protocolos]);
 
   return (
-    <SectionCard
-      icon="table-large"
+    <Card
+      icon="mdi-table-large"
       title="Matriz histórica de consultas"
-      actions={protocolos.length > 0 && (
+      badge={protocolos.length > 0 && (
         <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
           {granTotal.toLocaleString("es-MX")} atenciones
         </span>
@@ -74,7 +74,7 @@ const MatrizProtocolosChart: React.FC<MatrizProtocolosChartProps> = ({ meses, pr
       ) : (
         <div className="h-24 flex items-center justify-center text-xs text-gray-400">Sin protocolos de atención registrados.</div>
       )}
-    </SectionCard>
+    </Card>
   );
 };
 

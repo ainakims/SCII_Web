@@ -1,6 +1,6 @@
 import React from "react";
 import { DiagnosticoDiferencialItem } from "../types";
-import SectionCard from "../../saludPoblacional/components/shared/SectionCard";
+import Card from "./Card";
 
 interface DiagnosticoSectionProps {
   diagnostico: DiagnosticoDiferencialItem[];
@@ -11,7 +11,7 @@ interface DiagnosticoSectionProps {
 // según `esUsuarioMedico` (calculado en el backend a partir del rol del JWT, no
 // del cliente) — aquí solo se renderiza lo que haya llegado.
 const DiagnosticoSection: React.FC<DiagnosticoSectionProps> = ({ diagnostico }) => (
-  <SectionCard icon="code-brackets" title="Diagnóstico diferencial" subtitle="Contenido clínico detallado — visible solo para personal médico">
+  <Card icon="mdi-code-brackets" title="Diagnóstico diferencial">
     {diagnostico.length > 0 ? (
       <div className="flex flex-col gap-2.5">
         {diagnostico.map((d, i) => (
@@ -33,7 +33,7 @@ const DiagnosticoSection: React.FC<DiagnosticoSectionProps> = ({ diagnostico }) 
     ) : (
       <p className="text-xs text-gray-400">Sin diagnóstico diferencial disponible para este usuario.</p>
     )}
-  </SectionCard>
+  </Card>
 );
 
 export default DiagnosticoSection;
