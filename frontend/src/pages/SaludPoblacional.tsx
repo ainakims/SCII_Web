@@ -13,10 +13,6 @@ import KpiCards from "../features/saludPoblacional/components/KpiCards";
 import AntropometriaSection from "../features/saludPoblacional/components/AntropometriaSection";
 import CardiovascularSection from "../features/saludPoblacional/components/CardiovascularSection";
 import MetabolicoSection from "../features/saludPoblacional/components/MetabolicoSection";
-import RiesgoMatrizSection from "../features/saludPoblacional/components/RiesgoMatrizSection";
-import EvolucionHistoricaSection from "../features/saludPoblacional/components/EvolucionHistoricaSection";
-import ResumenMedicoSection from "../features/saludPoblacional/components/ResumenMedicoSection";
-import ResumenMedicoIASection from "../features/saludPoblacional/components/ResumenMedicoIASection";
 
 const errorModal = (title: string, message: string) => {
   Swal.fire({
@@ -31,14 +27,10 @@ const errorModal = (title: string, message: string) => {
 };
 
 const TABS: TabDef[] = [
-  { id: "resumen", label: "Resumen", icon: "view-dashboard-outline" },
-  { id: "antropometria", label: "Antropometría", icon: "human" },
+  { id: "resumen",        label: "Resumen",        icon: "view-dashboard-outline" },
+  { id: "antropometria",  label: "Somatometría",   icon: "human" },
   { id: "cardiovascular", label: "Cardiovascular", icon: "heart-pulse" },
-  { id: "metabolico", label: "Metabólico", icon: "water-outline" },
-  { id: "riesgo", label: "Matriz de riesgo", icon: "grid" },
-  { id: "evolucion", label: "Evolución histórica", icon: "chart-timeline-variant" },
-  { id: "resumenMedico", label: "Resumen médico", icon: "file-document-outline" },
-  { id: "resumenMedicoIA", label: "Resumen médico (IA)", icon: "creation" },
+  { id: "metabolico",     label: "Metabólico",     icon: "water-outline" },
 ];
 
 // Dashboard de Análisis de Salud Poblacional.
@@ -117,10 +109,6 @@ const SaludPoblacional: React.FC = () => {
               {tabActiva === "antropometria" && <AntropometriaSection estadoActual={estadoActualFiltrado} historico={historicoFiltrado} />}
               {tabActiva === "cardiovascular" && <CardiovascularSection estadoActual={estadoActualFiltrado} />}
               {tabActiva === "metabolico" && <MetabolicoSection estadoActual={estadoActualFiltrado} />}
-              {tabActiva === "riesgo" && <RiesgoMatrizSection estadoActual={estadoActualFiltrado} />}
-              {tabActiva === "evolucion" && <EvolucionHistoricaSection historico={historicoFiltrado} />}
-              {tabActiva === "resumenMedico" && <ResumenMedicoSection estadoActual={estadoActualFiltrado} />}
-              {tabActiva === "resumenMedicoIA" && <ResumenMedicoIASection estadoActual={estadoActualFiltrado} historico={historicoFiltrado} />}
             </>
           )}
         </div>

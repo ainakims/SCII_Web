@@ -12,7 +12,7 @@ interface SectionCardProps {
 // `icon` acepta un nombre corto de Material Design Icons ("heart-pulse" ->
 // "mdi mdi-heart-pulse") o, si ya trae espacio, una clase completa de otro set
 // (p. ej. Font Awesome: "fa-solid fa-building") — mismo criterio que KpiCard.
-// Contenedor estándar de cada bloque del dashboard (Demografía, Antropometría, etc.),
+// Contenedor estándar de cada bloque del dashboard (Demografía, Somatometría, etc.),
 // mismo patrón visual (motion.div + card) usado en el resto del sistema.
 const SectionCard: React.FC<SectionCardProps> = ({ icon, title, subtitle, actions, children }) => (
   <motion.div

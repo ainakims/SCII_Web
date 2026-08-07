@@ -3,10 +3,7 @@ import { RegistroValidado } from "../types";
 import { construirEstadoActual } from "../analytics";
 
 import AntropometriaCardiovascularMetabolicoSection from "./AntropometriaCardiovascularMetabolicoSection";
-import RiesgoMatrizSection from "./RiesgoMatrizSection";
-import EvolucionHistoricaSection from "./EvolucionHistoricaSection";
-import ResumenMedicoSection from "./ResumenMedicoSection";
-import ResumenMedicoIASection from "./ResumenMedicoIASection";
+import IndicadoresConsultasSection from "./IndicadoresConsultasSection";
 
 interface ExpedienteContenidoProps {
   historico: RegistroValidado[];
@@ -32,10 +29,7 @@ const ExpedienteContenido: React.FC<ExpedienteContenidoProps> = ({ historico, me
   return (
     <>
       <AntropometriaCardiovascularMetabolicoSection estadoActual={estadoActual} historico={historico} />
-      <RiesgoMatrizSection estadoActual={estadoActual} />
-      <EvolucionHistoricaSection historico={historico} />
-      <ResumenMedicoSection estadoActual={estadoActual} />
-      <ResumenMedicoIASection estadoActual={estadoActual} historico={historico} />
+      <IndicadoresConsultasSection />
     </>
   );
 };

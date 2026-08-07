@@ -26,6 +26,40 @@ const errorModal = (title: string, message: string) => {
   });
 };
 
+// Placeholder mientras carga el expediente: mismas formas/tamaños que el
+// contenido real (KPI cards, tabla de departamentos, cards de gráficas) para
+// que la página no "salte" de tamaño cuando llegan los datos.
+const ExpedienteSkeleton: React.FC = () => (
+  <div className="space-y-6 animate-pulse">
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+      {[0, 1, 2, 3].map((i) => (
+        <div key={i} className="bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl flex items-center px-5 py-4 gap-4">
+          <div className="size-12 rounded-md bg-gray-200 flex-shrink-0"></div>
+          <div className="flex-1 space-y-2">
+            <div className="h-2.5 w-16 rounded bg-gray-200"></div>
+            <div className="h-4 w-10 rounded bg-gray-200"></div>
+          </div>
+        </div>
+      ))}
+    </div>
+
+    <div className="bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl p-6">
+      <div className="flex items-center justify-between mb-4 flex-wrap gap-2">
+        <div className="h-4 w-40 rounded bg-gray-200"></div>
+        <div className="h-8 w-64 rounded-lg bg-gray-200"></div>
+      </div>
+      <div className="h-[420px] rounded-lg bg-gray-100"></div>
+    </div>
+
+    {[0, 1, 2, 3].map((i) => (
+      <div key={i} className="bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl p-6">
+        <div className="h-4 w-48 rounded bg-gray-200 mb-4"></div>
+        <div className="h-56 rounded-lg bg-gray-100"></div>
+      </div>
+    ))}
+  </div>
+);
+
 const TABS_DEPTO = [
   { id: "departamentos", label: "Departamento", icon: "fa-building" },
   { id: "activos",       label: "Personal",     icon: "fa-user-group" },
@@ -123,10 +157,7 @@ const Expediente: React.FC = () => {
       <div className="flex-1 mt-14 transition-all duration-300 ease-in-out">
         <div className="max-w-7xl mx-auto px-4 space-y-6 pb-5.5">
           {loading ? (
-            <div className="flex items-center justify-center py-24 text-sea-blue">
-              <i className="mdi mdi-loading mdi-spin text-3xl mr-3"></i>
-              Cargando información poblacional...
-            </div>
+            <ExpedienteSkeleton />
           ) : registros.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-24 text-gray-400 gap-2">
               <i className="mdi mdi-database-off-outline text-3xl"></i>

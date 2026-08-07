@@ -11,13 +11,13 @@ interface AntropometriaCardiovascularMetabolicoSectionProps {
 }
 
 const TABS_ACM = [
-  { id: "antropometria", label: "Antropometría", icon: "fa-weight-scale", titulo: "Antropometría", subtitulo: "Peso, altura, cálculo de IMC — ICT" },
+  { id: "antropometria", label: "Somatometría", icon: "fa-weight-scale", titulo: "Somatometría", subtitulo: "Peso, altura, cálculo de IMC — ICT" },
   { id: "cardiovascular", label: "Cardiovascular", icon: "fa-heart-pulse", titulo: "Cardiovascular", subtitulo: "Presión arterial: sistólica / diastólica" },
   { id: "metabolico", label: "Metabólico", icon: "fa-droplet", titulo: "Metabólico", subtitulo: "Glucosa, colesterol y triglicéridos" },
 ] as const;
 type VistaACMTab = typeof TABS_ACM[number]["id"];
 
-// Antropometría, Cardiovascular y Metabólico comparten un mismo bloque del
+// Somatometría, Cardiovascular y Metabólico comparten un mismo bloque del
 // expediente, alternando con pestañas (mismo patrón que la tabla de
 // departamentos). Los tres se montan una sola vez y se alternan con `hidden`
 // para no perder el estado interno de cada sección al cambiar de pestaña.

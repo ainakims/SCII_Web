@@ -38,9 +38,17 @@ const PAGE_TITLES: PageTitles = {
   '/Expediente': { label: 'Expediente', icon: 'mdi-folder-account-outline' },
 };
 
+// Ruta dinámica /Expediente/Departamento/:nombre: no tiene una entrada propia
+// en PAGE_TITLES (el nombre del departamento es variable), así que se detecta
+// aparte para mostrar el breadcrumb "Expediente > NOMBRE_DEPARTAMENTO" con
+// "Expediente" como link de regreso.
+const RUTA_EXPEDIENTE_DEPTO = /^\/Expediente\/Departamento\/(.+)$/;
+
 const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
   const location = useLocation();
-  const page = PAGE_TITLES[location.pathname];
+  const matchDepto = location.pathname.match(RUTA_EXPEDIENTE_DEPTO);
+  const nombreDepto = matchDepto ? decodeURIComponent(matchDepto[1]) : null;
+  const page = nombreDepto ? PAGE_TITLES["/Expediente"] : PAGE_TITLES[location.pathname];
 
   const { user, logout } = useAuth() as { user: User; logout: () => void };
 
@@ -67,7 +75,22 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
 
         {page && (
           <div className="ml-3 min-w-0">
-            <p className="text-sm font-bold text-sea-blue truncate">{page.label}</p>
+            <p className="text-sm font-bold text-sea-blue truncate flex items-center gap-1">
+              {nombreDepto ? (
+                <>
+                  <button
+                    onClick={() => navigate("/Expediente")}
+                    className="hover:underline cursor-pointer"
+                  >
+                    {page.label}
+                  </button>
+                  <i className="mdi mdi-chevron-right text-gray-300"></i>
+                  <span className="truncate">{nombreDepto}</span>
+                </>
+              ) : (
+                page.label
+              )}
+            </p>
             {page.subtitle && (
               <p className="text-xs text-gray-500 truncate hidden md:block max-w-md">{page.subtitle}</p>
             )}

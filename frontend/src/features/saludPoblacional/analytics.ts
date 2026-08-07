@@ -6,7 +6,7 @@
 // valores válidos como denominador; nunca se comparte un único denominador global.
 
 import { RegistroValidado, ValorNormalizado, EstadisticasIndicador, Filtros } from "./types";
-import { GRUPOS_ETARIOS, clasificarGrupoEtario, clasificarRiesgo, clasificarTipoEmpleado, Clasificacion } from "./clinicalRules";
+import { clasificarRiesgo, clasificarTipoEmpleado } from "./clinicalRules";
 
 export type IndicadorClave =
   | "IMC" | "Sistolica" | "Diastolica" | "Glucosa" | "Colesterol" | "Trigliceridos" | "Peso" | "Altura" | "PA" | "ICT" | "Riesgo";
@@ -217,39 +217,6 @@ export interface DistribucionItem {
 }
 
 // --- Matriz de riesgo (sección 28) --------------------------------------------
-
-export interface CeldaMatrizRiesgo {
-  grupoEtario: string;
-  n: number;
-  elevadoPct: number;
-}
-
-export function construirMatrizRiesgo(
-  estadoActual: RegistroValidado[],
-  campo: IndicadorClave,
-  clasificador: (valor: number | null) => Clasificacion
-): CeldaMatrizRiesgo[] {
-  const grupos = [...GRUPOS_ETARIOS.map((g) => g.label), "No clasificado"];
-
-  return grupos.map((grupoEtario) => {
-    const personasGrupo = estadoActual.filter((r) => {
-      const edad = calcularEdad(r.FechaNacimiento.original, r.Fecha.original);
-      return clasificarGrupoEtario(edad) === grupoEtario;
-    });
-
-    const conDato = personasGrupo.filter((r) => obtenerValor(r, campo) != null);
-    const elevados = conDato.filter((r) => {
-      const nivel = clasificador(obtenerValor(r, campo)).nivel;
-      return nivel === "alto" || nivel === "critico";
-    });
-
-    return {
-      grupoEtario,
-      n: conDato.length,
-      elevadoPct: conDato.length ? Number(((elevados.length / conDato.length) * 100).toFixed(1)) : 0,
-    };
-  }).filter((celda) => celda.grupoEtario !== "No clasificado" || celda.n > 0);
-}
 
 // --- Evolución histórica (sección 29-30) --------------------------------------
 
@@ -471,29 +438,6 @@ export function pivotPromedio(
     cols.forEach((valores, columna) => {
       row[columna] = calcularEstadisticas(valores).media;
     });
-    return row;
-  });
-}
-
-export function pivotConteo(
-  registros: RegistroValidado[],
-  filaFn: (r: RegistroValidado) => string | null,
-  columnaFn: (r: RegistroValidado) => string | null
-): Record<string, any>[] {
-  const filas = new Map<string, Map<string, number>>();
-
-  registros.forEach((r) => {
-    const fila = filaFn(r);
-    const columna = columnaFn(r);
-    if (fila == null || columna == null) return;
-    if (!filas.has(fila)) filas.set(fila, new Map());
-    const cols = filas.get(fila)!;
-    cols.set(columna, (cols.get(columna) ?? 0) + 1);
-  });
-
-  return Array.from(filas.entries()).map(([fila, cols]) => {
-    const row: Record<string, any> = { fila };
-    cols.forEach((count, columna) => { row[columna] = count; });
     return row;
   });
 }

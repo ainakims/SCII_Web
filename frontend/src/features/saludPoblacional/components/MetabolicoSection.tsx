@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from "react";
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ScatterChart, Scatter, ReferenceLine } from "recharts";
 import { RegistroValidado } from "../types";
-import { estadisticasIndicador, obtenerValor, calcularCoberturaCalidad, construirRelacion, IndicadorClave } from "../analytics";
-import { clasificarGlucosa, clasificarColesterol, clasificarTrigliceridos, UMBRALES_LABORATORIO, NIVEL_ESTILOS, Nivel, Clasificacion } from "../clinicalRules";
+import { estadisticasIndicador, obtenerValor, construirRelacion, IndicadorClave } from "../analytics";
+import { clasificarGlucosa, clasificarColesterol, clasificarTrigliceridos, UMBRALES_LABORATORIO, Nivel, Clasificacion } from "../clinicalRules";
+import { generarResumenMedico } from "../resumenMedico";
 import SectionCard from "./shared/SectionCard";
-import QualityBadge from "./shared/QualityBadge";
 
 interface MetabolicoSectionProps {
   estadoActual: RegistroValidado[];
@@ -18,6 +18,9 @@ const VARIABLES_METABOLICAS: { campo: IndicadorClave; label: string }[] = [
 
 const selectCls =
   "w-full appearance-none bg-linear-to-r from-gray-50 to-gray-100 text-sea-blue pl-3 pr-8 py-2 rounded-lg text-xs font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer";
+
+// Mismo estilo de tooltip que el resto de las gráficas del dashboard.
+const tooltipCls = "bg-white shadow-lg rounded-lg p-2.5 text-[11px]";
 
 // Explorador interactivo: dispersión entre dos indicadores metabólicos, con líneas
 // de umbral de laboratorio superpuestas según el indicador elegido en cada eje.
@@ -96,20 +99,7 @@ interface BloqueProps {
 }
 
 const BloqueIndicador: React.FC<BloqueProps> = ({ titulo, icono, campo, unidad, clasificador, estadoActual }) => {
-  const cobertura = useMemo(() => calcularCoberturaCalidad(estadoActual, campo), [estadoActual, campo]);
   const umbrales = UMBRALES_LABORATORIO[campo];
-
-  const clasificacion = useMemo(() => {
-    const conteo = new Map<string, { count: number; nivel: Nivel }>();
-    estadoActual.forEach((r) => {
-      const valor = obtenerValor(r, campo);
-      if (valor == null) return;
-      const { label, nivel } = clasificador(valor);
-      const actual = conteo.get(label);
-      conteo.set(label, { count: (actual?.count ?? 0) + 1, nivel });
-    });
-    return Array.from(conteo.entries()).map(([label, v]) => ({ label, ...v }));
-  }, [estadoActual, campo, clasificador]);
 
   // Valores individuales (una persona = un punto), para ver de un vistazo quién
   // está dentro/fuera de cada umbral de laboratorio.
@@ -124,53 +114,47 @@ const BloqueIndicador: React.FC<BloqueProps> = ({ titulo, icono, campo, unidad, 
 
   return (
     <div className="p-4 rounded-xl border border-gray-200 shadow-md bg-linear-to-b from-white to-gray-50">
-      <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+      <div className="flex items-center mb-3 flex-wrap gap-2">
         <h3 className="text-sm font-bold text-gray-800 flex items-center">
           <i className={`mdi mdi-${icono} text-sea-blue mr-2`}></i>
           {titulo}
         </h3>
-        <div className="flex items-center gap-1.5">
-          <QualityBadge label={`Cobertura ${cobertura.coberturaPct}%`} nivel={cobertura.coberturaPct >= 70 ? "normal" : cobertura.coberturaPct >= 40 ? "leve" : "alto"} />
-          <QualityBadge label={`Calidad ${cobertura.calidadPct}% (${cobertura.validos}/${cobertura.totalEvaluado})`} nivel={cobertura.calidadPct >= 70 ? "normal" : cobertura.calidadPct >= 40 ? "leve" : "alto"} />
-        </div>
       </div>
-
-      {clasificacion.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-4">
-          {clasificacion.map((c) => (
-            <span key={c.label} className={`px-2 py-1 rounded-lg text-[9px] font-semibold ${NIVEL_ESTILOS[c.nivel]}`}>
-              {c.label}: {c.count}
-            </span>
-          ))}
-        </div>
-      )}
 
       {/* <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">Valores individuales</h4> */}
       {puntosIndividuales.length > 0 ? (
-        <>
-          <ResponsiveContainer width="100%" height={80}>
-            <ScatterChart margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis type="number" dataKey="x" hide domain={[-1, puntosIndividuales.length]} />
-              <YAxis type="number" dataKey="y" tick={{ fontSize: 10 }} label={{ value: unidad, angle: -90, position: "insideLeft", fontSize: 10 }} />
-              <Tooltip cursor={{ strokeDasharray: "3 3" }} formatter={(value: any) => [`${value} ${unidad}`, titulo]} labelFormatter={() => ""} />
-              {umbrales && (
-                <>
-                  <ReferenceLine y={umbrales[0]} stroke="#f59e0b" strokeDasharray="4 4" label={{ value: `${umbrales[0]}`, fontSize: 9, fill: "#f59e0b", position: "insideTopLeft" }} />
-                  <ReferenceLine y={umbrales[1]} stroke="#ef4444" strokeDasharray="4 4" label={{ value: `${umbrales[1]}`, fontSize: 9, fill: "#ef4444", position: "insideTopLeft" }} />
-                </>
-              )}
-              <Scatter data={puntosIndividuales}>
-                {puntosIndividuales.map((p, i) => <Cell key={i} fill={NIVEL_COLOR[p.nivel]} fillOpacity={0.75} />)}
-              </Scatter>
-            </ScatterChart>
-          </ResponsiveContainer>
-          {umbrales && (
-            <p className="text-[10px] text-gray-400 mt-1">
-              Ámbar ({umbrales[0]} {unidad}): valor alterado/límite. Rojo ({umbrales[1]} {unidad}): alto riesgo / criterio diagnóstico. Cada punto es una persona.
-            </p>
-          )}
-        </>
+        <ResponsiveContainer width="100%" height={80}>
+          <ScatterChart margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+            <XAxis type="number" dataKey="x" hide domain={[-1, puntosIndividuales.length]} />
+            <YAxis type="number" dataKey="y" tick={{ fontSize: 10 }} />
+            <Tooltip
+              cursor={{ strokeDasharray: "3 3" }}
+              content={({ active, payload }: any) => {
+                if (!active || !payload || !payload.length) return null;
+                const p = payload[0].payload;
+                return (
+                  <div className={tooltipCls}>
+                    <p className="font-bold text-gray-700 mb-1">{titulo}</p>
+                    <p className="flex items-center gap-1.5 text-gray-500">
+                      <span className="size-2 rounded-full inline-block" style={{ backgroundColor: NIVEL_COLOR[p.nivel] }}></span>
+                      <span className="font-bold text-gray-700">{p.y} {unidad}</span>
+                    </p>
+                  </div>
+                );
+              }}
+            />
+            {umbrales && (
+              <>
+                <ReferenceLine y={umbrales[0]} stroke="#f59e0b" strokeDasharray="4 4" label={{ value: `${umbrales[0]}`, fontSize: 9, fill: "#f59e0b", position: "insideTopLeft" }} />
+                <ReferenceLine y={umbrales[1]} stroke="#ef4444" strokeDasharray="4 4" label={{ value: `${umbrales[1]}`, fontSize: 9, fill: "#ef4444", position: "insideTopLeft" }} />
+              </>
+            )}
+            <Scatter data={puntosIndividuales}>
+              {puntosIndividuales.map((p, i) => <Cell key={i} fill={NIVEL_COLOR[p.nivel]} fillOpacity={0.75} />)}
+            </Scatter>
+          </ScatterChart>
+        </ResponsiveContainer>
       ) : (
         <div className="h-[220px] flex items-center justify-center text-xs text-gray-400">Sin datos suficientes</div>
       )}
@@ -181,18 +165,33 @@ const BloqueIndicador: React.FC<BloqueProps> = ({ titulo, icono, campo, unidad, 
 // Sección 26 del documento: Glucosa, Colesterol, Triglicéridos.
 // No se calcula ninguna media usando valores no numéricos (los estados
 // PENDIENTE/NO_APLICA/INVALIDO/FALTANTE quedan excluidos por analytics.ts).
-export const MetabolicoContenido: React.FC<MetabolicoSectionProps> = ({ estadoActual }) => (
-  <>
-    {/* Oculto (no eliminado): "Explorador de dispersión metabólico".
-    <ExploradorMetabolico estadoActual={estadoActual} />
-    */}
-    <div className="grid grid-cols-1 gap-4">
-      <BloqueIndicador titulo="Glucosa" icono="water" campo="Glucosa" unidad="mg/dL" clasificador={clasificarGlucosa} estadoActual={estadoActual} />
-      <BloqueIndicador titulo="Colesterol" icono="virus" campo="Colesterol" unidad="mg/dL" clasificador={clasificarColesterol} estadoActual={estadoActual} />
-      <BloqueIndicador titulo="Triglicéridos" icono="atom-variant" campo="Trigliceridos" unidad="mg/dL" clasificador={clasificarTrigliceridos} estadoActual={estadoActual} />
-    </div>
-  </>
-);
+export const MetabolicoContenido: React.FC<MetabolicoSectionProps> = ({ estadoActual }) => {
+  const resumen = useMemo(() => generarResumenMedico(estadoActual), [estadoActual]);
+
+  return (
+    <>
+      {/* Oculto (no eliminado): "Explorador de dispersión metabólico".
+      <ExploradorMetabolico estadoActual={estadoActual} />
+      */}
+      <div className="grid grid-cols-1 gap-4">
+        <BloqueIndicador titulo="Glucosa" icono="water" campo="Glucosa" unidad="mg/dL" clasificador={clasificarGlucosa} estadoActual={estadoActual} />
+        <BloqueIndicador titulo="Colesterol" icono="virus" campo="Colesterol" unidad="mg/dL" clasificador={clasificarColesterol} estadoActual={estadoActual} />
+        <BloqueIndicador titulo="Triglicéridos" icono="atom-variant" campo="Trigliceridos" unidad="mg/dL" clasificador={clasificarTrigliceridos} estadoActual={estadoActual} />
+      </div>
+      <div className="flex items-start gap-2 bg-horz-blue/15 text-yellow-700 text-[11px] px-3 py-2 rounded-lg mt-6">
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-blue/10 shrink-0">
+          <i className="mdi mdi-creation text-sea-blue text-base animate-pulse"></i>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-sea-blue uppercase tracking-wide mb-1">
+            Cobertura metabólica
+          </p>
+          <p className="text-xs text-sea-blue leading-relaxed line-clamp-2 min-h-[2.4rem]">{resumen?.coberturaMetabolica}</p>
+        </div>
+      </div>
+    </>
+  );
+};
 
 const MetabolicoSection: React.FC<MetabolicoSectionProps> = (props) => (
   <SectionCard icon="water-outline" title="Metabólico" subtitle="Glucosa, colesterol y triglicéridos (estado actual)">

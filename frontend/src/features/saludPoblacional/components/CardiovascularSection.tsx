@@ -3,6 +3,7 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, Res
 import { RegistroValidado } from "../types";
 import { estadisticasIndicador, histogramaConjunto, obtenerValor, promedioPorGrupo } from "../analytics";
 import { clasificarPresion } from "../clinicalRules";
+import { generarResumenMedico } from "../resumenMedico";
 import SectionCard from "./shared/SectionCard";
 import KpiCard from "./shared/KpiCard";
 
@@ -19,7 +20,7 @@ const COLOR_PRESION: Record<"Sistólica" | "Diastólica", string> = {
 // comparten nivel "alto", pero deben distinguirse visualmente — degradado de
 // severidad creciente, verde a rojo oscuro.
 const COLOR_ESTADIO_PRESION: Record<string, string> = {
-  "Normal": "#54BBAB",
+  "Normal": "#009BDE",
   "Elevada": "#FFC627",
   "Etapa 1": "#EE7523",
   "Etapa 2": "#ef4444",
@@ -31,7 +32,7 @@ const COLOR_ESTADIO_PRESION: Record<string, string> = {
 // Etapa 1, Etapa 2, Crisis — mismas etiquetas que clasificarPresion.
 const ORDEN_PRESION = ["Normal", "Elevada", "Etapa 1", "Etapa 2", "Crisis"] as const;
 
-// Mismo estilo de tooltip que Antropometría: sin borde, con sombra y esquinas
+// Mismo estilo de tooltip que Somatometría: sin borde, con sombra y esquinas
 // redondeadas, título de la gráfica, color propio de cada serie y el valor en
 // negritas — letra pequeña para no saturar.
 const tooltipCls = "bg-white shadow-lg rounded-lg p-2.5 text-[11px]";
@@ -55,7 +56,7 @@ const TooltipDistPresion: React.FC<any> = ({ active, payload, label }) => {
 // Sección 25 del documento.
 export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ estadoActual }) => {
   // Series ocultas por clic en la leyenda de "Distribución presión arterial"
-  // (mismo toggle mostrar/ocultar que las leyendas de Antropometría).
+  // (mismo toggle mostrar/ocultar que las leyendas de Somatometría).
   const [seriesPresionOcultas, setSeriesPresionOcultas] = useState<Set<string>>(new Set());
   const toggleSeriePresion = (serie: string) => {
     setSeriesPresionOcultas((prev) => {
@@ -66,7 +67,7 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
   };
 
   // Estadios ocultos por clic en la leyenda de "Presión arterial (ACC/AHA)"
-  // (mismo toggle que la leyenda de Distribución de ICT en Antropometría).
+  // (mismo toggle que la leyenda de Distribución de ICT en Somatometría).
   const [estadiosPresionOcultos, setEstadiosPresionOcultos] = useState<Set<string>>(new Set());
   const toggleEstadioPresion = (label: string) => {
     setEstadiosPresionOcultos((prev) => {
@@ -75,6 +76,8 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
       return next;
     });
   };
+
+  const resumen = useMemo(() => generarResumenMedico(estadoActual), [estadoActual]);
 
   const sistolica = useMemo(() => estadisticasIndicador(estadoActual, "Sistolica"), [estadoActual]);
   const diastolica = useMemo(() => estadisticasIndicador(estadoActual, "Diastolica"), [estadoActual]);
@@ -262,6 +265,17 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
               <Bar dataKey="promedio" name="Sistólica promedio" fill="#0090D8" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
+        </div>
+      </div>
+      <div className="flex items-start gap-2 bg-horz-blue/15 text-yellow-700 text-[11px] px-3 py-2 rounded-lg mt-6">
+        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-blue/10 shrink-0">
+          <i className="mdi mdi-creation text-sea-blue text-base animate-pulse"></i>
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs font-bold text-sea-blue uppercase tracking-wide mb-1">
+            Perfil cardiovascular
+          </p>
+          <p className="text-xs text-sea-blue leading-relaxed line-clamp-2 min-h-[2.4rem]">{resumen?.perfilCardiovascular}</p>
         </div>
       </div>
     </>

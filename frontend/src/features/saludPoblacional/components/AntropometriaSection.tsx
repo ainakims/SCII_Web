@@ -1,22 +1,22 @@
 import React, { useMemo, useState } from "react";
-import { BarChart, Bar, ComposedChart, Scatter, PieChart, Pie, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ReferenceArea, ResponsiveContainer, Cell } from "recharts";
+import { BarChart, Bar, ComposedChart, Scatter, PieChart, Pie, Sector, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ReferenceArea, ResponsiveContainer, Cell } from "recharts";
 import { RegistroValidado } from "../types";
 import { estadisticasIndicador } from "../analytics";
 import { clasificarIMC, clasificarIMCSimplificado, clasificarICT, NIVEL_ESTILOS, Nivel } from "../clinicalRules";
+import { generarResumenMedico } from "../resumenMedico";
 import SectionCard from "./shared/SectionCard";
 import KpiCard from "./shared/KpiCard";
 
 const BANDA_IMC_NORMAL: [number, number] = [18.5, 25];
 
+const RADIAN = Math.PI / 180;
+// Distancia (px) que se desplaza una rebanada seleccionada hacia afuera del centro.
+const EXPLODE_OFFSET_ICT = 10;
+
 // Paleta categórica por departamento (identidad, no severidad clínica) — se repite
 // si hay más departamentos que colores.
 const PALETA_DEPTO = [
-  "#002E6D",
   "#009BDE",
-  "#9ACAEB",
-  // "#002E6D", "#009BDE", "#1f3461", "#278cc3", "#599AC8", "#434c73",
-  // "#9ACAEB", "#7daacf", "#666786", "#8db2cc", "#9ebbd6", "#9fbcd1",
-  // "#8a8aa2", "#b1c7d7", "#b3b3c1", "#c2cfde", "#c3d1db", "#d5dbe1"
 ];
 
 // Mismo estilo que los selects de filtro de las tablas (Departamentos/Pacientes).
@@ -38,7 +38,7 @@ interface AntropometriaSectionProps {
 
 const NIVEL_COLOR: Record<Nivel, string> = {
   // bajo: "#009BDE",
-  normal: "#54BBAB",
+  normal: "#009BDE",
   leve: "#FFC627",
   alto: "#EE7523",
   // ef4444
@@ -47,7 +47,7 @@ const NIVEL_COLOR: Record<Nivel, string> = {
 };
 
 const ORDEN_IMC: { label: string; nivel: Nivel; color: string }[] = [
-  { label: "Normal", nivel: "normal", color: "#54BBAB" },
+  { label: "Normal", nivel: "normal", color: "#009BDE" },
   { label: "Sobrepeso", nivel: "leve", color: "#FFC627" },
   { label: "Obesidad I", nivel: "alto", color: "#EE7523" },
   { label: "Obesidad II", nivel: "alto", color: "#EF4444" },
@@ -97,6 +97,49 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
       return next;
     });
   };
+
+  // Segmentos de ICT seleccionados al hacer clic directamente sobre la dona: los
+  // seleccionados quedan resaltados y el resto se atenúa (sin seleccionar ninguno,
+  // todos se ven normal).
+  const [segmentosIctSeleccionados, setSegmentosIctSeleccionados] = useState<Set<string>>(new Set());
+  const toggleSegmentoIct = (label: string) => {
+    setSegmentosIctSeleccionados((prev) => {
+      const next = new Set(prev);
+      if (next.has(label)) next.delete(label); else next.add(label);
+      return next;
+    });
+  };
+
+  // Rebanada de la dona de ICT: si está seleccionada, se dibuja desplazada hacia
+  // afuera del centro (efecto "exploded pie"). El desplazamiento se hace con un
+  // <g transform="translate(...)"> (no moviendo cx/cy del propio Sector) para que
+  // el cambio se pueda animar con una transición CSS en vez de saltar de golpe.
+  const renderSectorIct = (props: any) => {
+    const { cx, cy, midAngle, innerRadius, outerRadius, startAngle, endAngle, fill, payload } = props;
+    const seleccionado = segmentosIctSeleccionados.has(payload.label);
+    const offset = seleccionado ? EXPLODE_OFFSET_ICT : 0;
+    const dx = offset * Math.cos(-midAngle * RADIAN);
+    const dy = offset * Math.sin(-midAngle * RADIAN);
+    return (
+      <g
+        style={{ transform: `translate(${dx}px, ${dy}px)`, transition: "transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1)" }}
+        onClick={() => toggleSegmentoIct(payload.label)}
+        className="cursor-pointer"
+      >
+        <Sector
+          cx={cx}
+          cy={cy}
+          innerRadius={innerRadius}
+          outerRadius={outerRadius}
+          startAngle={startAngle}
+          endAngle={endAngle}
+          fill={fill}
+        />
+      </g>
+    );
+  };
+
+  const resumen = useMemo(() => generarResumenMedico(estadoActual), [estadoActual]);
 
   const imc = useMemo(() => estadisticasIndicador(estadoActual, "IMC"), [estadoActual]);
   const peso = useMemo(() => estadisticasIndicador(estadoActual, "Peso"), [estadoActual]);
@@ -153,43 +196,45 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
   // departamento (no la severidad clínica del punto).
   const { puntosImcPorDepto, departamentos, statsPorDepto } = useMemo(() => {
     const conteoPorDepto = new Map<string, number>();
-    const sumaImcPorDepto = new Map<string, number>();
     estadoActual.forEach((r) => {
-      if (r.IMC.estado === "FALTANTE" || !r.Depto_nombre) return;
-      conteoPorDepto.set(r.Depto_nombre, (conteoPorDepto.get(r.Depto_nombre) ?? 0) + 1);
-      sumaImcPorDepto.set(r.Depto_nombre, (sumaImcPorDepto.get(r.Depto_nombre) ?? 0) + (r.IMC.usado as number));
+      if (r.IMC.estado === "FALTANTE" || !r.Depto_Series) return;
+      conteoPorDepto.set(r.Depto_Series, (conteoPorDepto.get(r.Depto_Series) ?? 0) + 1);
     });
 
     const deptos = Array.from(conteoPorDepto.entries()).sort((a, b) => b[1] - a[1]).map(([depto]) => depto);
     const indexPorDepto = new Map(deptos.map((d, i) => [d, i]));
-    const colores = new Map(deptos.map((d, i) => [d, PALETA_DEPTO[i % PALETA_DEPTO.length]]));
 
+    const normalPorDepto = new Map<string, number>();
+    const anormalPorDepto = new Map<string, number>();
     const contadorEnDepto = new Map<string, number>();
     const puntos: { x: number; y: number; nivel: Nivel; depto: string; color: string }[] = [];
     estadoActual.forEach((r) => {
-      if (r.IMC.estado === "FALTANTE" || !r.Depto_nombre) return;
-      const idx = indexPorDepto.get(r.Depto_nombre);
+      if (r.IMC.estado === "FALTANTE" || !r.Depto_Series) return;
+      const idx = indexPorDepto.get(r.Depto_Series);
       if (idx == null) return;
-      const total = conteoPorDepto.get(r.Depto_nombre) ?? 1;
-      const i = contadorEnDepto.get(r.Depto_nombre) ?? 0;
-      contadorEnDepto.set(r.Depto_nombre, i + 1);
+      const total = conteoPorDepto.get(r.Depto_Series) ?? 1;
+      const i = contadorEnDepto.get(r.Depto_Series) ?? 0;
+      contadorEnDepto.set(r.Depto_Series, i + 1);
       const jitter = total > 1 ? -0.32 + (0.64 * i) / (total - 1) : 0;
+      const valorImc = r.IMC.usado as number;
+      const dentroDelUmbral = valorImc >= BANDA_IMC_NORMAL[0] && valorImc <= BANDA_IMC_NORMAL[1];
+      if (dentroDelUmbral) normalPorDepto.set(r.Depto_Series, (normalPorDepto.get(r.Depto_Series) ?? 0) + 1);
+      else anormalPorDepto.set(r.Depto_Series, (anormalPorDepto.get(r.Depto_Series) ?? 0) + 1);
       puntos.push({
         x: idx + jitter,
-        y: r.IMC.usado as number,
-        nivel: clasificarIMC(r.IMC.usado).nivel,
-        depto: r.Depto_nombre as string,
-        color: colores.get(r.Depto_nombre as string) ?? "#94a3b8",
+        y: valorImc,
+        nivel: clasificarIMC(valorImc).nivel,
+        depto: r.Depto_Series as string,
+        color: dentroDelUmbral ? "#009BDE" : "#EF4444",
       });
     });
 
-    // Un solo tooltip por departamento (no por punto): total de personas y el
-    // IMC promedio calculado sobre esas mismas personas.
-    const stats = new Map<string, { count: number; promedio: number }>();
+    // Un solo tooltip por departamento (no por punto): conteo de personas dentro
+    // y fuera del umbral de IMC normal, calculado sobre esas mismas personas.
+    const stats = new Map<string, { count: number; normal: number; anormal: number }>();
     deptos.forEach((d) => {
       const count = conteoPorDepto.get(d) ?? 0;
-      const suma = sumaImcPorDepto.get(d) ?? 0;
-      stats.set(d, { count, promedio: count ? suma / count : 0 });
+      stats.set(d, { count, normal: normalPorDepto.get(d) ?? 0, anormal: anormalPorDepto.get(d) ?? 0 });
     });
 
     return { puntosImcPorDepto: puntos, departamentos: deptos, statsPorDepto: stats };
@@ -212,15 +257,16 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
 
   return (
     <>
-    <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="rounded-lg border border-gray-200 p-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="rounded-lg shadow-xl p-4">
+          {/* border border-gray-200 */}
           <h3 className="text-xs font-bold text-gray-600 mb-2">
             <i className="fa-solid fa-chart-simple mr-2"></i>Categoría de la OMS
           </h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={distribucionImcVisible} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={0} angle={-20} textAnchor="end" height={50} />
+              <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={0} angle={0} textAnchor="end" height={50} />
               <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
               <Tooltip content={<TooltipImcCategoria />} cursor={{ fill: "#f8fafc" }} />
               <Bar dataKey="count" name="Personas" radius={[4, 4, 0, 0]} animationDuration={900} animationEasing="ease-out">
@@ -246,7 +292,7 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 p-4">
+        <div className="rounded-lg shadow-xl p-4">
           <h3 className="text-xs font-bold text-gray-600 mb-2">
             <i className="fa-solid fa-chart-pie mr-2"></i>Distribución de ICT
           </h3>
@@ -264,6 +310,7 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
                     animationBegin={0}
                     animationDuration={900}
                     animationEasing="ease-out"
+                    shape={renderSectorIct}
                   >
                     {distribucionIctVisible.map((d, i) => <Cell key={i} fill={NIVEL_COLOR[d.nivel]} />)}
                   </Pie>
@@ -307,10 +354,10 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
           )}
         </div>
 
-        <div className="lg:col-span-2 rounded-lg border border-gray-200 p-4">
+        <div className="lg:col-span-2 rounded-lg shadow-xl p-4">
           <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
             <h3 className="text-xs font-bold text-gray-600">
-              <i className="fa-solid fa-diagram-project mr-2"></i>Departamento IMC
+              <i className="fa-solid fa-diagram-project mr-2"></i>Distribución de IMC
             </h3>
             <div className="flex items-center gap-1.5">
               <span className="text-[11px] font-medium text-gray-500">Tipo</span>
@@ -326,20 +373,21 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
           {puntosImcPorDepto.length > 0 ? (
             <>
               <ResponsiveContainer width="100%" height={200}>
-                <ComposedChart margin={{ top: 8, right: 16, left: 0, bottom: -20 }}>
+                <ComposedChart margin={{ top: 8, right: 30, left: 0, bottom: -30 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis
                     type="number"
                     dataKey="x"
-                    domain={[-0.6, departamentos.length - 0.4]}
-                    tick={false}
-                    axisLine={false}
-                    tickLine={false}
+                    domain={[-1, departamentos.length - 0]}
+                    ticks={departamentos.map((_, i) => i)}
+                    tickFormatter={(value) => departamentos[value] ?? ""}
+                    tick={{ fontSize: 9, fontWeight: 400, dy: 20 }}
+                    interval={0}
+                    angle={-45}
+                    textAnchor="start"
+                    height={90}
                   />
                   <YAxis type="number" dataKey="y" name="IMC" tick={{ fontSize: 10 }} label={{ value: "", angle: -90, position: "insideLeft", fontSize: 11 }} />
-                  {/* Eje oculto 0–1, exclusivo de la barra invisible de abajo: le
-                      da altura completa al "carril" de cada departamento sin
-                      afectar la escala real de IMC que usa el Scatter. */}
                   <YAxis yAxisId="hover" type="number" domain={[0, 1]} hide />
                   <Tooltip
                     cursor={{ fill: "#e2e8f0", fillOpacity: 0.5 }}
@@ -350,19 +398,44 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
                       const s = statsPorDepto.get(p.depto);
                       return (
                         <div className={tooltipCls}>
-                          <p className="font-bold text-gray-700 mb-1 flex items-center gap-1.5">
-                            <span className="size-2 rounded-full inline-block" style={{ backgroundColor: p.color }}></span>
-                            {p.depto}
+                          <p className="font-bold text-gray-700 mb-1.5">{p.depto}</p>
+                          <p className="flex items-center gap-1.5 text-gray-500">
+                            <span className="size-2 rounded-full inline-block" style={{ backgroundColor: "#009BDE" }}></span>
+                            Dentro del rango: <span className="font-bold text-gray-700">{s?.normal ?? 0}</span>
                           </p>
-                          <p className="text-gray-500">Total: <span className="font-bold text-gray-700">{s?.count ?? 0}</span></p>
-                          <p className="text-gray-500">IMC promedio: <span className="font-bold text-gray-700">{s ? s.promedio.toFixed(1) : "-"}</span></p>
+                          <p className="flex items-center gap-1.5 text-gray-500">
+                            <span className="size-2 rounded-full inline-block" style={{ backgroundColor: "#EF4444" }}></span>
+                            Fuera del rango: <span className="font-bold text-gray-700">{s?.anormal ?? 0}</span>
+                          </p>
                         </div>
                       );
                     }}
                   />
                   <ReferenceArea y1={BANDA_IMC_NORMAL[0]} y2={BANDA_IMC_NORMAL[1]} fill="#9ACAEB" fillOpacity={0.15} ifOverflow="extendDomain" />
-                  <ReferenceLine y={BANDA_IMC_NORMAL[0]} stroke="#9ACAEB" strokeDasharray="6 4" label={{ value: `${BANDA_IMC_NORMAL[0]}`, fontSize: 10, fontWeight: 700, fill: "#002E6D", position: "insideTopRight" }} />
-                  <ReferenceLine y={BANDA_IMC_NORMAL[1]} stroke="#9ACAEB" strokeDasharray="6 4" label={{ value: `${BANDA_IMC_NORMAL[1]}`, fontSize: 10, fontWeight: 700, fill: "#002E6D", position: "insideTopRight" }} />
+                  {/* Etiquetas de umbral con offset manual (en vez de los keywords de
+                      posición de Recharts): 18.5 siempre debajo de su línea (fuera de
+                      la banda, por abajo) y 25 siempre encima de la suya (fuera de la
+                      banda, por arriba), sin importar qué tan angosta sea la banda. */}
+                  <ReferenceLine
+                    y={BANDA_IMC_NORMAL[0]}
+                    stroke="#9ACAEB"
+                    strokeDasharray="6 4"
+                    label={({ viewBox }: any) => (
+                      <text x={viewBox.x + viewBox.width - 4} y={viewBox.y + 14} textAnchor="end" fontSize={10} fontWeight={700} fill="#002E6D">
+                        {BANDA_IMC_NORMAL[0]}
+                      </text>
+                    )}
+                  />
+                  <ReferenceLine
+                    y={BANDA_IMC_NORMAL[1]}
+                    stroke="#9ACAEB"
+                    strokeDasharray="6 4"
+                    label={({ viewBox }: any) => (
+                      <text x={viewBox.x + viewBox.width - 4} y={viewBox.y - 6} textAnchor="end" fontSize={10} fontWeight={700} fill="#002E6D">
+                        {BANDA_IMC_NORMAL[1]}
+                      </text>
+                    )}
+                  />
                   {/* Barra invisible por departamento: no se ve (fill transparente),
                       pero le da al mouse un "carril" completo (todo el alto y el
                       ancho de la columna) sobre el que activar el tooltip — igual
@@ -386,25 +459,15 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
           )}
         </div>
       </div>
-      
-      {/* <div className="mt-6 flex items-center bg-gradient-to-b from-blue-50 to-white rounded-xl border-horz-blue shadow-lg shadow-horz-blue px-4 py-3 gap-3">
-        <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-blue/10 shrink-0">
-          <i className="mdi mdi-creation text-sea-blue text-base"></i>
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-sea-blue uppercase tracking-wide">
-            Análisis de IA
-          </p>
-        </div>
-      </div> */}
       <div className="flex items-start gap-2 bg-horz-blue/15 text-yellow-700 text-[11px] px-3 py-2 rounded-lg mt-6">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-blue/10 shrink-0">
           <i className="mdi mdi-creation text-sea-blue text-base animate-pulse"></i>
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-bold text-sea-blue uppercase tracking-wide">
-            Análisis de IA
+          <p className="text-xs font-bold text-sea-blue uppercase tracking-wide mb-1">
+            Estado nutricional
           </p>
+          <p className="text-xs text-sea-blue leading-relaxed line-clamp-2 min-h-[2.4rem]">{resumen?.estadoNutricional}</p>
         </div>
       </div>
     </>
@@ -412,7 +475,7 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
 };
 
 const AntropometriaSection: React.FC<AntropometriaSectionProps> = (props) => (
-  <SectionCard icon="person" title="Antropometría" subtitle="Peso, altura, IMC e ICT (estado actual)">
+  <SectionCard icon="person" title="Somatometría" subtitle="Peso, altura, IMC e ICT (estado actual)">
     <AntropometriaContenido {...props} />
   </SectionCard>
 );

@@ -196,7 +196,7 @@ const DepartamentoTabla: React.FC<DepartamentoTablaProps> = ({ departamentos, on
       {/* Alto FIJO (no max-h): la caja siempre mide lo mismo, tenga 0, 3 o 30
           filas después de buscar/filtrar — solo cuando hay más de ~10 aparece
           scroll, en vez de que la tabla crezca/encoja según el resultado. */}
-      <div className="h-[420px] overflow-auto rounded-lg border border-gray-200">
+      <div className="h-[420px] overflow-auto rounded-lg shadow-xl">
         {/* table-fixed: con layout automático, `w-[100px]` es solo una
             sugerencia que el contenido puede empujar (p. ej. el select de
             "Tipo"); fixed lo vuelve un ancho real, y "Nombre" (sin ancho

@@ -7,10 +7,7 @@ interface ResumenMedicoSectionProps {
   estadoActual: RegistroValidado[];
 }
 
-const BLOQUES: { key: "estadoNutricional" | "perfilCardiovascular" | "coberturaMetabolica" | "recomendacionEjecutiva"; icon: string; titulo: string }[] = [
-  { key: "estadoNutricional", icon: "food-apple-outline", titulo: "Estado nutricional" },
-  { key: "perfilCardiovascular", icon: "heart-pulse", titulo: "Perfil cardiovascular" },
-  { key: "coberturaMetabolica", icon: "clipboard-pulse-outline", titulo: "Cobertura metabólica" },
+const BLOQUES: { key: "recomendacionEjecutiva"; icon: string; titulo: string }[] = [
   { key: "recomendacionEjecutiva", icon: "lightbulb-on-outline", titulo: "Recomendación ejecutiva" },
 ];
 
@@ -32,7 +29,7 @@ const ResumenMedicoSection: React.FC<ResumenMedicoSectionProps> = ({ estadoActua
           <p className="text-[10px] text-gray-400 mb-4">
             Basado en {resumen.poblacion.toLocaleString("es-MX")} personas (estado actual de la población filtrada). Síntesis generada por reglas, no reemplaza el criterio clínico.
           </p>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+          <div className="grid grid-cols-1 gap-4">
             {BLOQUES.map((b) => (
               <div key={b.key} className="p-4 rounded-xl shadow-md bg-linear-to-b from-white to-gray-50">
                 <h3 className="text-sm font-bold text-gray-800 flex items-center mb-2">

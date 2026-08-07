@@ -50,6 +50,7 @@ export interface RegistroValidado {
   Riesgo: number | null;
   Categoria_desc: string | null;
   Depto_nombre: string | null;
+  Depto_Series: string | null;
   Especialidad: string | null;
   Sexo: string | null;
 
