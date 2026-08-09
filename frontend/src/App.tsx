@@ -19,6 +19,7 @@ import Configuracion from './pages/Configuracion';
 import SaludPoblacional from './pages/SaludPoblacional';
 import Expediente from './pages/Expediente';
 import ExpedienteDepartamento from './pages/ExpedienteDepartamento';
+import AnalisisIndividual from './pages/AnalisisIndividual';
 
 import { AuthProvider } from './context/AuthToken';
 import TitleManager from './components/layout/TitleManager';
@@ -55,6 +56,7 @@ function App() {
             <Route path="SaludPoblacional" element={<SaludPoblacional />} />
             <Route path="Expediente" element={<Expediente />} />
             <Route path="Expediente/Departamento/:nombre" element={<ExpedienteDepartamento />} />
+            <Route path="AnalisisIndividual" element={<AnalisisIndividual />} />
             <Route path="*" element={<div className="p-8 text-center text-gray-500">Módulo en construcción</div>} />
           </Route>
         </Routes>

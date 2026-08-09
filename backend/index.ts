@@ -20,6 +20,7 @@ import DocumentosRouter from './routes/DocumentosRoutes';
 import Pacientes from './routes/PacientesRoutes';
 import Configuracion from './routes/ConfigRoutes';
 import SaludPoblacionalRouter from './routes/SaludPoblacionalRoutes';
+import AnalisisIndividualRouter from './routes/AnalisisIndividualRoutes';
 // import GruposRouter from './routes/GruposRoutes';
 
 const app = express();
@@ -58,6 +59,7 @@ app.use('/Documentos', DocumentosRouter(db));
 app.use('/Pacientes', Pacientes(db));
 app.use('/Configuracion', Configuracion(db));
 app.use('/SaludPoblacional', SaludPoblacionalRouter(db));
+app.use('/AnalisisIndividual', AnalisisIndividualRouter());
 // app.use('/Grupos', GruposRouter(db));
 // app.use('/Stats', require('./routes/statsRoutes'));
 // app.use('/api/Inventario', require('./routes/inventoryRoutes'));
