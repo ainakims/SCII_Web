@@ -44,7 +44,7 @@ const AnalisisIndividual: React.FC = () => {
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/AnalisisIndividual/Evaluar`, {
         method: "POST",
-        body: JSON.stringify({ matricula }),
+        body: JSON.stringify({ matricula: matricula.trim() }),
       });
       const json = await res.json();
       if (json?.ok) {
