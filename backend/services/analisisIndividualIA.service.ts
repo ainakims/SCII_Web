@@ -14,7 +14,7 @@ import { AnalisisIndividualResult } from "../interfaces/analisis_individual";
 
 // TODO: reemplazar por la URL real cuando el servicio deje de correr en
 // localhost de desarrollo (ver backend/.env — URL_SOAP_ANALISIS_INDIVIDUAL).
-const URL_DEFAULT = "https://localhost:44303/EvaluacionSalud.asmx";
+const URL_DEFAULT = "http://10.133.18.28:1619/EvaluacionSalud.asmx";
 const SOAP_ACTION = "http://tempuri.org/EvaluarSaludConAnalisisIA";
 
 // El certificado de EvaluacionSalud.asmx en localhost es el autofirmado típico
@@ -62,7 +62,7 @@ export async function evaluarSaludConAnalisisIA(idUsuario: string, esUsuarioMedi
       "Content-Type": "text/xml; charset=utf-8",
       SOAPAction: SOAP_ACTION,
     },
-    httpsAgent: agenteDev,
+    // httpsAgent: agenteDev,
     timeout: 60000,
   });
 
