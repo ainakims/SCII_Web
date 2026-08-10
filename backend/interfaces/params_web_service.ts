@@ -17,6 +17,14 @@ export interface ParamsWebService {
   UnidadNegocio?: string;
 }
 
+export interface ParamsWebServiceBinaryFile {
+  TipoConsulta: TipoConsulta;
+  Consulta: string;
+  Parametros: Parametros[];
+  UnidadNegocio?: string;
+  Binario: string;
+}
+
 export interface UsuarioAD {
   id: number;
   nombre: string;
