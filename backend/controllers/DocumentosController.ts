@@ -69,6 +69,20 @@ export function DocumentosController(db: DB) {
     fs.mkdirSync(BaseDoc, { recursive: true });
   }
 
+  // Tope de PDF crudo aceptado por el formulario. OJO: el archivo se manda al
+  // servicio SOAP externo codificado en Base64 (ver bd_connection.service.ts),
+  // lo que infla su tamaño ~33% en el request real — un PDF de 10 MB llega
+  // como ~13.3 MB de Base64 más el envoltorio SOAP. Si el servicio rechaza con
+  // "Maximum request length exceeded" incluso dentro de este tope, es porque
+  // su límite real (httpRuntime maxRequestLength) es menor a esos ~13.3 MB.
+  const MAX_UPLOAD_BYTES = 10 * 1024 * 1024; // 10 MB de PDF crudo
+
+  // El nombre del archivo se usa tal cual como ruta en disco y arma la URL de
+  // /uploads/:matricula/:nombre. Acentos, ñ, etc. son texto Unicode normal y
+  // no rompen nada — lo que sí rompe una ruta son los caracteres reservados
+  // del sistema y los de control invisibles, así que solo esos se bloquean.
+  const CARACTERES_PROHIBIDOS_NOMBRE = /[\\/:*?"<>|\x00-\x1F]/;
+
   const storage = multer.diskStorage({
     destination: (req: any, file: any, cb: any) => {
       const { matricula } = req.body;
@@ -93,18 +107,30 @@ export function DocumentosController(db: DB) {
 
   const upload = multer({
     storage,
+    limits: { fileSize: MAX_UPLOAD_BYTES },
     fileFilter: (req: any, file: any, cb: any) => {
-      if (file.mimetype === 'application/pdf') {
-        cb(null, true);
-      } else {
+      if (file.mimetype !== 'application/pdf') {
         cb(new Error('Solo se permiten archivos PDF'));
+        return;
       }
+      if (CARACTERES_PROHIBIDOS_NOMBRE.test(file.originalname)) {
+        cb(new Error('El nombre del archivo tiene caracteres no permitidos ( \\ / : * ? " < > | ). Renómbralo y vuelve a intentar.'));
+        return;
+      }
+      cb(null, true);
     }
   }).single('document');
 
   const SubirDocumentos = (req: Request, res: Response): void => {
     upload(req as any, res as any, async (err: any) => {
       if (err) {
+        if (err.code === 'LIMIT_FILE_SIZE') {
+          res.status(400).json({
+            ok: false,
+            error: `El archivo supera el tamaño máximo permitido (${(MAX_UPLOAD_BYTES / (1024 * 1024)).toFixed(1)} MB).`
+          });
+          return;
+        }
         res.status(400).json({ ok: false, error: err.message });
         return;
       }
@@ -154,7 +180,15 @@ export function DocumentosController(db: DB) {
           file: { name: file.filename, path: filePath }
         });
       } catch (error: any) {
-        res.status(500).json({ ok: false, error: error.message });
+        const mensaje: string = error?.message ?? "";
+        if (mensaje.includes("Maximum request length exceeded")) {
+          res.status(413).json({
+            ok: false,
+            error: "El archivo es demasiado grande para el servicio de almacenamiento. Intenta con un PDF de menor tamaño."
+          });
+          return;
+        }
+        res.status(500).json({ ok: false, error: mensaje });
       }
     });
   };

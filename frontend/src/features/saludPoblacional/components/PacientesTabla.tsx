@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { ChevronFirst, ChevronLeft, ChevronRight, ChevronLast } from "lucide-react";
 
 export interface PacienteResumen {
@@ -40,6 +41,7 @@ const ITEMS_POR_PAGINA = 100;
 // empleado/contrato/Sexo + paginado numerado con elipsis); Reingresos se
 // queda con la versión simple (búsqueda + primera/anterior/siguiente/última).
 const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes }) => {
+  const navigate = useNavigate();
   const [busqueda, setBusqueda] = useState("");
   const [showFiltros, setShowFiltros] = useState(true);
   const [pagina, setPagina] = useState(1);
@@ -248,7 +250,11 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes }) =>
             {mostrados.map((p, idx) => {
               const fecha = activo ? p.FechaConsulta : p.Empl_fecha_baja;
               return (
-                <tr key={`${p.Empl_matricula}-${idx}`} className="group border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors">
+                <tr
+                  key={`${p.Empl_matricula}-${idx}`}
+                  onClick={() => navigate(`/Expediente/${encodeURIComponent(String(p.Empl_matricula ?? ""))}`, { state: { nombre: p.Empl_Nombres } })}
+                  className="group border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors cursor-pointer"
+                >
                   <td className="px-5 py-0 font-semibold text-gray-700">{p.Empl_matricula && p.Empl_matricula !== "0" ? p.Empl_matricula : "EXT"}</td>
                   <td className="px-5 py-0">
                     <p className="font-bold uppercase text-gray-600 truncate group-hover:text-sea-blue transition-colors">{p.Empl_Nombres}</p>

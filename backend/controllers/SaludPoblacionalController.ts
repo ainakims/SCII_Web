@@ -15,13 +15,14 @@ export function SaludPoblacionalController(db: DB) {
   const ObtenerDatos = async (req: Request, res: Response): Promise<Response> => {
     try {      
       const params: Parametros[] = [
-        { Nombre: "@Activo", Valor: "1" }        
+        { Nombre: "@Activo", Valor: "1" }
+        // { Nombre: "@Matricula", Valor: "" }
       ];
 
       // TODO: ajustar el nombre del SP y sus parámetros cuando se confirme el
       // contrato real. "SCII_Valores_Indicadores" es el nombre de referencia
       // acordado con el usuario mientras tanto.
-      const sql = "[TNGCORE].[dbo].[SCII_Valores_Indicadores]";
+      const sql = "[TNGCORE].[dbo].[SCII_Valores_Indicadores_2]";
 
       const filas = await executeConnection<RawIndicadorRow>(sql, TipoConsulta.ProcedimientoAlmacenado, params);
 

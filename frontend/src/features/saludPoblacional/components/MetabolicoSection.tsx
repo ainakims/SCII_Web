@@ -82,9 +82,9 @@ const ExploradorMetabolico: React.FC<{ estadoActual: RegistroValidado[] }> = ({ 
 
 const NIVEL_COLOR: Record<Nivel, string> = {
   bajo: "#009BDE",
-  normal: "#22c55e",
-  leve: "#eab308",
-  alto: "#ef4444",
+  normal: "#54BBAB",
+  leve: "#FFC627",
+  alto: "#EE7523",
   critico: "#991b1b",
   sin_dato: "#9ca3af",
 };
@@ -113,7 +113,7 @@ const BloqueIndicador: React.FC<BloqueProps> = ({ titulo, icono, campo, unidad, 
   }, [estadoActual, campo, clasificador]);
 
   return (
-    <div className="p-4 rounded-xl border border-gray-200 shadow-md bg-linear-to-b from-white to-gray-50">
+    <div className="p-4 rounded-xl shadow-xl bg-linear-to-b from-white to-gray-50">
       <div className="flex items-center mb-3 flex-wrap gap-2">
         <h3 className="text-sm font-bold text-gray-800 flex items-center">
           <i className={`mdi mdi-${icono} text-sea-blue mr-2`}></i>
@@ -121,9 +121,8 @@ const BloqueIndicador: React.FC<BloqueProps> = ({ titulo, icono, campo, unidad, 
         </h3>
       </div>
 
-      {/* <h4 className="text-[11px] font-bold text-gray-500 uppercase tracking-wide mb-1">Valores individuales</h4> */}
       {puntosIndividuales.length > 0 ? (
-        <ResponsiveContainer width="100%" height={80}>
+        <ResponsiveContainer width="100%" height={127}>
           <ScatterChart margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis type="number" dataKey="x" hide domain={[-1, puntosIndividuales.length]} />
@@ -156,7 +155,7 @@ const BloqueIndicador: React.FC<BloqueProps> = ({ titulo, icono, campo, unidad, 
           </ScatterChart>
         </ResponsiveContainer>
       ) : (
-        <div className="h-[220px] flex items-center justify-center text-xs text-gray-400">Sin datos suficientes</div>
+        <div className="h-[145px] flex items-center justify-center text-xs text-gray-400">Sin datos suficientes</div>
       )}
     </div>
   );
@@ -170,10 +169,7 @@ export const MetabolicoContenido: React.FC<MetabolicoSectionProps> = ({ estadoAc
 
   return (
     <>
-      {/* Oculto (no eliminado): "Explorador de dispersión metabólico".
-      <ExploradorMetabolico estadoActual={estadoActual} />
-      */}
-      <div className="grid grid-cols-1 gap-4">
+      <div className="grid grid-cols-1 gap-6">
         <BloqueIndicador titulo="Glucosa" icono="water" campo="Glucosa" unidad="mg/dL" clasificador={clasificarGlucosa} estadoActual={estadoActual} />
         <BloqueIndicador titulo="Colesterol" icono="virus" campo="Colesterol" unidad="mg/dL" clasificador={clasificarColesterol} estadoActual={estadoActual} />
         <BloqueIndicador titulo="Triglicéridos" icono="atom-variant" campo="Trigliceridos" unidad="mg/dL" clasificador={clasificarTrigliceridos} estadoActual={estadoActual} />

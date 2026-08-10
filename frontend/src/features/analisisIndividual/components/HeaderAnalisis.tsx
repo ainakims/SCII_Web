@@ -19,9 +19,12 @@ const HeaderAnalisis: React.FC<HeaderAnalisisProps> = ({ prioridad, aptitud }) =
   return (
     <div className="flex flex-col gap-4">
       {/* Aptitud laboral: card completa con borde y fondo teñido según dictamen */}
-      <div className={`rounded-xl p-4 border ${aptitud.Apto ? "border-green-300 bg-green-50" : "border-red-300 bg-red-50"}`}>
+      <div
+      className={` bg-gradient-to-b ${aptitud.Apto ? "from-aqua-green/30 to-white" : "from-red-50 to-white"} rounded-xl shadow-xl px-4 py-3 gap-3`}
+      // className={`rounded-xl p-4 border ${aptitud.Apto ? "border-green-300 bg-green-50" : "border-red-300 bg-red-50"}`}
+      >
         <div className="flex items-center justify-between mb-2">
-          <span className={`text-[12px] font-bold uppercase tracking-wide flex items-center gap-2 ${aptitud.Apto ? "text-green-700" : "text-red-700"}`}>
+          <span className={`text-[12px] font-bold uppercase tracking-wide flex items-center gap-2 ${aptitud.Apto ? "text-white" : "text-red-700"}`}>
             <i className="mdi mdi-account-check-outline text-sm"></i>
             Dictamen de aptitud laboral
           </span>

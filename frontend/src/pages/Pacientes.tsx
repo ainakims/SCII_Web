@@ -848,22 +848,13 @@ const Pacientes: React.FC = () => {
                                     <i className="mdi mdi-trash-can-outline text-lg"></i>
                                   </button>
                                 ) : (
-                                  <>
-                                    <button
-                                      onClick={() => navigate("/Documentos", { state: { matricula: String(p.Empl_matricula ?? "") } })}
-                                      className="w-9 h-9 text-gray-400 hover:text-sky-blue bg-linear-to-b hover:from-sky-blue/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
-                                      title="Documentación"
-                                    >
-                                      <i className="mdi mdi-file-outline text-lg"></i>
-                                    </button>
-                                    <button
-                                      onClick={() => navigate("/AnalisisIndividual", { state: { matricula: String(p.Empl_matricula ?? "") } })}
-                                      className="w-9 h-9 text-gray-400 hover:text-sky-blue bg-linear-to-b hover:from-sky-blue/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
-                                      title="Análisis Individual (IA)"
-                                    >
-                                      <i className="mdi mdi-creation text-lg"></i>
-                                    </button>
-                                  </>
+                                  <button
+                                    onClick={() => navigate("/Documentos", { state: { matricula: String(p.Empl_matricula ?? "") } })}
+                                    className="w-9 h-9 text-gray-400 hover:text-sky-blue bg-linear-to-b hover:from-sky-blue/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
+                                    title="Documentación"
+                                  >
+                                    <i className="mdi mdi-file-outline text-lg"></i>
+                                  </button>
                                 )}
                               </div>
                             </td>

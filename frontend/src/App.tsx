@@ -56,7 +56,7 @@ function App() {
             <Route path="SaludPoblacional" element={<SaludPoblacional />} />
             <Route path="Expediente" element={<Expediente />} />
             <Route path="Expediente/Departamento/:nombre" element={<ExpedienteDepartamento />} />
-            <Route path="AnalisisIndividual" element={<AnalisisIndividual />} />
+            <Route path="Expediente/:matricula" element={<AnalisisIndividual />} />
             <Route path="*" element={<div className="p-8 text-center text-gray-500">Módulo en construcción</div>} />
           </Route>
         </Routes>

@@ -359,20 +359,13 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
             <h3 className="text-xs font-bold text-gray-600">
               <i className="fa-solid fa-diagram-project mr-2"></i>Distribución de IMC
             </h3>
-            <div className="flex items-center gap-1.5">
-              <span className="text-[11px] font-medium text-gray-500">Tipo</span>
-              <select
-                value={filtroTipoEmpleado}
-                onChange={(e) => setFiltroTipoEmpleado(e.target.value as TipoEmpleado)}
-                className={filtroSelectCls}
-              >
-                {TIPOS_EMPLEADO.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
-              </select>
-            </div>
           </div>
           {puntosImcPorDepto.length > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={200}>
+            // Alto fijo (mismo que "Presión arterial (ACC/AHA)" en
+            // CardiovascularSection.tsx) para que ambas gráficas midan lo
+            // mismo aunque esa otra tenga una fila de leyenda debajo y esta no.
+            <div className="h-64">
+              <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart margin={{ top: 8, right: 30, left: 0, bottom: -30 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
                   <XAxis
@@ -453,9 +446,9 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
                   </Scatter>
                 </ComposedChart>
               </ResponsiveContainer>
-            </>
+            </div>
           ) : (
-            <div className="h-[320px] flex items-center justify-center text-xs text-gray-400 text-center px-6">Sin datos suficientes de IMC/departamento.</div>
+            <div className="h-64 flex items-center justify-center text-xs text-gray-400 text-center px-6">Sin datos suficientes de IMC/departamento.</div>
           )}
         </div>
       </div>

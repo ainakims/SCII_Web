@@ -1,12 +1,12 @@
 import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
 import React, { useCallback, useEffect, useState } from "react";
-import { useLocation, useNavigate } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 
+import KpiCard from "../features/saludPoblacional/components/shared/KpiCard";
 import { AnalisisIndividualResult } from "../features/analisisIndividual/types";
 import HeaderAnalisis from "../features/analisisIndividual/components/HeaderAnalisis";
-import MetricasDestacadas from "../features/analisisIndividual/components/MetricasDestacadas";
 import EvolucionPesoChart from "../features/analisisIndividual/components/EvolucionPesoChart";
 import PresionArterialChart from "../features/analisisIndividual/components/PresionArterialChart";
 import EvolucionImcChart from "../features/analisisIndividual/components/EvolucionImcChart";
@@ -18,24 +18,38 @@ import DiagnosticoSection from "../features/analisisIndividual/components/Diagno
 import IncertidumbreSection from "../features/analisisIndividual/components/IncertidumbreSection";
 import EnfermedadesBadges from "../features/analisisIndividual/components/EnfermedadesBadges";
 
+// Último valor no nulo de una serie histórica (y su etiqueta correspondiente),
+// recorriendo de más reciente a más antiguo.
+function ultimoValido<T>(valores: T[], etiquetas: string[]): { valor: T; etiqueta: string } | null {
+  for (let i = valores.length - 1; i >= 0; i--) {
+    if (valores[i] != null) return { valor: valores[i], etiqueta: etiquetas[i] ?? "" };
+  }
+  return null;
+}
+
 // Análisis Individual: consume el servicio SOAP externo EvaluarSaludConAnalisisIA
 // (EvaluacionSalud.asmx, repo aparte — ver memoria de proyecto) a través del
 // backend de SCII_Web. El backend decide `esUsuarioMedico` a partir del rol del
 // JWT, nunca del cliente, porque controla si el servicio regresa contenido
 // clínico sensible (diagnóstico diferencial, aptitud laboral detallada).
 //
-// Se presenta como drawer (no ruta de página completa) para replicar el
-// mockup de referencia del usuario: overlay + panel fijo desde la derecha.
+// Vista de página completa (mismo patrón que ExpedienteDepartamento.tsx), no
+// drawer/modal: se accede desde Expediente > Personal/Reingresos al hacer
+// clic sobre un paciente. Ruta /Expediente/:matricula (ver Topbar.tsx para el
+// breadcrumb "Expediente > Matrícula - Nombre"); el nombre viaja por
+// location.state (solo disponible al navegar desde la tabla, no en un
+// refresh directo de la URL) y es puramente decorativo, nunca se usa para
+// las llamadas al backend.
 const AnalisisIndividual: React.FC = () => {
-  const location = useLocation();
+  const { matricula: matriculaParam } = useParams<{ matricula: string }>();
   const navigate = useNavigate();
-  const matricula: string | undefined = (location.state as any)?.matricula;
+  const matricula = matriculaParam ? decodeURIComponent(matriculaParam) : undefined;
 
   const [resultado, setResultado] = useState<AnalisisIndividualResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const cerrar = useCallback(() => navigate("/Pacientes"), [navigate]);
+  const regresar = useCallback(() => navigate(-1), [navigate]);
 
   const generar = useCallback(async () => {
     if (!matricula) return;
@@ -75,57 +89,30 @@ const AnalisisIndividual: React.FC = () => {
 
   if (!matricula) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-[2px]" onClick={cerrar}>
-        <div className="bg-white rounded-xl shadow-2xl p-8 flex flex-col items-center gap-3 text-gray-400" onClick={(e) => e.stopPropagation()}>
-          <i className="mdi mdi-account-search-outline text-3xl"></i>
-          <p className="text-sm">No se especificó ningún paciente.</p>
-          <button
-            onClick={cerrar}
-            className="flex items-center gap-2 bg-linear-to-r from-sea-blue to-sky-blue text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
-          >
-            <i className="mdi mdi-arrow-left"></i>
-            Ir a Pacientes
-          </button>
+      <div className="relative flex w-full overflow-hidden">
+        <div className="flex-1 mt-14 transition-all duration-300 ease-in-out">
+          <div className="max-w-7xl mx-auto px-4 pb-6">
+            <div className="flex flex-col items-center justify-center py-24 text-gray-400 gap-3 bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl">
+              <i className="mdi mdi-account-search-outline text-3xl"></i>
+              <p className="text-sm">No se especificó ningún paciente.</p>
+              <button
+                onClick={regresar}
+                className="flex items-center gap-2 bg-linear-to-r from-sea-blue to-sky-blue text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+              >
+                <i className="mdi mdi-arrow-left"></i>
+                Regresar
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end bg-black/40 backdrop-blur-[2px]" onClick={cerrar}>
-      <div className="w-full max-w-[660px] h-full bg-gray-50 shadow-2xl flex flex-col" onClick={(e) => e.stopPropagation()}>
-        <div className="flex items-center justify-between gap-3 px-5 py-4 bg-white border-b border-gray-100 shrink-0">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="size-10 rounded-lg bg-linear-to-br from-sea-blue to-sky-blue flex items-center justify-center shrink-0">
-              <i className="mdi mdi-hospital-box-outline text-white text-lg"></i>
-            </div>
-            <div className="min-w-0">
-              <h1 className="text-base font-bold text-gray-800 truncate">Análisis Médico Integral</h1>
-              <p className="text-xs text-gray-500 truncate">
-                Matrícula: <b>{matricula}</b> — evaluación clínica generada con IA
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center gap-1.5 shrink-0">
-            <button
-              onClick={generar}
-              disabled={loading}
-              title={resultado ? "Regenerar análisis" : "Generar análisis"}
-              className="size-9 flex items-center justify-center rounded-lg text-sea-blue hover:bg-sea-blue/10 transition-colors cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
-            >
-              <i className={`mdi ${loading ? "mdi-loading mdi-spin" : "mdi-refresh"} text-lg`}></i>
-            </button>
-            <button
-              onClick={cerrar}
-              title="Cerrar"
-              className="size-9 flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors cursor-pointer"
-            >
-              <i className="mdi mdi-close text-lg"></i>
-            </button>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-4">
+    <div className="relative flex w-full overflow-hidden">
+      <div className="flex-1 mt-14 transition-all duration-300 ease-in-out">
+        <div className="max-w-7xl mx-auto px-4 space-y-6 pb-6">
           {loading && !resultado && (
             <div className="flex items-center justify-center py-24 text-sea-blue">
               <i className="mdi mdi-loading mdi-spin text-3xl mr-3"></i>
@@ -142,9 +129,41 @@ const AnalisisIndividual: React.FC = () => {
 
           {resultado && (
             <>
+              {(() => {
+                const { PresionArterial, EvolucionIMC, EvolucionPesoAnual, Meses } = resultado.HistoricosYGraficas;
+                const sistolica = ultimoValido(PresionArterial.Sistolica, PresionArterial.Fechas);
+                const diastolica = ultimoValido(PresionArterial.Diastolica, PresionArterial.Fechas);
+                const fc = ultimoValido(PresionArterial.FrecuenciaCardiaca, PresionArterial.Fechas);
+                const imc = ultimoValido(EvolucionIMC.ValoresIMC, Meses);
+                const peso = ultimoValido(EvolucionPesoAnual.PesoReal, EvolucionPesoAnual.Fechas);
+                const pesoIdeal = ultimoValido(EvolucionPesoAnual.PesoIdeal, EvolucionPesoAnual.Fechas);
+                return (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                    <KpiCard
+                      icon="mdi-heart-pulse"
+                      label="Presión arterial"
+                      value={sistolica && diastolica ? `${sistolica.valor}/${diastolica.valor} mmHg` : "Sin dato"}
+                    />
+                    <KpiCard
+                      icon="mdi-scale-bathroom"
+                      label="IMC"
+                      value={imc ? `${imc.valor} kg/m²` : "Sin dato"}
+                    />
+                    <KpiCard
+                      icon="mdi-pulse"
+                      label="Frecuencia cardiaca"
+                      value={fc ? `${fc.valor} bpm` : "Sin dato"}
+                    />
+                    <KpiCard
+                      icon="mdi-weight-kilogram"
+                      label="Peso vs. meta"
+                      value={peso ? `${peso.valor} kg${pesoIdeal ? ` (meta ${pesoIdeal.valor})` : ""}` : "Sin dato"}
+                    />
+                  </div>
+                );
+              })()}
               <HeaderAnalisis prioridad={resultado.PrioridadYUrgencia} aptitud={resultado.AptitudLaboral} />
               <EnfermedadesBadges enfermedades={resultado.HistoricosYGraficas.Enfermedades} />
-              <MetricasDestacadas historicos={resultado.HistoricosYGraficas} />              
               <EvolucionPesoChart datos={resultado.HistoricosYGraficas.EvolucionPesoAnual} />
               <PresionArterialChart datos={resultado.HistoricosYGraficas.PresionArterial} />
               <EvolucionImcChart meses={resultado.HistoricosYGraficas.Meses} evolucion={resultado.HistoricosYGraficas.EvolucionIMC} />
@@ -154,25 +173,27 @@ const AnalisisIndividual: React.FC = () => {
               <HallazgosSection hallazgos={resultado.HallazgosRelevantes} />
               <DiagnosticoSection diagnostico={resultado.DiagnosticoDiferencial} />
               <IncertidumbreSection evolucion={resultado.EvolucionYRiesgosPotenciales} />
-              
             </>
           )}
-        </div>
 
-        <div className="flex items-center justify-end gap-3 px-5 py-3.5 bg-white border-t border-gray-100 shrink-0">
-          <button
-            onClick={cerrar}
-            className="px-4 py-2 rounded-lg text-sm font-medium text-gray-600 bg-gray-100 hover:bg-gray-200 transition-colors cursor-pointer"
-          >
-            Cerrar
-          </button>
-          <button
-            onClick={programarSeguimiento}
-            className="flex items-center gap-2 bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 text-white px-4 py-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
-          >
-            <i className="mdi mdi-calendar-check-outline"></i>
-            Programar Seguimiento
-          </button>
+          <div className="flex items-center justify-end gap-2">
+            <button
+              onClick={generar}
+              disabled={loading}
+              title={resultado ? "Regenerar análisis" : "Generar análisis"}
+              className="flex items-center gap-2 border border-gray-100 shadow-md bg-white text-gray-600 hover:text-sea-blue px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
+            >
+              <i className={`mdi ${loading ? "mdi-loading mdi-spin" : "mdi-refresh"}`}></i>
+              Regenerar
+            </button>
+            <button
+              onClick={programarSeguimiento}
+              className="flex items-center gap-2 bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
+            >
+              <i className="mdi mdi-calendar-check-outline"></i>
+              Programar Seguimiento
+            </button>
+          </div>
         </div>
       </div>
     </div>

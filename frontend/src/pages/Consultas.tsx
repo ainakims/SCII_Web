@@ -553,7 +553,7 @@ const Consultas: React.FC = () => {
       const cons = await fetchWithAuth(`${API_BASE_URL}/Consultas/BuscarHistorial`,
         {
           method: "POST",
-          body: JSON.stringify({ idEmpleado: patientId })
+          body: JSON.stringify({ idEmpleado: patientData.matricula || patientId })
         });
 
       const res = await cons.json();

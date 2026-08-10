@@ -22,6 +22,21 @@ import Swal from "sweetalert2";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthToken";
 
+// Mismo tope que DocumentosController.ts (10 MB de PDF crudo). El archivo
+// viaja como Base64 hacia el servicio SOAP externo (~33% más grande en el
+// request real), así que si el servicio sigue rechazando con "Maximum
+// request length exceeded" dentro de este límite, hay que revisar el
+// httpRuntime.maxRequestLength de ese servicio (ver nota en el controller).
+const MAX_UPLOAD_MB = 10;
+const MAX_UPLOAD_BYTES = MAX_UPLOAD_MB * 1024 * 1024;
+
+// El nombre del archivo se usa tal cual como nombre de carpeta/ruta en disco
+// (DocumentosController.ts) y para armar la URL de /uploads/:matricula/:nombre.
+// Acentos, ñ, etc. son texto Unicode normal y no rompen nada — lo que sí
+// rompe una ruta de archivo son los caracteres reservados del sistema y los
+// de control invisibles, así que solo esos se bloquean.
+const CARACTERES_PROHIBIDOS_NOMBRE = /[\\/:*?"<>|\x00-\x1F]/;
+
 interface Patient {
   Matricula: string;
   Nombres: string;
@@ -310,7 +325,7 @@ const Documentos: React.FC = () => {
         if (fileInputRef.current) fileInputRef.current.value = "";
         setIsPdfOpen(false);
       } else {
-        errorModal("No se pudo guardar", "Ocurrió un error al intentar almacenar el documento en el expediente.");
+        errorModal("No se pudo guardar", res?.error || "Ocurrió un error al intentar almacenar el documento en el expediente.");
       }
     } catch (err) {
       // setError((err as Error).message);
@@ -680,6 +695,15 @@ const Documentos: React.FC = () => {
                         onChange={patient ? (e) => {
                           const selected = e.target.files?.[0] ?? null;
                           if (selected) {
+                            if (CARACTERES_PROHIBIDOS_NOMBRE.test(selected.name)) {
+                              errorModal(
+                                "Nombre de archivo inválido",
+                                `El nombre <b>${selected.name}</b> tiene caracteres no permitidos ( \\ / : * ? " &lt; &gt; | ). Renómbralo y vuelve a intentar.`
+                              );
+                              e.target.value = "";
+                              setFile(null);
+                              return;
+                            }
                             const duplicado = documents.some(
                               (d) => d.Nombre.toLowerCase() === selected.name.toLowerCase()
                             );
@@ -687,6 +711,15 @@ const Documentos: React.FC = () => {
                               errorModal(
                                 "Documento duplicado",
                                 `Ya existe un documento con el nombre <b>${selected.name}</b>.`
+                              );
+                              e.target.value = "";
+                              setFile(null);
+                              return;
+                            }
+                            if (selected.size > MAX_UPLOAD_BYTES) {
+                              errorModal(
+                                "Archivo demasiado grande",
+                                `El PDF supera el tamaño máximo permitido (<b>${MAX_UPLOAD_MB} MB</b>).`
                               );
                               e.target.value = "";
                               setFile(null);
@@ -707,7 +740,7 @@ const Documentos: React.FC = () => {
                         {file ? file.name : fileError ? "Seleccionar PDF (obligatorio)" : "Seleccionar PDF o arrastrar aquí"}
                       </label>
                       <p className={`text-xs ${fileError && !file ? "text-red-300" : "text-gray-400"} mt-1`}>
-                        Máximo 10 MB
+                        Máximo {MAX_UPLOAD_MB} MB
                       </p>
                     </div>
 

@@ -141,7 +141,7 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
   return (
     <>
       <div className="grid grid-cols-1 lg:grid-cols-2 lg:grid-flow-dense gap-6">
-        <div className="lg:col-span-2 rounded-lg border border-gray-200 p-4">
+        <div className="lg:col-span-2 rounded-lg shadow-xl p-4">
           <h3 className="text-xs font-bold text-gray-600 mb-2">
             <i className="fa-solid fa-chart-simple mr-2"></i>Distribución presión arterial
           </h3>
@@ -173,11 +173,19 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
           </div>
         </div>
 
-        <div className="rounded-lg border border-gray-200 p-4">
-          <h3 className="text-xs font-bold text-gray-600 mb-2"><i className="fa-solid fa-chart-pie mr-2"></i>Presión arterial (ACC/AHA)</h3>
+        <div className="rounded-lg shadow-xl p-4">
+          <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+            <h3 className="text-xs font-bold text-gray-600">
+              <i className="fa-solid fa-chart-pie mr-2"></i>Presión arterial (ACC/AHA)
+            </h3>
+          </div>
           {totalConPresion > 0 ? (
-            <>
-              <ResponsiveContainer width="100%" height={200}>
+            // Alto fijo (mismo que "Distribución de IMC" en
+            // AntropometriaSection.tsx) para que ambas gráficas midan lo
+            // mismo pese a que aquí hay una fila de leyenda debajo del chart.
+            <div className="h-64 flex flex-col">
+              <div className="flex-1 min-h-0">
+                <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
                     data={estadiosPresionVisible}
@@ -185,7 +193,7 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
                     nameKey="label"
                     innerRadius={45}
                     outerRadius={75}
-                    paddingAngle={2}
+                    paddingAngle={3}
                     animationBegin={0}
                     animationDuration={900}
                     animationEasing="ease-out"
@@ -209,8 +217,9 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
                     }}
                   />
                 </PieChart>
-              </ResponsiveContainer>
-              <div className="flex flex-wrap gap-1.5 justify-center mt-2">
+                </ResponsiveContainer>
+              </div>
+              <div className="flex flex-wrap gap-1.5 justify-center mt-2 shrink-0">
                 {estadiosPresion.map((e) => {
                   const oculto = estadiosPresionOcultos.has(e.label);
                   return (
@@ -226,15 +235,15 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
                   );
                 })}
               </div>
-            </>
+            </div>
           ) : (
-            <div className="h-[220px] flex items-center justify-center text-xs text-gray-400">Sin datos suficientes</div>
+            <div className="h-64 flex items-center justify-center text-xs text-gray-400">Sin datos suficientes</div>
           )}
         </div>
 
         {/* Oculto (no eliminado): "Sistólica × Diastólica". Ver `scatterData`
-            comentado más arriba.
-        <div className="lg:col-span-2 rounded-lg border border-gray-200 p-4">
+            comentado más arriba. */}
+        {/* <div className="lg:col-span-2 rounded-lg border border-gray-200 p-4">
           <h3 className="text-xs font-bold text-gray-600 mb-2">Sistólica × Diastólica ({estadoActual.length.toLocaleString("es-MX")} personas)</h3>
           <p className="text-[10px] text-gray-400 mb-2">
             Cada punto representa una persona (estado actual). Líneas verdes: límite normal (120/80). Línea roja: umbral HTA etapa 2 (140).
@@ -251,10 +260,10 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
               <Scatter data={scatterData} fill="#005FAA" fillOpacity={0.6} />
             </ScatterChart>
           </ResponsiveContainer>
-        </div>
-        */}
+        </div> */}
+       
 
-        <div className="rounded-lg border border-gray-200 p-4">
+        {/* <div className="rounded-lg border border-gray-200 p-4">
           <h3 className="text-xs font-bold text-gray-600 mb-2">Sistólica promedio por departamento (top 10)</h3>
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={sistolicaPorDepto} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
@@ -265,7 +274,7 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
               <Bar dataKey="promedio" name="Sistólica promedio" fill="#0090D8" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
-        </div>
+        </div> */}
       </div>
       <div className="flex items-start gap-2 bg-horz-blue/15 text-yellow-700 text-[11px] px-3 py-2 rounded-lg mt-6">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-blue/10 shrink-0">

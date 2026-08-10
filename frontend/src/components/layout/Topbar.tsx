@@ -38,17 +38,25 @@ const PAGE_TITLES: PageTitles = {
   '/Expediente': { label: 'Expediente', icon: 'mdi-folder-account-outline' },
 };
 
-// Ruta dinámica /Expediente/Departamento/:nombre: no tiene una entrada propia
-// en PAGE_TITLES (el nombre del departamento es variable), así que se detecta
-// aparte para mostrar el breadcrumb "Expediente > NOMBRE_DEPARTAMENTO" con
-// "Expediente" como link de regreso.
+// Rutas dinámicas bajo /Expediente: no tienen una entrada propia en
+// PAGE_TITLES (el valor es variable), así que se detectan aparte para mostrar
+// el breadcrumb "Expediente > ..." con "Expediente" como link de regreso.
+// - /Expediente/Departamento/:nombre -> nombre de departamento en la URL.
+// - /Expediente/:matricula (un solo segmento, no "Departamento") -> matrícula
+//   del paciente en la URL; el nombre viaja por location.state (lo pone
+//   PacientesTabla.tsx al navegar) y es opcional: en un refresh directo de la
+//   URL no está disponible y solo se muestra la matrícula.
 const RUTA_EXPEDIENTE_DEPTO = /^\/Expediente\/Departamento\/(.+)$/;
+const RUTA_EXPEDIENTE_PACIENTE = /^\/Expediente\/([^/]+)$/;
 
 const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
   const location = useLocation();
   const matchDepto = location.pathname.match(RUTA_EXPEDIENTE_DEPTO);
   const nombreDepto = matchDepto ? decodeURIComponent(matchDepto[1]) : null;
-  const page = nombreDepto ? PAGE_TITLES["/Expediente"] : PAGE_TITLES[location.pathname];
+  const matchPaciente = !matchDepto ? location.pathname.match(RUTA_EXPEDIENTE_PACIENTE) : null;
+  const matriculaPaciente = matchPaciente ? decodeURIComponent(matchPaciente[1]) : null;
+  const nombrePaciente = (location.state as any)?.nombre as string | undefined;
+  const page = (nombreDepto || matriculaPaciente) ? PAGE_TITLES["/Expediente"] : PAGE_TITLES[location.pathname];
 
   const { user, logout } = useAuth() as { user: User; logout: () => void };
 
@@ -75,20 +83,31 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
 
         {page && (
           <div className="ml-3 min-w-0">
-            <p className="text-sm font-bold text-sea-blue truncate flex items-center gap-1">
+            <p className="text-sm font-bold truncate flex items-center gap-1">
               {nombreDepto ? (
                 <>
                   <button
                     onClick={() => navigate("/Expediente")}
-                    className="hover:underline cursor-pointer"
+                    className="text-gray-400 hover:text-gray-600 hover:underline cursor-pointer transition-colors"
                   >
                     {page.label}
                   </button>
                   <i className="mdi mdi-chevron-right text-gray-300"></i>
-                  <span className="truncate">{nombreDepto}</span>
+                  <span className="truncate text-sea-blue">{nombreDepto}</span>
+                </>
+              ) : matriculaPaciente ? (
+                <>
+                  <button
+                    onClick={() => navigate("/Expediente")}
+                    className="text-gray-400 hover:text-gray-600 hover:underline cursor-pointer transition-colors"
+                  >
+                    {page.label}
+                  </button>
+                  <i className="mdi mdi-chevron-right text-gray-300"></i>
+                  <span className="truncate text-sea-blue">{nombrePaciente ? `${matriculaPaciente} - ${nombrePaciente}` : matriculaPaciente}</span>
                 </>
               ) : (
-                page.label
+                <span className="text-sea-blue">{page.label}</span>
               )}
             </p>
             {page.subtitle && (

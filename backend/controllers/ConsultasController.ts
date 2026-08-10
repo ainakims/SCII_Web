@@ -126,6 +126,9 @@ export function ConsultasController(db: DB) {
   const BuscarHistorial = async (req: Request, res: Response): Promise<Response> => {
     try {
       const { idEmpleado } = req.body;
+
+      console.log("matricula: " + idEmpleado);
+
       const params: Parametros[] = [
         { Nombre: "@Case", Valor: "0" },
         { Nombre: "@IdEmpleado", Valor: idEmpleado },
