@@ -36,7 +36,7 @@ export function AnalisisIndividualController() {
       const rol = (req as any).user?.rol;
       const esUsuarioMedico = String(rol ?? "").toLowerCase().trim() === "médico";
 
-      const data = await evaluarSaludConAnalisisIA(String(matricula), esUsuarioMedico, false);
+      const data = await evaluarSaludConAnalisisIA(String(matricula), esUsuarioMedico, true);
 
       return res.json({ ok: true, data });
     } catch (error: any) {
