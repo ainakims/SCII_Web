@@ -71,10 +71,28 @@ export interface HeatmapAsistenciaMes {
   Riesgo: NivelRiesgo;
 }
 
+// Un elemento por cada año con registros. El componente navega entre años con
+// flechas; por defecto se muestra el año actual si viene incluido, o si no el
+// más reciente del arreglo (ver components/HeatmapAsistencia.tsx).
+export interface HeatmapAsistenciaAnio {
+  Anio: number;
+  Meses: HeatmapAsistenciaMes[];
+}
+
+// Conteo de consultas de un protocolo específico dentro de un año. `ConteoMeses`
+// siempre trae 12 elementos (Ene→Dic); los meses futuros del año en curso
+// simplemente son 0, no hay un estado especial como en HeatmapAsistenciaMes.
+export interface ConteoProtocoloAnio {
+  Anio: number;
+  ConteoMeses: number[];
+}
+
 export interface MatrizProtocoloItem {
   IdProtocolo: number;
   Nombre: string;
-  ConteoMeses: number[];
+  // Identidad estable por protocolo a través de los años: un elemento por cada
+  // año en que ESE protocolo tuvo al menos una consulta.
+  ConteoPorAnio: ConteoProtocoloAnio[];
 }
 
 export interface HistoricosYGraficas {
@@ -83,7 +101,7 @@ export interface HistoricosYGraficas {
   EvolucionIMC: EvolucionIMC;
   PerfilMetabolico: PerfilMetabolico;
   PresionArterial: PresionArterial;
-  HeatmapAsistencia: HeatmapAsistenciaMes[];
+  HeatmapAsistencia: HeatmapAsistenciaAnio[];
   MatrizProtocolos: MatrizProtocoloItem[];
   Enfermedades: string[];
 }

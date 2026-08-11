@@ -149,8 +149,8 @@ const AnalisisIndividual: React.FC = () => {
               <PresionArterialChart datos={resultado.HistoricosYGraficas.PresionArterial} />
               <EvolucionImcChart meses={resultado.HistoricosYGraficas.Meses} evolucion={resultado.HistoricosYGraficas.EvolucionIMC} />
               <PerfilMetabolicoChart meses={resultado.HistoricosYGraficas.Meses} perfil={resultado.HistoricosYGraficas.PerfilMetabolico} />
-              <HeatmapAsistencia meses={resultado.HistoricosYGraficas.HeatmapAsistencia} />
-              <MatrizProtocolosChart meses={resultado.HistoricosYGraficas.Meses} protocolos={resultado.HistoricosYGraficas.MatrizProtocolos} />
+              <HeatmapAsistencia anios={resultado.HistoricosYGraficas.HeatmapAsistencia} />
+              <MatrizProtocolosChart protocolos={resultado.HistoricosYGraficas.MatrizProtocolos} />
               <HallazgosSection hallazgos={resultado.HallazgosRelevantes} />
               <DiagnosticoSection diagnostico={resultado.DiagnosticoDiferencial} />
               <IncertidumbreSection evolucion={resultado.EvolucionYRiesgosPotenciales} />
