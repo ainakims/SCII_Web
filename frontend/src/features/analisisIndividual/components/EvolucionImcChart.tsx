@@ -1,64 +1,98 @@
 import React, { useMemo } from "react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { EvolucionIMC } from "../types";
-import { colorNivelRiesgo } from "../colores";
-import Card from "./Card";
+import EtiquetaUltimoValor from "./EtiquetaUltimoValor";
+import ShimmerOverlay from "../../saludPoblacional/components/shared/ShimmerOverlay";
 
 interface EvolucionImcChartProps {
   meses: string[];
   evolucion: EvolucionIMC;
 }
 
+const COLOR_IMC = "#002E6D";
+
+// Mismo estilo de tooltip que las gráficas de Expediente (Somatometría, Cardiovascular, etc.).
+const tooltipCls = "bg-white shadow-lg rounded-lg p-2.5 text-[11px]";
+
+const TooltipImc: React.FC<any> = ({ active, payload, label }) => {
+  if (!active || !payload || !payload.length) return null;
+  const p = payload[0].payload;
+  if (p.imc == null) return null;
+  return (
+    <div className={tooltipCls}>
+      <p className="font-bold text-gray-700 mb-1">{label}</p>
+      <p className="flex items-center gap-1.5 text-gray-500">
+        <span className="size-2 rounded-full inline-block" style={{ backgroundColor: COLOR_IMC }}></span>
+        IMC: <span className="font-bold text-gray-700">{p.imc}</span>
+      </p>
+    </div>
+  );
+};
+
 const EvolucionImcChart: React.FC<EvolucionImcChartProps> = ({ meses, evolucion }) => {
   const serie = useMemo(
-    () => meses.map((mes, i) => ({ mes, imc: evolucion.ValoresIMC[i] ?? null, riesgo: evolucion.NivelRiesgo[i] ?? null })),
+    () => meses.map((mes, i) => ({ mes, imc: evolucion.ValoresIMC[i] ?? null })),
     [meses, evolucion]
   );
 
   const hayDatos = serie.some((p) => p.imc != null);
-  const ultimoImc = [...serie].reverse().find((p) => p.imc != null)?.imc ?? null;
+
+  // Índice del último registro con IMC: ahí se dibuja la etiqueta "IMC
+  // actual" dentro de la gráfica (en vez de un badge en el header).
+  const ultimoImcIndex = useMemo(() => {
+    for (let i = serie.length - 1; i >= 0; i--) if (serie[i].imc != null) return i;
+    return -1;
+  }, [serie]);
+
+  // El eje Y arranca cerca del valor mínimo (no en un fijo 18) para que las
+  // variaciones de IMC se noten mejor sin importar el rango real de datos.
+  const limiteInferiorY = useMemo(() => {
+    const valores = serie.map((p) => p.imc).filter((v): v is number => v != null);
+    return valores.length ? Math.floor(Math.min(...valores)) - 1 : 18;
+  }, [serie]);
 
   return (
-    <Card
-      icon="mdi-human"
-      title="Evolución de IMC"
-      badge={ultimoImc != null && (
-        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-green-50 text-green-700 border border-green-200">IMC actual: {ultimoImc}</span>
-      )}
-    >
+    <div className="rounded-lg shadow-xl p-4">
+      <h3 className="text-xs font-bold text-gray-600 flex items-center mb-2">
+        <i className="fa-solid fa-scale-balanced mr-2"></i>Evolución de IMC
+      </h3>
       {hayDatos ? (
+        <div className="relative overflow-hidden">
         <ResponsiveContainer width="100%" height={180}>
-          <AreaChart data={serie} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-            <defs>
-              <linearGradient id="gradienteImc" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#0070BD" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#0070BD" stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
+          <LineChart data={serie} margin={{ top: 28, right: 16, left: 0, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis dataKey="mes" tick={{ fontSize: 9 }} />
-            <YAxis tick={{ fontSize: 9 }} width={30} />
-            <Tooltip formatter={(value: any) => [value, "IMC"]} />
-            <Area
-              type="monotone"
+            <YAxis tick={{ fontSize: 9 }} width={30} domain={[limiteInferiorY, "auto"]} allowDecimals={false} />
+            <Tooltip content={<TooltipImc />} />
+            <Line
+              type="linear"
               dataKey="imc"
               name="IMC"
-              stroke="#0070BD"
+              stroke={COLOR_IMC}
               strokeWidth={2.5}
-              fill="url(#gradienteImc)"
               connectNulls
+              animationDuration={900}
+              animationEasing="ease-out"
               dot={(props: any) => {
-                const { cx, cy, payload, index } = props;
+                const { cx, cy, index, payload } = props;
                 if (payload.imc == null) return <React.Fragment key={`dot-${index}`} />;
-                return <circle key={`dot-${index}`} cx={cx} cy={cy} r={4} fill={colorNivelRiesgo(payload.riesgo)} stroke="#fff" strokeWidth={1.5} />;
+                if (index !== ultimoImcIndex) return <circle key={`dot-${index}`} cx={cx} cy={cy} r={3} fill={COLOR_IMC} stroke="#fff" strokeWidth={1.5} />;
+                return (
+                  <g key={`dot-${index}`}>
+                    <circle cx={cx} cy={cy} r={4} fill={COLOR_IMC} stroke="#fff" strokeWidth={1.5} />
+                    <EtiquetaUltimoValor cx={cx} cy={cy} texto={`IMC actual: ${payload.imc}`} color={COLOR_IMC} />
+                  </g>
+                );
               }}
             />
-          </AreaChart>
+          </LineChart>
         </ResponsiveContainer>
+        <ShimmerOverlay />
+        </div>
       ) : (
         <div className="h-[180px] flex items-center justify-center text-xs text-gray-400">Sin datos de IMC disponibles.</div>
       )}
-    </Card>
+    </div>
   );
 };
 

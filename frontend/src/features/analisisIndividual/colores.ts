@@ -1,14 +1,15 @@
 // Paleta de este feature (independiente de saludPoblacional: contrato de datos
-// distinto). Mismo lenguaje visual de la app (sea-blue/sky-blue + semáforo
-// clínico verde/ámbar/rojo), sin acoplarse a las reglas clínicas de Salud
-// Poblacional.
+// distinto). Semáforo verde/amarillo/naranja (bajo/medio/alto), con los
+// mismos colores de marca que ya usa el resto del sitio: aqua-green,
+// sunray-yellow (ámbar/leve en NIVEL_COLOR de AntropometriaSection.tsx) y
+// sunset-orange (naranja/alto en el mismo NIVEL_COLOR).
 
 import { NivelRiesgo, Prioridad } from "./types";
 
 export const COLOR_RIESGO: Record<1 | 2 | 3, string> = {
-  1: "#22c55e",
-  2: "#eab308",
-  3: "#ef4444",
+  1: "#54BBAB",
+  2: "#FFC627",
+  3: "#EE7523",
 };
 
 export function colorNivelRiesgo(nivel: NivelRiesgo): string {

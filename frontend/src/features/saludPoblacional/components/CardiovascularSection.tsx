@@ -6,6 +6,7 @@ import { clasificarPresion } from "../clinicalRules";
 import { generarResumenMedico } from "../resumenMedico";
 import SectionCard from "./shared/SectionCard";
 import KpiCard from "./shared/KpiCard";
+import ShimmerOverlay from "./shared/ShimmerOverlay";
 
 interface CardiovascularSectionProps {
   estadoActual: RegistroValidado[];
@@ -145,6 +146,7 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
           <h3 className="text-xs font-bold text-gray-600 mb-2">
             <i className="fa-solid fa-chart-simple mr-2"></i>Distribución presión arterial
           </h3>
+          <div className="relative overflow-hidden">
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={distPresionVisible} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -155,6 +157,8 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
               <Bar dataKey="Diastólica" name="Diastólica" fill={COLOR_PRESION["Diastólica"]} radius={[4, 4, 0, 0]} animationDuration={900} animationEasing="ease-out" />
             </BarChart>
           </ResponsiveContainer>
+          <ShimmerOverlay subtle />
+          </div>
           <div className="flex flex-wrap gap-1.5 justify-center mt-2">
             {(["Sistólica", "Diastólica"] as const).map((serie) => {
               const oculto = seriesPresionOcultas.has(serie);
@@ -184,7 +188,7 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
             // AntropometriaSection.tsx) para que ambas gráficas midan lo
             // mismo pese a que aquí hay una fila de leyenda debajo del chart.
             <div className="h-64 flex flex-col">
-              <div className="flex-1 min-h-0">
+              <div className="relative overflow-hidden flex-1 min-h-0">
                 <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
@@ -218,6 +222,7 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
                   />
                 </PieChart>
                 </ResponsiveContainer>
+                <ShimmerOverlay subtle />
               </div>
               <div className="flex flex-wrap gap-1.5 justify-center mt-2 shrink-0">
                 {estadiosPresion.map((e) => {

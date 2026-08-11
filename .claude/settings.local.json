@@ -44,7 +44,8 @@
       "PowerShell(Get-Command gs -ErrorAction SilentlyContinue)",
       "PowerShell(Get-Command gswin64c -ErrorAction SilentlyContinue)",
       "PowerShell(Get-Command qpdf -ErrorAction SilentlyContinue)",
-      "PowerShell(\"checked\")"
+      "PowerShell(\"checked\")",
+      "Bash(cd \"../frontend\" 2>/dev/null; grep -m1 '\"recharts\"' package.json)"
     ]
   }
 }

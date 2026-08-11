@@ -60,6 +60,27 @@ const ExpedienteSkeleton: React.FC = () => (
   </div>
 );
 
+// Skeleton del directorio de Personal/Reingresos (mismo alto/columnas que
+// PacientesTabla): se muestra la primera vez que se abre cada tab, mientras
+// llega su propio fetch — mismo alto fijo (420px) que la tabla real para que
+// no "salte" al terminar de cargar.
+const PacientesTablaSkeleton: React.FC = () => (
+  <div className="h-[420px] rounded-lg bg-gray-50 overflow-hidden animate-pulse">
+    <div className="h-10 bg-linear-to-r from-white to-gray-100"></div>
+    {Array.from({ length: 9 }).map((_, i) => (
+      <div key={i} className="flex items-center gap-5 px-5 py-3 border-b border-gray-100 last:border-0">
+        <div className="h-3 w-14 rounded bg-gray-200"></div>
+        <div className="flex-1 space-y-1.5">
+          <div className="h-3 w-40 rounded bg-gray-200"></div>
+          <div className="h-2.5 w-24 rounded bg-gray-100"></div>
+        </div>
+        <div className="h-3 w-28 rounded bg-gray-200"></div>
+        <div className="h-3 w-24 rounded bg-gray-200"></div>
+      </div>
+    ))}
+  </div>
+);
+
 const TABS_DEPTO = [
   { id: "departamentos", label: "Departamento", icon: "fa-building" },
   { id: "activos",       label: "Personal",     icon: "fa-user-group" },
@@ -92,9 +113,17 @@ const Expediente: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [vistaTab, setVistaTab] = useState<VistaDeptoTab>("departamentos");
 
+  // Activos y reingresos ya NO se piden juntos por adelantado: cada uno se
+  // carga completo (para que paginar dentro del tab sea instantáneo,
+  // client-side) pero solo la PRIMERA vez que se abre su propio tab — así
+  // "Personal" no obliga a cargar también "Reingresos" (y viceversa) si el
+  // usuario nunca lo visita.
   const [pacientesActivos, setPacientesActivos] = useState<PacienteResumen[]>([]);
   const [pacientesReingresos, setPacientesReingresos] = useState<PacienteResumen[]>([]);
-  const [loadingDirectorios, setLoadingDirectorios] = useState(true);
+  const [loadingActivos, setLoadingActivos] = useState(false);
+  const [loadingReingresos, setLoadingReingresos] = useState(false);
+  const [cargadoActivos, setCargadoActivos] = useState(false);
+  const [cargadoReingresos, setCargadoReingresos] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -120,28 +149,25 @@ const Expediente: React.FC = () => {
     fetchData();
   }, []);
 
-  // Activos y reingresos se piden una sola vez, en paralelo con la población,
-  // y se guardan aquí arriba (no dentro de la tabla) para que cambiar de tab
-  // solo alterne qué se muestra, sin repetir la petición ni perder los datos.
   useEffect(() => {
-    const fetchDirectorios = async () => {
-      setLoadingDirectorios(true);
-      try {
-        const [resActivos, resReingresos] = await Promise.all([
-          fetchWithAuth(`${API_BASE_URL}/Pacientes/ObtenerPacientes`, { method: "POST", body: JSON.stringify({ esActivo: "1" }) }),
-          fetchWithAuth(`${API_BASE_URL}/Pacientes/ObtenerPacientes`, { method: "POST", body: JSON.stringify({ esActivo: "0" }) }),
-        ]);
-        const [jsonActivos, jsonReingresos] = await Promise.all([resActivos.json(), resReingresos.json()]);
-        setPacientesActivos(Array.isArray(jsonActivos?.data) ? jsonActivos.data : []);
-        setPacientesReingresos(Array.isArray(jsonReingresos?.data) ? jsonReingresos.data : []);
-      } catch (err) {
-        console.error("Error al obtener directorios de pacientes:", err);
-      } finally {
-        setLoadingDirectorios(false);
-      }
-    };
-    fetchDirectorios();
-  }, []);
+    if (vistaTab !== "activos" || cargadoActivos) return;
+    setLoadingActivos(true);
+    fetchWithAuth(`${API_BASE_URL}/Pacientes/ObtenerPacientes`, { method: "POST", body: JSON.stringify({ esActivo: "1" }) })
+      .then((res) => res.json())
+      .then((json) => setPacientesActivos(Array.isArray(json?.data) ? json.data : []))
+      .catch((err) => console.error("Error al obtener personal activo:", err))
+      .finally(() => { setLoadingActivos(false); setCargadoActivos(true); });
+  }, [vistaTab, cargadoActivos]);
+
+  useEffect(() => {
+    if (vistaTab !== "reingresos" || cargadoReingresos) return;
+    setLoadingReingresos(true);
+    fetchWithAuth(`${API_BASE_URL}/Pacientes/ObtenerPacientes`, { method: "POST", body: JSON.stringify({ esActivo: "0" }) })
+      .then((res) => res.json())
+      .then((json) => setPacientesReingresos(Array.isArray(json?.data) ? json.data : []))
+      .catch((err) => console.error("Error al obtener reingresos:", err))
+      .finally(() => { setLoadingReingresos(false); setCargadoReingresos(true); });
+  }, [vistaTab, cargadoReingresos]);
 
   const estadoActual = useMemo(() => construirEstadoActual(registros), [registros]);
   // minPoblacion=1: a diferencia del resumen de IA, la tabla debe listar TODOS
@@ -186,27 +212,25 @@ const Expediente: React.FC = () => {
                   </div>
                 }
               >
-                {loadingDirectorios ? (
-                  <div className="flex items-center justify-center py-16 text-sea-blue">
-                    <i className="mdi mdi-loading mdi-spin text-2xl mr-3"></i>
-                    Cargando departamentos, activos y reingresos...
-                  </div>
-                ) : (
-                  // Los tres se montan una sola vez y se alternan con `hidden`
-                  // (no con && condicional): así cambiar de tab no vuelve a
-                  // renderizar la tabla completa cada vez, solo la muestra/oculta.
-                  <>
-                    <div className={vistaTab === "departamentos" ? "" : "hidden"}>
-                      <DepartamentoTabla departamentos={resumenDepartamentos.departamentos} onSeleccionar={irADepartamento} />
-                    </div>
-                    <div className={vistaTab === "activos" ? "" : "hidden"}>
-                      <PacientesTabla activo={true} pacientes={pacientesActivos} />
-                    </div>
-                    <div className={vistaTab === "reingresos" ? "" : "hidden"}>
-                      <PacientesTabla activo={false} pacientes={pacientesReingresos} />
-                    </div>
-                  </>
-                )}
+                {/* Los tres se montan una sola vez y se alternan con `hidden`
+                    (no con && condicional): así cambiar de tab no vuelve a
+                    renderizar la tabla completa cada vez, solo la muestra/oculta.
+                    Departamentos no depende de ningún fetch propio (usa
+                    `resumenDepartamentos`, ya listo apenas carga `registros`),
+                    así que se muestra de inmediato sin esperar a Personal/
+                    Reingresos. Personal y Reingresos sí muestran un skeleton
+                    mientras se carga su propio directorio completo por
+                    primera vez (después de eso, cambiar de página es
+                    instantáneo: ya quedó todo en memoria). */}
+                <div className={vistaTab === "departamentos" ? "" : "hidden"}>
+                  <DepartamentoTabla departamentos={resumenDepartamentos.departamentos} onSeleccionar={irADepartamento} />
+                </div>
+                <div className={vistaTab === "activos" ? "" : "hidden"}>
+                  {loadingActivos ? <PacientesTablaSkeleton /> : <PacientesTabla activo={true} pacientes={pacientesActivos} />}
+                </div>
+                <div className={vistaTab === "reingresos" ? "" : "hidden"}>
+                  {loadingReingresos ? <PacientesTablaSkeleton /> : <PacientesTabla activo={false} pacientes={pacientesReingresos} />}
+                </div>
               </SectionCard>
 
               <ExpedienteContenido historico={registros} mensajeVacio="No hay información disponible." />

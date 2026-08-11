@@ -32,9 +32,9 @@ const ITEMS_POR_PAGINA = 100;
 // directorio de Pacientes (frontend/src/pages/Pacientes.tsx), con el mismo
 // "look & feel" que DepartamentoTabla.tsx (altura fija con scroll interno,
 // encabezado sticky, columnas ordenables). Es puramente presentacional: el
-// fetch y el loading compartido con Departamentos viven en Expediente.tsx,
-// para que los tres directorios carguen juntos y no se repita la petición al
-// cambiar de tab.
+// fetch y el loading viven en Expediente.tsx (uno por tab, cargado la primera
+// vez que se visita), para que cambiar de página dentro del mismo tab sea
+// instantáneo (paginado 100% client-side, sin ir de nuevo al backend).
 //
 // SOLO en "Personal activo" (activo=true) el panel de filtros y el pie de
 // paginación copian exactamente los de Pacientes.tsx (Tipo de
@@ -143,7 +143,8 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes }) =>
       {/* Alto FIJO (no max-h): la caja siempre mide lo mismo sin importar
           cuántas filas traiga la página actual — solo cuando hay más de ~10
           aparece scroll interno, en vez de que la tabla crezca/encoja. */}
-      <div className="h-[420px] overflow-auto rounded-lg border border-gray-200">
+      <div className="h-[420px] overflow-auto rounded-lg ">
+        {/* shadow-xl */}
         <table className="w-full text-xs table-fixed">
           <thead className="sticky top-0 z-10 bg-linear-to-r from-white to-gray-100">
             <tr className="text-gray-700 text-left">
@@ -222,7 +223,7 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes }) =>
                         </select>
                       </div>
                     </td>
-                    
+
                   </>
                 ) : (
                   <>
@@ -281,114 +282,69 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes }) =>
         </table>
       </div>
 
-      {activo ? (
-        <div className="grid grid-cols-2 gap-4 items-center mt-2 h-5 overflow-visible">
-          <div className="col-span-1 flex items-center">
-            <span className="text-xs font-bold text-gray-400">
-              {paginaSegura} de {totalPaginas} páginas · {ordenados.length.toLocaleString("es-MX")} resultados
-            </span>
-          </div>
-          <div className="col-span-1 flex justify-end">
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPagina(1)}
-                disabled={paginaSegura === 1}
-                className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-                title="Primera página"
-              >
-                <ChevronFirst className="h-4 w-4" />
-              </button>
-              <button
-                title="Anterior"
-                onClick={() => setPagina((p) => Math.max(p - 1, 1))}
-                disabled={paginaSegura === 1}
-                className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-              >
-                <ChevronLeft className="h-4 w-4" />
-              </button>
+      {/* Mismo diseño de paginado para Personal y Reingresos (antes Reingresos
+          tenía una versión más simple, con botones distintos). */}
+      <div className="grid grid-cols-2 gap-4 items-center mt-2 h-5 overflow-visible">
+        <div className="col-span-1 flex items-center">
+          <span className="text-xs font-bold text-gray-400">
+            {paginaSegura} de {totalPaginas} páginas · {ordenados.length.toLocaleString("es-MX")} resultados
+          </span>
+        </div>
+        <div className="col-span-1 flex justify-end">
+          <div className="flex items-center gap-1">
+            <button
+              onClick={() => setPagina(1)}
+              disabled={paginaSegura === 1}
+              className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+              title="Primera página"
+            >
+              <ChevronFirst className="h-4 w-4" />
+            </button>
+            <button
+              title="Anterior"
+              onClick={() => setPagina((p) => Math.max(p - 1, 1))}
+              disabled={paginaSegura === 1}
+              className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </button>
 
-              <div className="flex gap-1 items-center">
-                {getPageNumbers()[0] > 1 && <span className="text-slate-400 px-1 text-xs">...</span>}
-                {getPageNumbers().map((page) => (
-                  <button
-                    title={`Pág. ${page}`}
-                    key={page}
-                    onClick={() => setPagina(page)}
-                    className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs border cursor-pointer border-gray-100 shadow-md font-semibold transition-all ${paginaSegura === page ? "text-white bg-linear-to-b from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80" : "hover:bg-gray-100"}`}
-                  >
-                    {page}
-                  </button>
-                ))}
-                {getPageNumbers()[getPageNumbers().length - 1] < totalPaginas && (
-                  <span className="text-slate-400 px-1 text-xs">...</span>
-                )}
-              </div>
-
-              <button
-                title="Siguiente"
-                onClick={() => setPagina((p) => Math.min(p + 1, totalPaginas))}
-                disabled={paginaSegura === totalPaginas}
-                className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 hover:text-sea-blue text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-              >
-                <ChevronRight className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setPagina(totalPaginas)}
-                disabled={paginaSegura === totalPaginas}
-                className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 hover:text-sea-blue text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-                title="Última página"
-              >
-                <ChevronLast className="h-4 w-4" />
-              </button>
+            <div className="flex gap-1 items-center">
+              {getPageNumbers()[0] > 1 && <span className="text-slate-400 px-1 text-xs">...</span>}
+              {getPageNumbers().map((page) => (
+                <button
+                  title={`Pág. ${page}`}
+                  key={page}
+                  onClick={() => setPagina(page)}
+                  className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs border cursor-pointer border-gray-100 shadow-md font-semibold transition-all ${paginaSegura === page ? "text-white bg-linear-to-b from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80" : "hover:bg-gray-100"}`}
+                >
+                  {page}
+                </button>
+              ))}
+              {getPageNumbers()[getPageNumbers().length - 1] < totalPaginas && (
+                <span className="text-slate-400 px-1 text-xs">...</span>
+              )}
             </div>
+
+            <button
+              title="Siguiente"
+              onClick={() => setPagina((p) => Math.min(p + 1, totalPaginas))}
+              disabled={paginaSegura === totalPaginas}
+              className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 hover:text-sea-blue text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </button>
+            <button
+              onClick={() => setPagina(totalPaginas)}
+              disabled={paginaSegura === totalPaginas}
+              className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 hover:text-sea-blue text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+              title="Última página"
+            >
+              <ChevronLast className="h-4 w-4" />
+            </button>
           </div>
         </div>
-      ) : (
-        <div className="flex items-center justify-between mt-2">
-          <p className="text-[10px] text-gray-400">
-            {ordenados.length.toLocaleString("es-MX")} paciente(s)
-            {totalPaginas > 1 && ` · página ${paginaSegura} de ${totalPaginas}`}
-          </p>
-
-          {totalPaginas > 1 && (
-            <div className="flex items-center gap-1">
-              <button
-                onClick={() => setPagina(1)}
-                disabled={paginaSegura === 1}
-                className="p-1.5 rounded-md bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 text-white shadow-md shadow-blue-500/30 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-                title="Primera página"
-              >
-                <i className="mdi mdi-page-first"></i>
-              </button>
-              <button
-                onClick={() => setPagina((p) => Math.max(1, p - 1))}
-                disabled={paginaSegura === 1}
-                className="p-1.5 rounded-md bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 text-white shadow-md shadow-blue-500/30 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-                title="Anterior"
-              >
-                <i className="mdi mdi-chevron-left"></i>
-              </button>
-              <span className="text-[10px] text-gray-500 px-1">{paginaSegura} / {totalPaginas}</span>
-              <button
-                onClick={() => setPagina((p) => Math.min(totalPaginas, p + 1))}
-                disabled={paginaSegura === totalPaginas}
-                className="p-1.5 rounded-md bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 text-white shadow-md shadow-blue-500/30 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-                title="Siguiente"
-              >
-                <i className="mdi mdi-chevron-right"></i>
-              </button>
-              <button
-                onClick={() => setPagina(totalPaginas)}
-                disabled={paginaSegura === totalPaginas}
-                className="p-1.5 rounded-md bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 text-white shadow-md shadow-blue-500/30 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-                title="Última página"
-              >
-                <i className="mdi mdi-page-last"></i>
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+      </div>
     </div>
   );
 };

@@ -7,12 +7,10 @@ import Swal from "sweetalert2";
 import KpiCard from "../features/saludPoblacional/components/shared/KpiCard";
 import { AnalisisIndividualResult } from "../features/analisisIndividual/types";
 import HeaderAnalisis from "../features/analisisIndividual/components/HeaderAnalisis";
-import EvolucionPesoChart from "../features/analisisIndividual/components/EvolucionPesoChart";
-import PresionArterialChart from "../features/analisisIndividual/components/PresionArterialChart";
-import EvolucionImcChart from "../features/analisisIndividual/components/EvolucionImcChart";
-import PerfilMetabolicoChart from "../features/analisisIndividual/components/PerfilMetabolicoChart";
-import HeatmapAsistencia from "../features/analisisIndividual/components/HeatmapAsistencia";
-import MatrizProtocolosChart from "../features/analisisIndividual/components/MatrizProtocolosChart";
+import AnalisisIndividualSkeleton from "../features/analisisIndividual/components/AnalisisIndividualSkeleton";
+import OverlayCargandoIA from "../features/analisisIndividual/components/OverlayCargandoIA";
+import UltimaTomaSection from "../features/analisisIndividual/components/UltimaTomaSection";
+import MatricesSection from "../features/analisisIndividual/components/MatricesSection";
 import HallazgosSection from "../features/analisisIndividual/components/HallazgosSection";
 import DiagnosticoSection from "../features/analisisIndividual/components/DiagnosticoSection";
 import IncertidumbreSection from "../features/analisisIndividual/components/IncertidumbreSection";
@@ -56,7 +54,7 @@ const AnalisisIndividual: React.FC = () => {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/AnalisisIndividual/Evaluar`, {
+      const res = await fetchWithAuth(`${API_BASE_URL}/AnalisisIndividual/EvaluarInactivos`, {
         method: "POST",
         body: JSON.stringify({ matricula: matricula.trim() }),
       });
@@ -113,12 +111,8 @@ const AnalisisIndividual: React.FC = () => {
     <div className="relative flex w-full overflow-hidden">
       <div className="flex-1 mt-14 transition-all duration-300 ease-in-out">
         <div className="max-w-7xl mx-auto px-4 space-y-6 pb-6">
-          {loading && !resultado && (
-            <div className="flex items-center justify-center py-24 text-sea-blue">
-              <i className="mdi mdi-loading mdi-spin text-3xl mr-3"></i>
-              Generando análisis con IA...
-            </div>
-          )}
+          {loading && !resultado && <AnalisisIndividualSkeleton />}
+          {loading && <OverlayCargandoIA />}
 
           {error && (
             <div className="flex items-start gap-2 bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl shadow-md">
@@ -140,39 +134,47 @@ const AnalisisIndividual: React.FC = () => {
                 return (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                     <KpiCard
-                      icon="mdi-heart-pulse"
+                      icon="gauge-high"
                       label="Presión arterial"
                       value={sistolica && diastolica ? `${sistolica.valor}/${diastolica.valor} mmHg` : "Sin dato"}
                     />
                     <KpiCard
-                      icon="mdi-scale-bathroom"
+                      icon="scale-balanced"
                       label="IMC"
                       value={imc ? `${imc.valor} kg/m²` : "Sin dato"}
                     />
                     <KpiCard
-                      icon="mdi-pulse"
+                      icon="heart-pulse"
                       label="Frecuencia cardiaca"
                       value={fc ? `${fc.valor} bpm` : "Sin dato"}
                     />
                     <KpiCard
-                      icon="mdi-weight-kilogram"
-                      label="Peso vs. meta"
-                      value={peso ? `${peso.valor} kg${pesoIdeal ? ` (meta ${pesoIdeal.valor})` : ""}` : "Sin dato"}
+                      icon="weight-scale"
+                      label="Peso actual"
+                      value={peso ? `${peso.valor} kg` : ""}
                     />
                   </div>
                 );
               })()}
-              <HeaderAnalisis prioridad={resultado.PrioridadYUrgencia} aptitud={resultado.AptitudLaboral} />
-              <EnfermedadesBadges enfermedades={resultado.HistoricosYGraficas.Enfermedades} />
-              <EvolucionPesoChart datos={resultado.HistoricosYGraficas.EvolucionPesoAnual} />
-              <PresionArterialChart datos={resultado.HistoricosYGraficas.PresionArterial} />
-              <EvolucionImcChart meses={resultado.HistoricosYGraficas.Meses} evolucion={resultado.HistoricosYGraficas.EvolucionIMC} />
-              <PerfilMetabolicoChart meses={resultado.HistoricosYGraficas.Meses} perfil={resultado.HistoricosYGraficas.PerfilMetabolico} />
-              <HeatmapAsistencia meses={resultado.HistoricosYGraficas.HeatmapAsistencia} />
-              <MatrizProtocolosChart meses={resultado.HistoricosYGraficas.Meses} protocolos={resultado.HistoricosYGraficas.MatrizProtocolos} />
+              <HeaderAnalisis prioridad={resultado.PrioridadYUrgencia} aptitud={resultado.AptitudLaboral} matricula={matricula} />
+              {/* Oculto (no eliminado): "Enfermedades registradas" no se va a ocupar por ahora. */}
+              {/* <EnfermedadesBadges enfermedades={resultado.HistoricosYGraficas.Enfermedades} /> */}
+              <UltimaTomaSection
+                meses={resultado.HistoricosYGraficas.Meses}
+                peso={resultado.HistoricosYGraficas.EvolucionPesoAnual}
+                presion={resultado.HistoricosYGraficas.PresionArterial}
+                imc={resultado.HistoricosYGraficas.EvolucionIMC}
+                perfilMetabolico={resultado.HistoricosYGraficas.PerfilMetabolico}
+              />
+              <MatricesSection
+                meses={resultado.HistoricosYGraficas.Meses}
+                heatmap={resultado.HistoricosYGraficas.HeatmapAsistencia}
+                protocolos={resultado.HistoricosYGraficas.MatrizProtocolos}
+              />
               <HallazgosSection hallazgos={resultado.HallazgosRelevantes} />
               <DiagnosticoSection diagnostico={resultado.DiagnosticoDiferencial} />
-              <IncertidumbreSection evolucion={resultado.EvolucionYRiesgosPotenciales} />
+              {/* Oculto (no eliminado): "Factores de incertidumbre registrados" no se va a ocupar por ahora. */}
+              {/* <IncertidumbreSection evolucion={resultado.EvolucionYRiesgosPotenciales} /> */}
             </>
           )}
 

@@ -6,6 +6,7 @@ import { clasificarIMC, clasificarIMCSimplificado, clasificarICT, NIVEL_ESTILOS,
 import { generarResumenMedico } from "../resumenMedico";
 import SectionCard from "./shared/SectionCard";
 import KpiCard from "./shared/KpiCard";
+import ShimmerOverlay from "./shared/ShimmerOverlay";
 
 const BANDA_IMC_NORMAL: [number, number] = [18.5, 25];
 
@@ -263,6 +264,7 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
           <h3 className="text-xs font-bold text-gray-600 mb-2">
             <i className="fa-solid fa-chart-simple mr-2"></i>Categoría de la OMS
           </h3>
+          <div className="relative overflow-hidden">
           <ResponsiveContainer width="100%" height={200}>
             <BarChart data={distribucionImcVisible} margin={{ top: 8, right: 8, left: 0, bottom: 8 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -274,6 +276,8 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
               </Bar>
             </BarChart>
           </ResponsiveContainer>
+          <ShimmerOverlay subtle />
+          </div>
           <div className="flex flex-wrap gap-1.5 justify-center mt-2">
             {distribucionImc.map((d) => {
               const oculto = categoriasImcOcultas.has(d.label);
@@ -298,6 +302,7 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
           </h3>
           {totalConIct > 0 ? (
             <>
+              <div className="relative overflow-hidden">
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie
@@ -332,6 +337,8 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
                   />
                 </PieChart>
               </ResponsiveContainer>
+              <ShimmerOverlay subtle />
+              </div>
               <div className="flex flex-wrap gap-1.5 justify-center mt-2">
                 {distribucionIct.map((d) => {
                   const oculto = categoriasIctOcultas.has(d.label);
@@ -364,7 +371,7 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
             // Alto fijo (mismo que "Presión arterial (ACC/AHA)" en
             // CardiovascularSection.tsx) para que ambas gráficas midan lo
             // mismo aunque esa otra tenga una fila de leyenda debajo y esta no.
-            <div className="h-64">
+            <div className="relative overflow-hidden h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <ComposedChart margin={{ top: 8, right: 30, left: 0, bottom: -30 }}>
                   <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -446,6 +453,7 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
                   </Scatter>
                 </ComposedChart>
               </ResponsiveContainer>
+              <ShimmerOverlay subtle />
             </div>
           ) : (
             <div className="h-64 flex items-center justify-center text-xs text-gray-400 text-center px-6">Sin datos suficientes de IMC/departamento.</div>

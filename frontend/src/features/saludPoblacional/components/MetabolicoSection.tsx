@@ -5,6 +5,7 @@ import { estadisticasIndicador, obtenerValor, construirRelacion, IndicadorClave 
 import { clasificarGlucosa, clasificarColesterol, clasificarTrigliceridos, UMBRALES_LABORATORIO, Nivel, Clasificacion } from "../clinicalRules";
 import { generarResumenMedico } from "../resumenMedico";
 import SectionCard from "./shared/SectionCard";
+import ShimmerOverlay from "./shared/ShimmerOverlay";
 
 interface MetabolicoSectionProps {
   estadoActual: RegistroValidado[];
@@ -52,6 +53,7 @@ const ExploradorMetabolico: React.FC<{ estadoActual: RegistroValidado[] }> = ({ 
           <i className="mdi mdi-chevron-down absolute right-2 top-1/2 -translate-y-1/2 text-sea-blue pointer-events-none"></i>
         </div>
       </div>
+      <div className="relative overflow-hidden">
       <ResponsiveContainer width="100%" height={280}>
         <ScatterChart margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
           <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" />
@@ -73,6 +75,8 @@ const ExploradorMetabolico: React.FC<{ estadoActual: RegistroValidado[] }> = ({ 
           <Scatter data={puntos} fill="#0070BD" fillOpacity={0.6} />
         </ScatterChart>
       </ResponsiveContainer>
+      <ShimmerOverlay subtle />
+      </div>
       <p className="text-[10px] text-gray-400 mt-1">
         Ámbar: valor alterado/límite. Rojo: alto riesgo / criterio diagnóstico. {puntos.length.toLocaleString("es-MX")} personas con ambos valores disponibles.
       </p>
@@ -122,6 +126,7 @@ const BloqueIndicador: React.FC<BloqueProps> = ({ titulo, icono, campo, unidad, 
       </div>
 
       {puntosIndividuales.length > 0 ? (
+        <div className="relative overflow-hidden">
         <ResponsiveContainer width="100%" height={127}>
           <ScatterChart margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
@@ -154,6 +159,8 @@ const BloqueIndicador: React.FC<BloqueProps> = ({ titulo, icono, campo, unidad, 
             </Scatter>
           </ScatterChart>
         </ResponsiveContainer>
+        <ShimmerOverlay subtle />
+        </div>
       ) : (
         <div className="h-[145px] flex items-center justify-center text-xs text-gray-400">Sin datos suficientes</div>
       )}

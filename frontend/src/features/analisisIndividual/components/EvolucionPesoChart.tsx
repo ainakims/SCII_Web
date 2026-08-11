@@ -1,52 +1,143 @@
-import React, { useMemo } from "react";
-import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
+import React, { useMemo, useState } from "react";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { EvolucionPesoAnual } from "../types";
-import Card from "./Card";
+import EtiquetaUltimoValor from "./EtiquetaUltimoValor";
+import ShimmerOverlay from "../../saludPoblacional/components/shared/ShimmerOverlay";
 
 interface EvolucionPesoChartProps {
   datos: EvolucionPesoAnual;
 }
 
+const SERIES_PESO = [
+  { key: "real", label: "Peso real (kg)", color: "#002E6D" },
+  { key: "ideal", label: "Peso ideal (kg)", color: "#009BDE" },
+] as const;
+
+// Mismo estilo de tooltip que las gráficas de Expediente (Somatometría, Cardiovascular, etc.).
+const tooltipCls = "bg-white shadow-lg rounded-lg p-2.5 text-[11px]";
+
+// "01/Mar/2025" -> "Mar 2025": el día no aporta nada aquí (un punto por mes).
+function formatearMesAnio(fecha: string): string {
+  const partes = fecha.split("/");
+  return partes.length === 3 ? `${partes[1]} ${partes[2]}` : fecha;
+}
+
+const TooltipPeso: React.FC<any> = ({ active, payload, label }) => {
+  if (!active || !payload || !payload.length) return null;
+  return (
+    <div className={tooltipCls}>
+      <p className="font-bold text-gray-700 mb-1">{label}</p>
+      {payload.map((p: any) => (
+        <p key={p.dataKey} className="flex items-center gap-1.5 text-gray-500">
+          <span className="w-2.5 h-2 inline-block" style={{ backgroundColor: p.color }}></span>
+          {p.name}: <span className="font-bold text-gray-700">{p.value}</span>
+        </p>
+      ))}
+    </div>
+  );
+};
+
 const EvolucionPesoChart: React.FC<EvolucionPesoChartProps> = ({ datos }) => {
   const serie = useMemo(
-    () => datos.Fechas.map((fecha, i) => ({ fecha, real: datos.PesoReal[i] ?? null, ideal: datos.PesoIdeal[i] ?? null })),
+    () => datos.Fechas.map((fecha, i) => ({ fecha: formatearMesAnio(fecha), real: datos.PesoReal[i] ?? null, ideal: datos.PesoIdeal[i] ?? null })),
     [datos]
   );
 
   const hayDatos = serie.some((p) => p.real != null || p.ideal != null);
-  const meta = [...datos.PesoIdeal].reverse().find((v) => v != null) ?? null;
+
+  // Índice del último registro con peso ideal: ahí se dibuja la etiqueta
+  // "Meta" dentro de la gráfica (en vez de un badge en el header), para que
+  // quede claro que corresponde al punto más reciente.
+  const ultimoIdealIndex = useMemo(() => {
+    for (let i = datos.PesoIdeal.length - 1; i >= 0; i--) if (datos.PesoIdeal[i] != null) return i;
+    return -1;
+  }, [datos]);
+  const meta = ultimoIdealIndex >= 0 ? datos.PesoIdeal[ultimoIdealIndex] : null;
+
+  // El eje Y arranca cerca del valor mínimo (no en 0), igual que en
+  // Evolución de IMC, para que las variaciones de peso se noten mejor.
+  const limiteInferiorY = useMemo(() => {
+    const valores = serie.flatMap((p) => [p.real, p.ideal]).filter((v): v is number => v != null);
+    return valores.length ? Math.floor(Math.min(...valores)) - 1 : 0;
+  }, [serie]);
+
+  // Series ocultas por clic en la leyenda (mismo toggle mostrar/ocultar que
+  // las leyendas de Somatometría/Cardiovascular en Expediente): en vez de un
+  // <Legend/> de recharts, se omite el <Line/> correspondiente.
+  const [seriesOcultas, setSeriesOcultas] = useState<Set<string>>(new Set());
+  const toggleSerie = (key: string) => {
+    setSeriesOcultas((prev) => {
+      const next = new Set(prev);
+      if (next.has(key)) next.delete(key); else next.add(key);
+      return next;
+    });
+  };
 
   return (
-    <Card
-      icon="mdi-scale-balance"
-      iconColorClass="text-green-500"
-      title="Peso real vs. peso ideal"
-      badge={meta != null && (
-        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-green-50 text-green-700 border border-green-200">Meta: {meta} kg</span>
-      )}
-    >
+    <div className="rounded-lg shadow-xl p-4">
+      <h3 className="text-xs font-bold text-gray-600 flex items-center mb-2">
+        <i className="fa-solid fa-weight-scale mr-2"></i>Peso Real vs Peso Ideal
+      </h3>
       {hayDatos ? (
-        <ResponsiveContainer width="100%" height={200}>
-          <AreaChart data={serie} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-            <defs>
-              <linearGradient id="gradientePesoReal" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#002E6D" stopOpacity={0.2} />
-                <stop offset="95%" stopColor="#002E6D" stopOpacity={0.02} />
-              </linearGradient>
-            </defs>
-            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            <XAxis dataKey="fecha" tick={{ fontSize: 9 }} />
-            <YAxis tick={{ fontSize: 9 }} unit=" kg" width={38} />
-            <Tooltip contentStyle={{ fontSize: 11 }} />
-            <Legend wrapperStyle={{ fontSize: 10 }} iconSize={9} />
-            <Area type="monotone" dataKey="real" name="Peso real (kg)" stroke="#002E6D" strokeWidth={2.5} fill="url(#gradientePesoReal)" dot={{ r: 3 }} connectNulls />
-            <Area type="monotone" dataKey="ideal" name="Peso ideal (kg)" stroke="#10b981" strokeWidth={2} strokeDasharray="6 4" fill="none" dot={false} connectNulls />
-          </AreaChart>
-        </ResponsiveContainer>
+        <>
+          <div className="relative overflow-hidden">
+          <ResponsiveContainer width="100%" height={200}>
+            <LineChart data={serie} margin={{ top: 28, right: 16, left: 0, bottom: 8 }}>
+              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+              <XAxis dataKey="fecha" tick={{ fontSize: 9 }} />
+              <YAxis tick={{ fontSize: 9 }} unit=" kg" width={38} domain={[limiteInferiorY, "auto"]} allowDecimals={false} />
+              <Tooltip content={<TooltipPeso />} />
+              {!seriesOcultas.has("real") && (
+                <Line type="linear" dataKey="real" name="Peso real (kg)" stroke="#002E6D" strokeWidth={2.5} dot={{ r: 3 }} connectNulls animationDuration={900} animationEasing="ease-out" />
+              )}
+              {!seriesOcultas.has("ideal") && (
+                <Line
+                  type="linear"
+                  dataKey="ideal"
+                  name="Peso ideal (kg)"
+                  stroke="#009BDE"
+                  strokeWidth={2}
+                  strokeDasharray="6 4"
+                  connectNulls
+                  animationDuration={900}
+                  animationEasing="ease-out"
+                  dot={(props: any) => {
+                    const { cx, cy, index } = props;
+                    if (index !== ultimoIdealIndex || meta == null) return <React.Fragment key={`dot-ideal-${index}`} />;
+                    return (
+                      <g key={`dot-ideal-${index}`}>
+                        <circle cx={cx} cy={cy} r={4} fill="#009BDE" stroke="#fff" strokeWidth={1.5} />
+                        <EtiquetaUltimoValor cx={cx} cy={cy} texto={`Meta: ${meta} kg`} color="#009BDE" />
+                      </g>
+                    );
+                  }}
+                />
+              )}
+            </LineChart>
+          </ResponsiveContainer>
+          <ShimmerOverlay />
+          </div>
+          <div className="flex flex-wrap gap-1.5 justify-center mt-2">
+            {SERIES_PESO.map((s) => {
+              const oculto = seriesOcultas.has(s.key);
+              return (
+                <button
+                  key={s.key}
+                  type="button"
+                  onClick={() => toggleSerie(s.key)}
+                  className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-semibold bg-gray-50 transition-opacity cursor-pointer hover:opacity-80 ${oculto ? "text-gray-300 opacity-50" : "text-gray-600"}`}
+                >
+                  <span className="w-3 h-2 inline-block" style={{ backgroundColor: oculto ? "#d1d5db" : s.color }}></span>
+                  {s.label}
+                </button>
+              );
+            })}
+          </div>
+        </>
       ) : (
         <div className="h-[200px] flex items-center justify-center text-xs text-gray-400">Sin datos de peso disponibles.</div>
       )}
-    </Card>
+    </div>
   );
 };
 

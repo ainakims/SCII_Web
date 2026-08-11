@@ -93,3 +93,30 @@
 svg:focus {
   outline: none !important;
 }
+
+/* Barrido continuo tipo "shine" sobre las gráficas del dashboard (Expediente
+   y Análisis Individual), para que se sientan "vivas" incluso después de la
+   animación de carga inicial. Ver shared/ShimmerOverlay.tsx. */
+@keyframes shimmer-sweep {
+  0% { transform: translateX(-120%); }
+  100% { transform: translateX(220%); }
+}
+
+.animate-shimmer-sweep {
+  animation: shimmer-sweep 2.2s ease-in-out infinite;
+}
+
+/* Anillos giratorios del overlay de carga con IA (OverlayCargandoIA.tsx):
+   uno en cada sentido, a distinta velocidad, para dar sensación de
+   "procesando" alrededor del ícono del robot. */
+@keyframes spin-slow {
+  to { transform: rotate(360deg); }
+}
+
+.animate-spin-slow {
+  animation: spin-slow 3s linear infinite;
+}
+
+.animate-spin-reverse {
+  animation: spin-slow 2.2s linear infinite reverse;
+}

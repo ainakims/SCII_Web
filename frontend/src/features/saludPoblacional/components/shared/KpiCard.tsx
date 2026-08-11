@@ -15,7 +15,7 @@ interface KpiCardProps {
 const KpiCard: React.FC<KpiCardProps> = ({ icon, label, value }) => (
   <div className="relative bg-linear-to-b from-white to-gray-50 rounded-xl overflow-hidden flex items-center px-5 py-4 cursor-default group shadow-xl">
     <div className="relative z-1 size-12 rounded-md bg-linear-to-b from-sea-blue to-sky-blue to-90% flex items-center justify-center flex-shrink-0 shadow-md transition-transform duration-300">
-      <i className={`${icon.includes(" ") ? icon : `mdi mdi-${icon}`} text-white text-xl`}></i>
+      <i className={`${icon.includes(" ") ? icon : `fa-solid fa-${icon}`} text-white text-xl`}></i>
     </div>
     <div className="ml-4 flex-1 relative z-1 min-w-0">
       <p className="text-[10px] font-semibold text-gray-400 uppercase tracking-wide truncate">{label}</p>

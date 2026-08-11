@@ -22,13 +22,14 @@ const SOAP_ACTION = "http://tempuri.org/EvaluarSaludConAnalisisIA";
 // forma global en el proceso.
 const agenteDev = new https.Agent({ rejectUnauthorized: false });
 
-function construirEnvelope(idUsuario: string, esUsuarioMedico: boolean): string {
+function construirEnvelope(idUsuario: string, esUsuarioMedico: boolean, esActivo: boolean): string {
   return `<?xml version="1.0" encoding="utf-8"?>
 <soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">
   <soap:Body>
     <EvaluarSaludConAnalisisIA xmlns="http://tempuri.org/">
       <idUsuario>${idUsuario}</idUsuario>
       <esUsuarioMedico>${esUsuarioMedico}</esUsuarioMedico>
+      <esActivo>${esActivo}</esActivo>
     </EvaluarSaludConAnalisisIA>
   </soap:Body>
 </soap:Envelope>`;
@@ -53,9 +54,9 @@ function encontrarResult(nodo: any): string | null {
   return null;
 }
 
-export async function evaluarSaludConAnalisisIA(idUsuario: string, esUsuarioMedico: boolean): Promise<AnalisisIndividualResult> {
+export async function evaluarSaludConAnalisisIA(idUsuario: string, esUsuarioMedico: boolean, esActivo: boolean): Promise<AnalisisIndividualResult> {
   const url = process.env.URL_SOAP_ANALISIS_INDIVIDUAL || URL_DEFAULT;
-  const envelope = construirEnvelope(idUsuario, esUsuarioMedico);
+  const envelope = construirEnvelope(idUsuario, esUsuarioMedico, esActivo);
 
   const response = await axios.post(url, envelope, {
     headers: {

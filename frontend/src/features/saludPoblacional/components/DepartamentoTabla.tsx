@@ -196,7 +196,7 @@ const DepartamentoTabla: React.FC<DepartamentoTablaProps> = ({ departamentos, on
       {/* Alto FIJO (no max-h): la caja siempre mide lo mismo, tenga 0, 3 o 30
           filas después de buscar/filtrar — solo cuando hay más de ~10 aparece
           scroll, en vez de que la tabla crezca/encoja según el resultado. */}
-      <div className="h-[420px] overflow-auto rounded-lg shadow-xl">
+      <div className="h-[420px] overflow-auto rounded-lg">
         {/* table-fixed: con layout automático, `w-[100px]` es solo una
             sugerencia que el contenido puede empujar (p. ej. el select de
             "Tipo"); fixed lo vuelve un ancho real, y "Nombre" (sin ancho
@@ -205,8 +205,8 @@ const DepartamentoTabla: React.FC<DepartamentoTablaProps> = ({ departamentos, on
           <thead className="sticky top-0 z-10 bg-linear-to-r from-white to-gray-100">
             <tr className="text-gray-700 text-left">
               {encabezado("nombre", "Nombre", "")}
-              {encabezado("total", "Población", "text-left w-[100px]")}
-              {encabezado("imc", "IMC %", "text-left w-[100px] pr-6")}
+              {encabezado("total", "Total", "text-left w-[100px]")}
+              {encabezado("imc", "IMC promedio", "text-left w-[150px] pr-6")}
               {encabezado("riesgo", "Riesgo", "text-right w-[100px]")}
               <th className="pl-5 pr-1 py-3 font-semibold text-left w-[180px]">Clasificación</th>
               <th className="w-8 pl-1 pr-3 py-3 text-center">
@@ -217,10 +217,6 @@ const DepartamentoTabla: React.FC<DepartamentoTablaProps> = ({ departamentos, on
                 ></i>
               </th>
             </tr>
-            {/* Una celda por columna (no un colSpan con flexbox propio): así
-                cada control queda EXACTAMENTE en la misma columna que su
-                encabezado — el ancho de cada columna lo fija la tabla misma,
-                no cambia si se abre la barra lateral o se activan filtros. */}
             {showFiltros && (
               <tr className="bg-linear-to-r from-white to-gray-100 text-left">
                 <td className="px-5 py-2">
@@ -235,8 +231,8 @@ const DepartamentoTabla: React.FC<DepartamentoTablaProps> = ({ departamentos, on
                     />
                   </div>
                 </td>
-                <td className="px-5 py-2"></td>
-                <td colSpan={2} className="px-5 py-2 text-right">
+                <td colSpan={3} className="px-5 py-2"></td>
+                <td colSpan={2} className="px-5 py-2 text-right hidden">
                   <div className="flex items-center justify-start gap-1.5">
                     <span className="text-[11px] font-medium text-gray-500">Tipo</span>
                     <select
