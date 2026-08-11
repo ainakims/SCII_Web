@@ -17,6 +17,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthToken";
 import { useNavigate } from "react-router-dom";
 import ShimmerOverlay from "../features/saludPoblacional/components/shared/ShimmerOverlay";
+import { useSidebarWidth } from "../context/SidebarContext";
 
 interface PatientData {
   id: number | null;
@@ -455,6 +456,18 @@ const Consultas: React.FC = () => {
   const [selectedExp, setSelectedExp]   = useState<Consulta | null>(null);
   const [isDetailFullscreen, setIsDetailFullscreen] = useState(false);
 
+  // Ancho real del sidebar (vía contexto, reactivo al colapsar/expandir) para que el panel
+  // en pantalla completa deje siempre el espacio correcto — "md:left-64" por sí solo no
+  // reacciona si el sidebar está colapsado (w-20) en vez de expandido (w-64).
+  const sidebarW = useSidebarWidth();
+  const [viewportW, setViewportW] = useState(() => (typeof window !== "undefined" ? window.innerWidth : 1280));
+  useEffect(() => {
+    const onResize = () => setViewportW(window.innerWidth);
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  }, []);
+  const fullscreenLeft = viewportW >= 768 ? sidebarW : 0;
+
   const recetaPrintRef = useRef<HTMLDivElement>(null);
   const handlePrintReceta = useReactToPrint({
     contentRef: recetaPrintRef,
@@ -523,10 +536,10 @@ const Consultas: React.FC = () => {
     return (w > 0 && h > 0) ? (w / (h * h)).toFixed(2) : "";
   };
 
-  // ICT = perímetro abdominal (cm) / talla (cm) * 100  (igual que en Indicadores)
+  // ICT = perímetro abdominal (cm) / talla (cm), como razón (ej. 0.51) — no como porcentaje.
   const calcICT = (abdomen: string, talla: string) => {
     const c = parseFloat(abdomen), h = parseFloat(talla);
-    return (c > 0 && h > 0) ? ((c / (h * 100)) * 100).toFixed(2) : "";
+    return (c > 0 && h > 0) ? (c / (h * 100)).toFixed(2) : "";
   };
 
   const handleMeasureChange = (field: "Peso" | "Talla", value: string) =>
@@ -1399,8 +1412,8 @@ const Consultas: React.FC = () => {
     const v = parseFloat(ict);
 
     if (!ict || isNaN(v) || v === 0) return "border-gray-100 bg-gray-100 text-gray-700";
-    if (v < 50) return "border-horz-blue/20 bg-blue-50 text-sky-blue";
-    if (v < 60) return "border-yellow-300/20 bg-yellow-50 text-yellow-500";
+    if (v < 0.5) return "border-horz-blue/20 bg-blue-50 text-sky-blue";
+    if (v < 0.6) return "border-yellow-300/20 bg-yellow-50 text-yellow-500";
     return "border-red-200/20 bg-red-50 text-red-500";
   };
 
@@ -1408,8 +1421,8 @@ const Consultas: React.FC = () => {
     const v = parseFloat(ict);
 
     if (!ict || isNaN(v) || v === 0) return "text-gray-400";
-    if (v < 50) return "text-sky-blue";
-    if (v < 60) return "text-yellow-500";
+    if (v < 0.5) return "text-sky-blue";
+    if (v < 0.6) return "text-yellow-500";
     return "text-red-500";
   };
 
@@ -2703,8 +2716,8 @@ const Consultas: React.FC = () => {
       </div>
 
       <aside
-        className={`fixed top-[64px] h-[calc(100vh-64px)] bg-white shadow-xl z-40 transition-all duration-300 ease-in-out ${ isDetailFullscreen ? "left-0 md:left-64 right-0" : "right-0" } ${ showHistory ? "" : "translate-x-full" }`}
-        style={isDetailFullscreen ? undefined : { width: showHistory ? (isDetailOpen ? 300 + 420 : 300) : 300 }}
+        className={`fixed top-[64px] right-0 h-[calc(100vh-64px)] bg-white shadow-xl z-40 transition-all duration-300 ease-in-out ${ showHistory ? "" : "translate-x-full" }`}
+        style={isDetailFullscreen ? { left: fullscreenLeft } : { width: showHistory ? (isDetailOpen ? 300 + 420 : 300) : 300 }}
       >
         <div className="flex h-full w-full">
           <div className="flex flex-col border-0 h-full shrink-0" style={{ width: 300 }}>

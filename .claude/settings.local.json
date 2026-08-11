@@ -48,7 +48,8 @@
       "Bash(cd \"../frontend\" 2>/dev/null; grep -m1 '\"recharts\"' package.json)",
       "Bash(git hash-object *)",
       "Bash(git show *)",
-      "Bash(rm -f /tmp/aiService_gpt5.js)"
+      "Bash(rm -f /tmp/aiService_gpt5.js)",
+      "Bash(xxd backend/package.json)"
     ]
   }
 }

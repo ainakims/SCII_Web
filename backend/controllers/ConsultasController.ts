@@ -271,8 +271,6 @@ export function ConsultasController(db: DB) {
     try {
       const { id } = req.body;
 
-      console.log("ID: " + id);
-
       if (!id) {
         return res.status(400).json({
           ok: false,
@@ -280,16 +278,23 @@ export function ConsultasController(db: DB) {
         });
       }
 
-      const params: Parametros[] = [
-        { Nombre: "@ID", Valor: String(id) },
+      const sql = "[TNGCORE].[dbo].[SCII_Agregar_Consulta]";
+      const paramsBase: Parametros[] = [
+        { Nombre: "@ConsultaID",    Valor: String(id) },
       ];
+      
+      await executeConnection<boolean>(sql, TipoConsulta.ProcedimientoAlmacenado, [
+        { Nombre: "@Case", Valor: "2" },
+        ...paramsBase,
+      ]);
 
-      const sql = "DELETE FROM [TNGCORE].[dbo].[SCII_Consultas] WHERE ID=@ID";
-      const result = await executeConnection<boolean>(sql, TipoConsulta.Consulta, params);
+      await executeConnection<boolean>(sql, TipoConsulta.ProcedimientoAlmacenado, [
+        { Nombre: "@Case", Valor: "3" },
+        ...paramsBase,
+      ]);
 
       return res.json({
-        ok: true,
-        data: result
+        ok: true
       });
     } catch (error: any) {
       return res.status(500).json({
