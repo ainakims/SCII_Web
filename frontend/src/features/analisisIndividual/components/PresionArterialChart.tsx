@@ -9,8 +9,8 @@ interface PresionArterialChartProps {
 
 // Mismos colores que Sistólica/Diastólica en CardiovascularSection.tsx (COLOR_PRESION).
 const SERIES_PRESION = [
-  { key: "sistolica", label: "Sistólica", color: "#002E6D" },
-  { key: "diastolica", label: "Diastólica", color: "#009BDE" },
+  { key: "sistolica", label: "Sistólica", color: "#EF4444" },
+  { key: "diastolica", label: "Diastólica", color: "#EE7523" },
 ] as const;
 
 // Mismo estilo de tooltip que las gráficas de Expediente (Somatometría, Cardiovascular, etc.).
@@ -63,19 +63,19 @@ const PresionArterialChart: React.FC<PresionArterialChartProps> = ({ datos }) =>
       {hayDatos ? (
         <>
           <div className="relative overflow-hidden">
-          <ResponsiveContainer width="100%" height={200}>
-            <LineChart data={serie} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="fecha" tick={{ fontSize: 9 }} />
-              <YAxis tick={{ fontSize: 9 }} width={30} />
-              <Tooltip content={<TooltipPresion />} />
-              <ReferenceLine y={160} stroke="#ef4444" strokeDasharray="4 4" />
-              {SERIES_PRESION.map((s) => !seriesOcultas.has(s.key) && (
-                <Line key={s.key} type="linear" dataKey={s.key} name={s.label} stroke={s.color} strokeWidth={2} connectNulls dot={{ r: 3 }} animationDuration={900} animationEasing="ease-out" />
-              ))}
-            </LineChart>
-          </ResponsiveContainer>
-          <ShimmerOverlay />
+            <ResponsiveContainer width="100%" height={200}>
+              <LineChart data={serie} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis dataKey="fecha" tick={{ fontSize: 9 }} />
+                <YAxis tick={{ fontSize: 9 }} width={30} />
+                <Tooltip content={<TooltipPresion />} />
+                <ReferenceLine y={160} stroke="#ef4444" strokeDasharray="4 4" />
+                {SERIES_PRESION.map((s) => !seriesOcultas.has(s.key) && (
+                  <Line key={s.key} type="linear" dataKey={s.key} name={s.label} stroke={s.color} strokeWidth={2} connectNulls dot={{ r: 3 }} animationDuration={900} animationEasing="ease-out" />
+                ))}
+              </LineChart>
+            </ResponsiveContainer>
+            <ShimmerOverlay />
           </div>
           <div className="flex flex-wrap gap-1.5 justify-center mt-2">
             {SERIES_PRESION.map((s) => {

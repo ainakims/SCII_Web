@@ -45,7 +45,10 @@
       "PowerShell(Get-Command gswin64c -ErrorAction SilentlyContinue)",
       "PowerShell(Get-Command qpdf -ErrorAction SilentlyContinue)",
       "PowerShell(\"checked\")",
-      "Bash(cd \"../frontend\" 2>/dev/null; grep -m1 '\"recharts\"' package.json)"
+      "Bash(cd \"../frontend\" 2>/dev/null; grep -m1 '\"recharts\"' package.json)",
+      "Bash(git hash-object *)",
+      "Bash(git show *)",
+      "Bash(rm -f /tmp/aiService_gpt5.js)"
     ]
   }
 }

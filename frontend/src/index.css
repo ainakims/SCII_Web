@@ -120,3 +120,14 @@ svg:focus {
 .animate-spin-reverse {
   animation: spin-slow 2.2s linear infinite reverse;
 }
+
+/* Cerebro "pensando" junto al título de Sugerencias (AI): pulso de brillo +
+   ligero escalado, tono azul de marca, para dar sensación de actividad/IA. */
+@keyframes brain-pulse {
+  0%, 100% { color: #0d3b8c; filter: drop-shadow(0 0 1px rgba(13, 59, 140, 0.35)); transform: scale(1); }
+  50% { color: #4aa8ff; filter: drop-shadow(0 0 6px rgba(74, 168, 255, 0.85)); transform: scale(1.12); }
+}
+
+.animate-brain-pulse {
+  animation: brain-pulse 1.8s ease-in-out infinite;
+}

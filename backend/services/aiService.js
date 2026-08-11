@@ -112,6 +112,17 @@ const STOPWORDS_HISTORIAL = new Set([
     'esta', 'este', 'presenta', 'refiere', 'general', 'paciente', 'consulta',
 ]);
 
+const axios = require('axios');
+const { HttpsProxyAgent } = require('https-proxy-agent');
+
+// axios/follow-redirects no arma el túnel CONNECT correctamente para HTTPS a través de un
+// proxy HTTP corporativo (Kerio Control en este caso): en vez de eso deja pasar la petición
+// mal formada y el proxy responde con su propia página de error ("Invalid request"), sin que
+// la llamada llegue realmente a OpenAI. Se crea un agente explícito para forzar el mismo
+// túnel CONNECT que ya funciona con curl, y se desactiva el manejo de proxy propio de axios.
+const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy || process.env.HTTP_PROXY || process.env.http_proxy;
+const proxyAgent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined;
+
 const normalizarTexto = (s) =>
     String(s || '')
         .toLowerCase()
@@ -179,7 +190,10 @@ const encontrarConsultaSimilar = (padecimientoActual, protocoloActual, historial
     return candidatos[0] || null;
 };
 
-exports.analyzeConsult = async (consultData) => {
+// Motor de reglas local (sin IA real). Se usa como respaldo automático cuando no hay
+// OPENAI_API_KEY configurada o cuando la llamada a OpenAI falla (red, cuota, etc.),
+// para que el Asistente IA nunca deje al médico sin un análisis.
+const analyzeConsultReglas = async (consultData) => {
     // We simulate an API delay to mimic AI thinking
     await new Promise(resolve => setTimeout(resolve, 2000));
 
@@ -594,4 +608,203 @@ exports.analyzeConsult = async (consultData) => {
     }
 
     return analysis;
+};
+
+// Construye el prompt en español con el cuadro clínico, signos vitales, laboratorios,
+// antecedentes reales del paciente (edad, enfermedades, tratamientos, alergias) e
+// historial de consultas previas, para que el modelo analice el caso como lo haría
+// el motor de reglas, pero con criterio clínico real.
+const construirPromptIA = (consultData) => {
+    const {
+        MotivoConsulta = '',
+        PadecimientoActual = '',
+        SignosVitales = {},
+        Laboratorios = {},
+        TipoAtencion = '',
+        ProtocoloAtencion = '',
+        Procedimiento = '',
+        Paciente = null,
+        HistorialConsultas = [],
+        AnalisisDescartados = [],
+    } = consultData;
+
+    const edad = Paciente ? calcularEdad(Paciente.FechaNacimiento) : null;
+    const sexo = Paciente && Paciente.Sexo ? String(Paciente.Sexo).trim() : null;
+    const nombreProtocolo = PROTOCOLOS[String(ProtocoloAtencion)] || ProtocoloAtencion || 'No especificado';
+
+    const lineas = [];
+    lineas.push(`Tipo de atención: ${TipoAtencion || 'No especificado'}`);
+    lineas.push(`Protocolo de atención: ${nombreProtocolo}`);
+    if (Procedimiento) lineas.push(`Procedimiento/subtipo: ${Procedimiento}`);
+    if (MotivoConsulta) lineas.push(`Motivo de consulta: ${MotivoConsulta}`);
+    if (PadecimientoActual) lineas.push(`Padecimiento actual: ${PadecimientoActual}`);
+
+    // "PA" (Presión Arterial) y "TA" (Tensión Arterial) son el mismo dato clínico; se le manda
+    // al modelo ya con la etiqueta única "T/A" para que nunca use ambos nombres ni trate uno
+    // como si fuera un signo distinto o faltante.
+    const ETIQUETAS_SIGNOS = { PA: 'T/A' };
+
+    lineas.push('');
+    lineas.push('Signos vitales:');
+    Object.entries(SignosVitales || {}).forEach(([k, v]) => {
+        if (v !== null && v !== undefined && v !== '') lineas.push(`- ${ETIQUETAS_SIGNOS[k] || k}: ${v}`);
+    });
+
+    if (Laboratorios && Object.keys(Laboratorios).length > 0) {
+        lineas.push('');
+        lineas.push('Laboratorios:');
+        Object.entries(Laboratorios).forEach(([k, v]) => {
+            if (v !== null && v !== undefined && v !== '') lineas.push(`- ${k}: ${v}`);
+        });
+    }
+
+    lineas.push('');
+    lineas.push('Datos del paciente:');
+    lineas.push(`- Edad: ${edad !== null ? edad + ' años' : 'No registrada'}`);
+    lineas.push(`- Sexo: ${sexo || 'No registrado'}`);
+    if (Paciente && Paciente.Enfermedades) lineas.push(`- Enfermedades/antecedentes: ${Paciente.Enfermedades}`);
+    if (Paciente && Paciente.Tratamientos) lineas.push(`- Tratamientos actuales: ${Paciente.Tratamientos}`);
+    if (Paciente && Paciente.Alergias) lineas.push(`- Alergias: ${Paciente.Alergias}`);
+    if (Paciente && Paciente.AlergiasMedicamento) lineas.push(`- Alergias a medicamentos: ${Paciente.AlergiasMedicamento}`);
+
+    if (Array.isArray(HistorialConsultas) && HistorialConsultas.length > 0) {
+        const fechaUltima = HistorialConsultas[0]?.FechaConsulta && !isNaN(new Date(HistorialConsultas[0].FechaConsulta).getTime())
+            ? new Date(HistorialConsultas[0].FechaConsulta).toLocaleDateString('es-MX')
+            : null;
+
+        // Deliberadamente NO se manda el motivo/diagnóstico/nombre de la consulta anterior:
+        // solo la fecha. Así el modelo no tiene forma de filtrar ese texto libre (que puede
+        // ser un dato de prueba, irrelevante o sensible) en su respuesta.
+        if (fechaUltima) {
+            lineas.push('');
+            lineas.push(`Última cita del paciente: ${fechaUltima}. (Se omite a propósito el motivo/nombre de esa consulta: no lo menciones ni lo inventes).`);
+        }
+    }
+
+    if (Array.isArray(AnalisisDescartados) && AnalisisDescartados.length > 0) {
+        lineas.push('');
+        lineas.push('IMPORTANTE: el médico descartó los siguientes análisis previos de esta misma consulta por considerarlos poco útiles, genéricos o incorrectos. NO los repitas tal cual; ofrece un análisis distinto, más específico y mejor fundamentado:');
+        AnalisisDescartados.slice(-3).forEach((prev, i) => {
+            lineas.push(`Intento descartado #${i + 1}: riesgo=${prev.riesgo || '-'}, diagnósticos=${(prev.diagnosticoDiferencial || prev.diferencial || []).join(', ') || '-'}, sugerencias=${(prev.sugerenciasTratamiento || prev.sugerencias || []).join(', ') || '-'}`);
+        });
+    }
+
+    return lineas.join('\n');
+};
+
+const SYSTEM_PROMPT_IA = `Eres un médico internista experto que apoya a otro médico analizando una consulta clínica en un sistema hospitalario (TNG Sano).
+Analiza el cuadro clínico, los signos vitales, laboratorios y antecedentes reales del paciente (edad, enfermedades, tratamientos, alergias) y su historial de consultas previas.
+Responde ÚNICAMENTE con un objeto JSON válido (sin texto adicional, sin markdown, sin explicaciones fuera del JSON) con exactamente esta forma:
+{
+  "riesgo": "Bajo" | "Moderado" | "Alto",
+  "inconsistencias": string[],
+  "diagnosticoDiferencial": string[],
+  "sugerenciasTratamiento": string[],
+  "antecedentesRelevantes": string[]
+}
+Reglas:
+- "inconsistencias": hallazgos anormales o alertas detectadas (ej. presión arterial crítica, alergia en conflicto con el tratamiento sugerido).
+- "diagnosticoDiferencial": lista breve de diagnósticos probables, del más al menos probable.
+- "sugerenciasTratamiento": acciones/manejo concretos y accionables para el médico tratante.
+- "antecedentesRelevantes": antecedentes del paciente (edad, enfermedades, alergias, consultas previas) que sean pertinentes al cuadro actual; omite antecedentes irrelevantes al tipo de atención.
+- Si mencionas la consulta previa más reciente del paciente, usa EXACTAMENTE el formato "Última cita: <fecha>", sin agregar el motivo, diagnóstico o nombre de esa consulta (no lo conoces, no lo inventes). Nunca uses la frase "Historial de consultas previas".
+- Presión Arterial y Tensión Arterial son el MISMO dato: refiérete a él SIEMPRE como "T/A" (nunca como "PA" ni "TA" por separado, y nunca trates uno como si fuera un signo distinto o adicional al otro). Si el dato "T/A" viene en los signos vitales, está reportado; no digas que "no fue reportado/a".
+- El sexo del paciente úsalo SOLO internamente para ajustar tu razonamiento clínico (ej. patología prostática en hombres, causas gineco-obstétricas en mujeres). NUNCA lo incluyas como dato en "antecedentesRelevantes" ni en ningún otro campo, salvo que sea clínicamente indispensable mencionarlo explícitamente para justificar un diagnóstico o sugerencia concreta.
+- Si el paciente reporta alergia a un medicamento presente en las sugerencias de tratamiento, indícalo como la primera inconsistencia iniciando con "Alergia".
+- Si no hay hallazgos anormales, indica que el paciente está sano/en control adecuado y clasifica el riesgo como "Bajo".
+- Si se te indican análisis previos descartados por el médico, NO los repitas; profundiza o cambia el enfoque.
+- Sé conciso, clínico, en español, y basado en evidencia.
+- LÍMITES ESTRICTOS DE LONGITUD (un médico los lee entre pacientes, no tiene tiempo de leer párrafos):
+  * Cada elemento de cada lista debe ser UNA sola frase corta, máximo ~18 palabras. Nunca expliques el razonamiento ni des contexto adicional dentro del texto.
+  * Máximo 3 elementos en "inconsistencias", máximo 3 en "diagnosticoDiferencial", máximo 3 en "sugerenciasTratamiento" y máximo 2 en "antecedentesRelevantes". Prioriza lo más relevante y omite el resto.
+  * No repitas la misma idea en distintos campos.`;
+
+// Llama a la API real de OpenAI (Chat Completions, salida forzada a JSON) con el cuadro
+// clínico completo. Lanza error si falla la llamada o si la respuesta no tiene el formato
+// esperado, para que el llamador pueda hacer fallback al motor de reglas.
+const analyzeConsultIA = async (consultData) => {
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) throw new Error('OPENAI_API_KEY no configurada');
+
+    // const model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+    const model = process.env.OPENAI_MODEL || 'gpt-5-nano';
+    const prompt = construirPromptIA(consultData);
+
+    // Los modelos de la familia GPT-5 (gpt-5, gpt-5-nano, gpt-5-mini) solo aceptan el
+    // "temperature" por defecto (1) y rechazan con 400 cualquier otro valor explícito;
+    // los modelos anteriores (gpt-4o, gpt-4o-mini, etc.) sí soportan afinarlo, así que solo
+    // se manda cuando el modelo lo admite.
+    const soportaTemperaturaCustom = !/^gpt-5/i.test(model);
+
+    // Los modelos GPT-5 son modelos de razonamiento: además de generar la respuesta, gastan
+    // tiempo/tokens "pensando" internamente antes de contestar, por lo que tardan más que
+    // gpt-4o-mini. "reasoning_effort: low" acota ese razonamiento a lo necesario para esta
+    // tarea (más rápido, sin perder la calidad clínica que necesitamos aquí).
+    const esModeloRazonamiento = /^gpt-5/i.test(model);
+
+    const response = await axios.post(
+        'https://api.openai.com/v1/chat/completions',
+        {
+            model,
+            messages: [
+                { role: 'system', content: SYSTEM_PROMPT_IA },
+                { role: 'user', content: prompt },
+            ],
+            response_format: { type: 'json_object' },
+            ...(soportaTemperaturaCustom ? { temperature: 0.3 } : {}),
+            // "reasoning_effort" acota cuánto piensa antes de responder; "verbosity" acota
+            // qué tan largo redacta cada frase de la respuesta. Ambos son propios de GPT-5.
+            ...(esModeloRazonamiento ? { reasoning_effort: 'minimal', verbosity: 'low' } : {}),
+        },
+        {
+            headers: {
+                Authorization: `Bearer ${apiKey}`,
+                'Content-Type': 'application/json',
+            },
+            // Los modelos de razonamiento (GPT-5) pueden tardar más que un modelo estándar
+            // como gpt-4o-mini; se sube el timeout para no cortarlos antes de tiempo, sobre
+            // todo pasando por el proxy corporativo.
+            timeout: 45000,
+            ...(proxyAgent ? { httpsAgent: proxyAgent, proxy: false } : {}),
+        }
+    );
+
+    const content = response.data?.choices?.[0]?.message?.content;
+    if (!content) throw new Error('Respuesta vacía de OpenAI');
+
+    const parsed = JSON.parse(content);
+    if (!parsed || typeof parsed.riesgo !== 'string') throw new Error('Formato de respuesta de IA inválido');
+
+    return {
+        riesgo: parsed.riesgo,
+        inconsistencias: Array.isArray(parsed.inconsistencias) ? parsed.inconsistencias : [],
+        diagnosticoDiferencial: Array.isArray(parsed.diagnosticoDiferencial) ? parsed.diagnosticoDiferencial : [],
+        sugerenciasTratamiento: Array.isArray(parsed.sugerenciasTratamiento) ? parsed.sugerenciasTratamiento : [],
+        antecedentesRelevantes: Array.isArray(parsed.antecedentesRelevantes) ? parsed.antecedentesRelevantes : [],
+        fuente: 'ia',
+        modelo: model,
+    };
+};
+
+// Punto de entrada usado por el controlador: intenta el análisis real con OpenAI y, si no
+// hay API key configurada o la llamada falla (red, cuota, formato inesperado), recurre de
+// forma transparente al motor de reglas local para no dejar al médico sin análisis.
+// El campo "fuente" ("ia" | "reglas") viaja hasta el frontend para que sea evidente cuál
+// de los dos generó el resultado mostrado.
+exports.analyzeConsult = async (consultData) => {
+    if (process.env.OPENAI_API_KEY) {
+        try {
+            const resultado = await analyzeConsultIA(consultData);
+            console.log(`[AsistenteIA] Análisis generado por OpenAI (modelo ${resultado.modelo}).`);
+            return resultado;
+        } catch (err) {
+            const detalle = err.response?.data ? JSON.stringify(err.response.data) : err.message;
+            console.error(`[AsistenteIA] Falló el análisis con OpenAI (status ${err.response?.status ?? '?'}), usando motor de reglas de respaldo:`, detalle);
+        }
+    } else {
+        console.warn('[AsistenteIA] OPENAI_API_KEY no configurada, usando motor de reglas.');
+    }
+
+    const resultadoReglas = await analyzeConsultReglas(consultData);
+    return { ...resultadoReglas, fuente: 'reglas' };
 };

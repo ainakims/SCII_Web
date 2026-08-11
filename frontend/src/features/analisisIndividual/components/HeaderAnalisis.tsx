@@ -96,10 +96,10 @@ const ESTILO_APTITUD = {
 // tinte verde o rojo bien visible (no un degradado que se pierde hacia blanco).
 const HeaderAnalisis: React.FC<HeaderAnalisisProps> = ({ prioridad, aptitud, matricula }) => (
   <div className="flex flex-col gap-4">
-    <div className={`relative overflow-hidden rounded-xl shadow-xl p-6 bg-linear-to-b ${aptitud.Apto ? "from-aqua-green/40 to-aqua-green/15" : "from-red-200/50 to-red-100/20"}`}>
+    <div className={`relative overflow-hidden rounded-xl shadow-xl p-6 bg-linear-to-b ${aptitud.Apto ? "from-[#f0fdf4] to-[#f0fdf4]/20 text-green-800" : "from-red-200/50 to-red-100/20 text-red-800"}`}>
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
-        <h2 className="text-sm font-bold text-gray-800 flex items-center">
-          <i className="fa-solid fa-circle-nodes text-sea-blue mr-3"></i>
+        <h2 className="text-sm font-bold flex items-center">
+          <i className="fa-solid fa-circle-nodes mr-3"></i>
           Evaluación de Aptitud Laboral
         </h2>
         <span className={`${badgeCls} ${aptitud.Apto ? ESTILO_APTITUD.apto : ESTILO_APTITUD.noApto}`}>
@@ -107,7 +107,7 @@ const HeaderAnalisis: React.FC<HeaderAnalisisProps> = ({ prioridad, aptitud, mat
           {aptitud.Apto ? "Apto" : "No apto"}
         </span>
       </div>
-      <p className="text-[13px] text-gray-700 leading-relaxed mb-2.5"><span className="font-bold">Puesto: </span>{resaltarPuestoYMatricula(aptitud.Justificacion, matricula)}</p>
+      <p className="text-[13px] leading-relaxed mb-2.5"><span className="font-bold">Puesto: </span>{resaltarPuestoYMatricula(aptitud.Justificacion, matricula)}</p>
       {aptitud.FactoresDeRiesgoDetectados.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-2.5">
           {aptitud.FactoresDeRiesgoDetectados.map((f, i) => (

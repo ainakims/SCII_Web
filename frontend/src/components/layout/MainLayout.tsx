@@ -3,6 +3,7 @@ import { Outlet, useLocation } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Topbar from './Topbar';
 import { motion, AnimatePresence } from 'framer-motion';
+import { SidebarProvider } from '../../context/SidebarContext';
 
 const MainLayout: FC = () => {
   const [isCollapsed, setIsCollapsed] = useState<boolean>(false);
@@ -23,7 +24,9 @@ const MainLayout: FC = () => {
               transition={{ duration: 0.15 }}
               className="h-full"
             >
-              <Outlet />
+              <SidebarProvider isCollapsed={isCollapsed}>
+                <Outlet />
+              </SidebarProvider>
             </motion.div>
           </AnimatePresence>
         </main>

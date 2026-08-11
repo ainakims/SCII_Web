@@ -26,9 +26,6 @@ const errorModal = (title: string, message: string) => {
   });
 };
 
-// Placeholder mientras carga el expediente: mismas formas/tamaños que el
-// contenido real (KPI cards, tabla de departamentos, cards de gráficas) para
-// que la página no "salte" de tamaño cuando llegan los datos.
 const ExpedienteSkeleton: React.FC = () => (
   <div className="space-y-6 animate-pulse">
     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
@@ -60,10 +57,6 @@ const ExpedienteSkeleton: React.FC = () => (
   </div>
 );
 
-// Skeleton del directorio de Personal/Reingresos (mismo alto/columnas que
-// PacientesTabla): se muestra la primera vez que se abre cada tab, mientras
-// llega su propio fetch — mismo alto fijo (420px) que la tabla real para que
-// no "salte" al terminar de cargar.
 const PacientesTablaSkeleton: React.FC = () => (
   <div className="h-[420px] rounded-lg bg-gray-50 overflow-hidden animate-pulse">
     <div className="h-10 bg-linear-to-r from-white to-gray-100"></div>

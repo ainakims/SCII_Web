@@ -90,7 +90,8 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
 
   return (
     <div
-      className={`bg-white/70 backdrop-blur-md border-r border-white/20 h-screen flex flex-col hidden md:flex fixed top-0 left-0 z-20 shadow-lg transition-all duration-300 ${
+      id="app-sidebar"
+      className={`bg-white/70 backdrop-blur-md border-r border-white/20 h-screen flex flex-col hidden md:flex fixed top-0 left-0 z-50 shadow-lg transition-all duration-300 ${
         isCollapsed ? "w-20" : "w-64"
       }`}
     >

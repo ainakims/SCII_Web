@@ -127,8 +127,6 @@ export function ConsultasController(db: DB) {
     try {
       const { idEmpleado } = req.body;
 
-      console.log("matricula: " + idEmpleado);
-
       const params: Parametros[] = [
         { Nombre: "@Case", Valor: "0" },
         { Nombre: "@IdEmpleado", Valor: idEmpleado },
@@ -190,6 +188,7 @@ export function ConsultasController(db: DB) {
         { Nombre: "@TipoAtencion",  Valor: expediente.TipoAtencion?.trim() ?? "" },
         { Nombre: "@Enfermedad",    Valor: expediente.TipoEnfermedad?.trim() ?? "" },
         { Nombre: "@Protocolo",     Valor: String(parseInt(expediente.ProtocoloAtencion) || 0) },
+        { Nombre: "@Procedimiento", Valor: expediente.Procedimiento?.trim() || null },
         { Nombre: "@Padecimiento",  Valor: expediente.PadecimientoActual?.trim() ?? "" },
         { Nombre: "@Peso",          Valor: String(parseFloat(expediente.ExploracionFisica?.Peso) || 0) },
         { Nombre: "@Talla",         Valor: String(parseFloat(expediente.ExploracionFisica?.Talla) || 0) },
@@ -268,5 +267,39 @@ export function ConsultasController(db: DB) {
     }
   };
 
-  return { BuscarMatricula, BuscarProveedor, BuscarHistorial, BuscarRecetaMed, AgregarConsulta, ObtenerAlergias, BuscarMedicionEquipo };
+  const EliminarConsulta = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const { id } = req.body;
+
+      console.log("ID: " + id);
+
+      if (!id) {
+        return res.status(400).json({
+          ok: false,
+          message: "Se requiere el ID de la consulta a eliminar."
+        });
+      }
+
+      const params: Parametros[] = [
+        { Nombre: "@ID", Valor: String(id) },
+      ];
+
+      const sql = "DELETE FROM [TNGCORE].[dbo].[SCII_Consultas] WHERE ID=@ID";
+      const result = await executeConnection<boolean>(sql, TipoConsulta.Consulta, params);
+
+      return res.json({
+        ok: true,
+        data: result
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        ok: false,
+        error: "Error interno",
+        message: error.message,
+        stack: error.stack
+      });
+    }
+  };
+
+  return { BuscarMatricula, BuscarProveedor, BuscarHistorial, BuscarRecetaMed, AgregarConsulta, ObtenerAlergias, BuscarMedicionEquipo, EliminarConsulta };
 }

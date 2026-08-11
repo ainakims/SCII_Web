@@ -29,7 +29,8 @@ const ExpedienteContenido: React.FC<ExpedienteContenidoProps> = ({ historico, me
   return (
     <>
       <AntropometriaCardiovascularMetabolicoSection estadoActual={estadoActual} historico={historico} />
-      <IndicadoresConsultasSection />
+      {/* Oculto temporalmente: card de Indicadores/Consultas/Evaluaciones */}
+      {/* <IndicadoresConsultasSection /> */}
     </>
   );
 };

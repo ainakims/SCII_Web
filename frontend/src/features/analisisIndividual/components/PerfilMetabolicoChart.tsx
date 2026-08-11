@@ -10,16 +10,16 @@ interface PerfilMetabolicoChartProps {
 
 // Los tres azules del sistema (index.css: --color-sea-blue/sky-blue/horz-blue).
 const SERIES_METABOLICAS = [
-  { key: "glucosa", label: "Glucosa", color: "#002E6D" },
-  { key: "colesterol", label: "Colesterol", color: "#009BDE" },
-  { key: "trigliceridos", label: "Triglicéridos", color: "#9ACAEB" },
+  { key: "glucosa", label: "Glucosa", color: "#EE7523" },
+  { key: "colesterol", label: "Colesterol", color: "#EF4444" },
+  { key: "trigliceridos", label: "Triglicéridos", color: "#FFC627" },
 ] as const;
 
 // Umbral de cada indicador: mismo color que su serie, más tenue.
 const COLOR_UMBRAL: Record<string, string> = {
-  glucosa: "#002E6D",
-  colesterol: "#009BDE",
-  trigliceridos: "#9ACAEB",
+  glucosa: "#EF4444",
+  colesterol: "#EE7523",
+  trigliceridos: "#FFC627",
 };
 
 // Mismo estilo de tooltip que las gráficas de Expediente (Somatometría, Cardiovascular, etc.).
