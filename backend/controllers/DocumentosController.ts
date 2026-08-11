@@ -7,7 +7,7 @@ const path = require('path');
 const multer = require('multer');
 
 export function DocumentosController(db: DB) {
-  const { executeConnection } = db;
+  const { executeConnection,executeConnection_FileBinary } = db;
 
   const ObtenerPaciente = async (req: Request, res: Response): Promise<Response> => {
     try {
@@ -145,8 +145,13 @@ export function DocumentosController(db: DB) {
         const file = (req as any).file;
         const filePath: string = file.path;
         const fileBuffer: Buffer = fs.readFileSync(filePath);
+        const fileBytes: number[] = Array.from(fileBuffer);
         const fileBase64: string = fileBuffer.toString('base64');
 
+        function limpiarNombrePDF(filename: any): string {
+          return String(filename)
+              .replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ0-9.\-]/g, '');
+        }
         const params: Parametros[] = [
           { Nombre: "@Case",      Valor: "0" },
           { Nombre: "@Matricula", Valor: matricula },
@@ -166,13 +171,14 @@ export function DocumentosController(db: DB) {
         const doc_param: Parametros[] = [
           { Nombre: "@PacienteId", Valor: String(pacienteId) },
           { Nombre: "@Matricula",  Valor: matricula },
-          { Nombre: "@NombrePDF",  Valor: file.filename },
+          { Nombre: "@NombrePDF",  Valor: limpiarNombrePDF(file.filename) },
           { Nombre: "@TipoDoc",    Valor: String(parseInt(categoria)) },
           { Nombre: "@Direccion",  Valor: filePath.toUpperCase() },
-          { Nombre: "@FileBytes",  Valor: fileBase64 },
+          // { Nombre: "@FileBytes",  Valor: fileBase64 },
           { Nombre: "@Estado",     Valor: "1" },
         ];
-        await executeConnection<boolean>("[TNGCORE].[dbo].[SCII_Subir_Documentos]", TipoConsulta.ProcedimientoAlmacenado, doc_param);
+        await executeConnection_FileBinary<boolean>("[TNGCORE].[dbo].[SCII_Subir_Documentos_Test]", TipoConsulta.ProcedimientoAlmacenado, doc_param, fileBase64);
+
 
         res.json({
           ok: true,

@@ -5,7 +5,7 @@ interface CardProps {
   iconColorClass?: string;
   title: string;
   badge?: React.ReactNode;
-  subtitle?: string;
+  subtitle?: React.ReactNode;
   className?: string;
   children: React.ReactNode;
 }
@@ -22,7 +22,7 @@ const Card: React.FC<CardProps> = ({ icon, iconColorClass = "text-sea-blue", tit
       </span>
       {badge}
     </div>
-    {subtitle && <p className="text-[10px] text-gray-400 mb-2">{subtitle}</p>}
+    {subtitle && <div className="text-[10px] text-gray-400 mb-2">{subtitle}</div>}
     <div className={subtitle ? "" : "mt-2.5"}>{children}</div>
   </div>
 );
