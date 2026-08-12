@@ -1,8 +1,10 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { EvolucionIMC } from "../types";
 import EtiquetaUltimoValor from "./EtiquetaUltimoValor";
+import SelectorRangoAnios from "./SelectorRangoAnios";
 import ShimmerOverlay from "../../saludPoblacional/components/shared/ShimmerOverlay";
+import { RangoAnios, aniosUnicos, anioDeEtiquetaMesAnio, fechaDeEtiquetaMesAnio, formatoMesAnioLargo, rangoPorDefecto } from "../rangoAnios";
 
 interface EvolucionImcChartProps {
   meses: string[];
@@ -30,12 +32,31 @@ const TooltipImc: React.FC<any> = ({ active, payload, label }) => {
 };
 
 const EvolucionImcChart: React.FC<EvolucionImcChartProps> = ({ meses, evolucion }) => {
+  // Rango de años seleccionable (arriba a la derecha del título) — permite
+  // comparar dos o más años en vez de ver siempre el histórico completo.
+  const aniosDisponibles = useMemo(() => aniosUnicos(meses.map(anioDeEtiquetaMesAnio)), [meses]);
+  const [rango, setRango] = useState<RangoAnios | null>(null);
+  useEffect(() => {
+    setRango((prev) => (prev && aniosDisponibles.includes(prev.desde) && aniosDisponibles.includes(prev.hasta) ? prev : rangoPorDefecto(aniosDisponibles)));
+  }, [aniosDisponibles]);
+
   const serie = useMemo(
-    () => meses.map((mes, i) => ({ mes, imc: evolucion.ValoresIMC[i] ?? null })),
-    [meses, evolucion]
+    () => meses
+      .map((mes, i) => ({ mes, imc: evolucion.ValoresIMC[i] ?? null, anio: anioDeEtiquetaMesAnio(mes) }))
+      .filter((p) => rango == null || (p.anio != null && p.anio >= rango.desde && p.anio <= rango.hasta)),
+    [meses, evolucion, rango]
   );
 
   const hayDatos = serie.some((p) => p.imc != null);
+
+  // Rango de fechas efectivamente mostrado (para la leyenda debajo de la
+  // gráfica) — puede ser más angosto que el rango de años seleccionado si
+  // faltan datos en los extremos.
+  const rangoMostrado = useMemo(() => {
+    const fechas = serie.map((p) => fechaDeEtiquetaMesAnio(p.mes)).filter((f): f is Date => f != null);
+    if (fechas.length === 0) return null;
+    return { min: fechas.reduce((a, b) => (b < a ? b : a)), max: fechas.reduce((a, b) => (b > a ? b : a)) };
+  }, [serie]);
 
   // Índice del último registro con IMC: ahí se dibuja la etiqueta "IMC
   // actual" dentro de la gráfica (en vez de un badge en el header).
@@ -52,11 +73,15 @@ const EvolucionImcChart: React.FC<EvolucionImcChartProps> = ({ meses, evolucion 
   }, [serie]);
 
   return (
-    <div className="rounded-lg shadow-xl p-4">
-      <h3 className="text-xs font-bold text-gray-600 flex items-center mb-2">
-        <i className="fa-solid fa-scale-balanced mr-2"></i>Evolución de IMC
-      </h3>
+    <div className="rounded-lg p-4">
+      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+        <h3 className="text-xs font-bold text-gray-600 flex items-center">
+          <i className="fa-solid fa-scale-balanced mr-2"></i>Evolución de IMC
+        </h3>
+        {rango && <SelectorRangoAnios aniosDisponibles={aniosDisponibles} rango={rango} onChange={setRango} />}
+      </div>
       {hayDatos ? (
+        <>
         <div className="relative overflow-hidden">
         <ResponsiveContainer width="100%" height={180}>
           <LineChart data={serie} margin={{ top: 28, right: 16, left: 0, bottom: 8 }}>
@@ -89,6 +114,12 @@ const EvolucionImcChart: React.FC<EvolucionImcChartProps> = ({ meses, evolucion 
         </ResponsiveContainer>
         <ShimmerOverlay />
         </div>
+        {rangoMostrado && (
+          <p className="text-[10px] text-gray-400 text-center italic mt-2">
+            El contenido mostrado en esta gráfica comprende un rango del {formatoMesAnioLargo(rangoMostrado.min)} al {formatoMesAnioLargo(rangoMostrado.max)}.
+          </p>
+        )}
+        </>
       ) : (
         <div className="h-[180px] flex items-center justify-center text-xs text-gray-400">Sin datos de IMC disponibles.</div>
       )}

@@ -26,6 +26,24 @@ function ultimoValido<T>(valores: T[], etiquetas: string[]): { valor: T; etiquet
   return null;
 }
 
+const MESES_ABREV: Record<string, number> = {
+  ene: 0, feb: 1, mar: 2, abr: 3, may: 4, jun: 5,
+  jul: 6, ago: 7, sep: 8, oct: 9, nov: 10, dic: 11,
+};
+
+// Fechas de HistoricosYGraficas vienen como "01/Mar/2025" (ver
+// EvolucionPesoChart.tsx), no parseables directamente con `new Date()`.
+function parsearFechaDDMonYYYY(fecha: string): Date | null {
+  const partes = fecha.split("/");
+  if (partes.length !== 3) return null;
+  const dia = Number(partes[0]);
+  const mes = MESES_ABREV[partes[1].toLowerCase()];
+  const anio = Number(partes[2]);
+  if (!Number.isFinite(dia) || mes == null || !Number.isFinite(anio)) return null;
+  const fechaObj = new Date(anio, mes, dia);
+  return isNaN(fechaObj.getTime()) ? null : fechaObj;
+}
+
 // Análisis Individual: consume el servicio SOAP externo EvaluarSaludConAnalisisIA
 // (EvaluacionSalud.asmx, repo aparte — ver memoria de proyecto) a través del
 // backend de SCII_Web. El backend decide `esUsuarioMedico` a partir del rol del
@@ -81,6 +99,31 @@ const AnalisisIndividual: React.FC = () => {
 
     return candidatos.sort((a, b) => b.fecha.getTime() - a.fecha.getTime())[0];
   }, [registroEmpleado]);
+
+  // Fecha más antigua entre todos los registros disponibles de este paciente
+  // (consultas/indicadores en registroEmpleado, y las series históricas que
+  // trae el propio Evaluar/EvaluarInactivos) — alimenta la leyenda de
+  // "periodo analizado" en HeaderAnalisis.tsx.
+  const fechaInicioAnalisis = useMemo(() => {
+    const fechas: Date[] = [];
+
+    for (const r of registroEmpleado) {
+      if (!r.Fecha.valida || !r.Fecha.original) continue;
+      const fecha = new Date(r.Fecha.original);
+      if (!isNaN(fecha.getTime())) fechas.push(fecha);
+    }
+
+    if (resultado) {
+      const { PresionArterial, EvolucionPesoAnual } = resultado.HistoricosYGraficas;
+      for (const fechaStr of [...PresionArterial.Fechas, ...EvolucionPesoAnual.Fechas]) {
+        const fecha = parsearFechaDDMonYYYY(fechaStr);
+        if (fecha) fechas.push(fecha);
+      }
+    }
+
+    if (fechas.length === 0) return null;
+    return fechas.reduce((min, f) => (f < min ? f : min));
+  }, [registroEmpleado, resultado]);
 
   const regresar = useCallback(() => navigate(-1), [navigate]);
 
@@ -223,7 +266,7 @@ const AnalisisIndividual: React.FC = () => {
                   </div>
                 );
               })()}
-              <HeaderAnalisis prioridad={resultado.PrioridadYUrgencia} aptitud={resultado.AptitudLaboral} matricula={matricula} riesgoReciente={riesgoReciente} />
+              <HeaderAnalisis prioridad={resultado.PrioridadYUrgencia} aptitud={resultado.AptitudLaboral} matricula={matricula} riesgoReciente={riesgoReciente} fechaInicioAnalisis={fechaInicioAnalisis} />
               {/* Oculto (no eliminado): "Enfermedades registradas" no se va a ocupar por ahora. */}
               {/* <EnfermedadesBadges enfermedades={resultado.HistoricosYGraficas.Enfermedades} /> */}
               <UltimaTomaSection

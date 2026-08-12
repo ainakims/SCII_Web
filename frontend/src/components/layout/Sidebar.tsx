@@ -43,17 +43,18 @@ const ROLES_PRIVILEGIADOS = ["admin", "médico", "medico"];
 const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
   const menuItems: MenuItem[] = [
     // { name: "Dashboard",     icon: "view-dashboard",          path: "/Dashboard",     roles: ["admin", "médico"] }, //compass
-    { name: "Expediente",    icon: "folder-open",             path: "/Expediente",    roles: ["admin", "médico"] },
-    { name: "Pacientes",     icon: "account-multiple",        path: "/Pacientes",     roles: ["admin", "médico"] },
-    { name: "Agenda",        icon: "calendar-clock",          path: "/Agenda",        roles: ["admin", "médico", "usuario"] },
-    { name: "Consultas",     icon: "clipboard-pulse-outline", path: "/Consultas",     roles: ["admin", "médico"] },
+    { name: "Dashboard",     icon: "compass",                 path: "/Expediente",    roles: ["admin", "médico"] },
+    // { name: "Reingresos",    icon: "user-gear",               path: "/Reingresos",    roles: ["admin", "médico"] },
+    { name: "Pacientes",     icon: "user-group",              path: "/Pacientes",     roles: ["admin", "médico"] },
+    { name: "Agenda",        icon: "calendar-week",           path: "/Agenda",        roles: ["admin", "médico", "usuario"] },
+    { name: "Consultas",     icon: "file-waveform",           path: "/Consultas",     roles: ["admin", "médico"] },
     { name: "Indicadores",   icon: "heart-pulse",             path: "/Indicadores",   roles: ["admin", "médico"] },
-    { name: "Salud Poblacional", icon: "chart-box-outline",   path: "/SaludPoblacional", roles: ["admin", "médico"] },
+    // { name: "Salud Poblacional", icon: "chart-box-outline",   path: "/SaludPoblacional", roles: ["admin", "médico"] },
     
-    { name: "Evaluación",    icon: "clipboard-check-outline", path: "/Evaluacion",    roles: ["admin", "médico"] },
-    { name: "Recetas",       icon: "pill",                    path: "/Recetas",       roles: ["admin", "médico"] },
+    { name: "Evaluación",    icon: "clipboard-check",         path: "/Evaluacion",    roles: ["admin", "médico"] },
+    { name: "Recetas",       icon: "capsules",                path: "/Recetas",       roles: ["admin", "médico"] },
     // { name: "Inventario",    icon: "package-variant-closed",  path: "/Inventario",    roles: ["admin", "médico"] },
-    { name: "Documentos",    icon: "file-outline",            path: "/Documentos",    roles: ["admin", "médico", "usuario"] },
+    { name: "Documentos",    icon: "file-lines",              path: "/Documentos",    roles: ["admin", "médico", "usuario"] },
     { name: "Configuración", icon: "cog",                     path: "/Configuracion", roles: ["admin"] },
   ];
 
@@ -137,7 +138,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
               {({ isActive }) => (
                 <>
                   <i
-                    className={`mdi mdi-${item.icon} text-[20px] transition-all ${
+                    className={`fa-solid fa-${item.icon} text-sm transition-all ${
                       isCollapsed ? "ml-1.5" : "ml-1.5"
                     } ${
                       isActive

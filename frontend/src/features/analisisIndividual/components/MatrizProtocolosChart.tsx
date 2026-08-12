@@ -53,7 +53,7 @@ const MatrizProtocolosChart: React.FC<MatrizProtocolosChartProps> = ({ protocolo
 
   if (aniosDisponibles.length === 0) {
     return (
-      <div className="rounded-lg shadow-xl p-4">
+      <div className="rounded-lg p-4">
         <h3 className="text-xs font-bold text-gray-600 mb-2">
           <i className="fa-solid fa-bars-progress mr-2"></i>Histórico de Consultas
         </h3>
@@ -66,7 +66,7 @@ const MatrizProtocolosChart: React.FC<MatrizProtocolosChartProps> = ({ protocolo
   const irAnioSiguiente = () => indice < aniosDisponibles.length - 1 && setAnioSeleccionado(aniosDisponibles[indice + 1]);
 
   return (
-    <div className="rounded-lg shadow-xl p-4">
+    <div className="rounded-lg p-4">
       <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
         <h3 className="text-xs font-bold text-gray-600">
           <i className="fa-solid fa-bars-progress mr-2"></i>Histórico de Consultas

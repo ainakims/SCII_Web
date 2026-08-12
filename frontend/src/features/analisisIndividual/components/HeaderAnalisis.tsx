@@ -16,6 +16,10 @@ interface HeaderAnalisisProps {
   // para esta matrícula (independiente del análisis de IA) — null si no hay
   // ninguna toma registrada con Riesgo 1/2/3.
   riesgoReciente?: RiesgoReciente | null;
+  // Fecha del registro más antiguo disponible de este paciente (consultas,
+  // indicadores, etc.) — null si no se pudo determinar. Alimenta la leyenda
+  // del periodo analizado, mostrada arriba del título.
+  fechaInicioAnalisis?: Date | null;
 }
 
 function escapeRegExp(s: string): string {
@@ -103,7 +107,18 @@ const ESTILO_APTITUD = {
 // el resto de los títulos de card del sitio. La única diferencia intencional
 // es que, al tratarse de un dictamen apto/no apto, la card completa toma un
 // tinte verde o rojo bien visible (no un degradado que se pierde hacia blanco).
-const HeaderAnalisis: React.FC<HeaderAnalisisProps> = ({ prioridad, aptitud, matricula, riesgoReciente }) => (
+const HeaderAnalisis: React.FC<HeaderAnalisisProps> = ({ prioridad, aptitud, matricula, riesgoReciente, fechaInicioAnalisis }) => (
+  <div>
+  <div className="flex flex-col gap-4">
+    <div className={`relative overflow-hidden rounded-xl shadow-xl px-6 py-4 mb-4 bg-linear-to-b ${aptitud.Apto ? "from-horz-blue/20 to-gray-100 text-sea-blue" : "from-red-200/50 to-gray-100 text-red-800"}`}>
+      {fechaInicioAnalisis && (
+        <p className="text-[13px] leading-relaxed font-bold italic opacity-70 flex items-center gap-1.5">
+          <i className="fa-solid fa-clock-rotate-left mr-3"></i>
+          Este análisis se realizó considerando el historial clínico del paciente desde el {fechaInicioAnalisis.toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })} hasta la fecha actual.
+        </p>
+      )}
+    </div>
+  </div>
   <div className="flex flex-col gap-4">
     <div className={`relative overflow-hidden rounded-xl shadow-xl p-6 bg-linear-to-b ${aptitud.Apto ? "from-horz-blue/20 to-gray-100 text-sea-blue" : "from-red-200/50 to-gray-100 text-red-800"}`}>
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
@@ -163,6 +178,7 @@ const HeaderAnalisis: React.FC<HeaderAnalisisProps> = ({ prioridad, aptitud, mat
         <p className="text-[12px] leading-relaxed"><span className="font-bold">Plan sugerido: </span>{prioridad.Recomendacion}</p>
       </div>
     </div>
+  </div>
   </div>
 );
 

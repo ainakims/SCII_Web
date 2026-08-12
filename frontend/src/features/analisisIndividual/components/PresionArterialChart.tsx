@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ReferenceLine, ResponsiveContainer } from "recharts";
 import { PresionArterial } from "../types";
+import SelectorRangoAnios from "./SelectorRangoAnios";
 import ShimmerOverlay from "../../saludPoblacional/components/shared/ShimmerOverlay";
+import { RangoAnios, aniosUnicos, anioDeDDMonYYYY, fechaDeDDMonYYYY, formatoMesAnioLargo, rangoPorDefecto } from "../rangoAnios";
 
 interface PresionArterialChartProps {
   datos: PresionArterial;
@@ -9,8 +11,8 @@ interface PresionArterialChartProps {
 
 // Mismos colores que Sistólica/Diastólica en CardiovascularSection.tsx (COLOR_PRESION).
 const SERIES_PRESION = [
-  { key: "sistolica", label: "Sistólica", color: "#EF4444" },
-  { key: "diastolica", label: "Diastólica", color: "#EE7523" },
+  { key: "sistolica", label: "Sistólica", color: "#002E6D" },
+  { key: "diastolica", label: "Diastólica", color: "#009BDE" },
 ] as const;
 
 // Mismo estilo de tooltip que las gráficas de Expediente (Somatometría, Cardiovascular, etc.).
@@ -33,17 +35,37 @@ const TooltipPresion: React.FC<any> = ({ active, payload, label }) => {
 };
 
 const PresionArterialChart: React.FC<PresionArterialChartProps> = ({ datos }) => {
+  // Rango de años seleccionable (arriba a la derecha del título) — permite
+  // comparar dos o más años en vez de ver siempre el histórico completo.
+  const aniosDisponibles = useMemo(() => aniosUnicos(datos.Fechas.map(anioDeDDMonYYYY)), [datos]);
+  const [rango, setRango] = useState<RangoAnios | null>(null);
+  useEffect(() => {
+    setRango((prev) => (prev && aniosDisponibles.includes(prev.desde) && aniosDisponibles.includes(prev.hasta) ? prev : rangoPorDefecto(aniosDisponibles)));
+  }, [aniosDisponibles]);
+
   const serie = useMemo(
-    () => datos.Fechas.map((fecha, i) => ({
-      fecha,
-      sistolica: datos.Sistolica[i] ?? null,
-      diastolica: datos.Diastolica[i] ?? null,
-      origen: datos.Origen[i] ?? null,
-    })),
-    [datos]
+    () => datos.Fechas
+      .map((fecha, i) => ({
+        fecha,
+        sistolica: datos.Sistolica[i] ?? null,
+        diastolica: datos.Diastolica[i] ?? null,
+        origen: datos.Origen[i] ?? null,
+        anio: anioDeDDMonYYYY(fecha),
+      }))
+      .filter((p) => rango == null || (p.anio != null && p.anio >= rango.desde && p.anio <= rango.hasta)),
+    [datos, rango]
   );
 
   const hayDatos = serie.some((p) => p.sistolica != null || p.diastolica != null);
+
+  // Rango de fechas efectivamente mostrado (para la leyenda debajo de la
+  // gráfica) — puede ser más angosto que el rango de años seleccionado si
+  // faltan datos en los extremos.
+  const rangoMostrado = useMemo(() => {
+    const fechas = serie.map((p) => fechaDeDDMonYYYY(p.fecha)).filter((f): f is Date => f != null);
+    if (fechas.length === 0) return null;
+    return { min: fechas.reduce((a, b) => (b < a ? b : a)), max: fechas.reduce((a, b) => (b > a ? b : a)) };
+  }, [serie]);
 
   // Series ocultas por clic en la leyenda (mismo toggle que Somatometría/Cardiovascular).
   const [seriesOcultas, setSeriesOcultas] = useState<Set<string>>(new Set());
@@ -56,10 +78,13 @@ const PresionArterialChart: React.FC<PresionArterialChartProps> = ({ datos }) =>
   };
 
   return (
-    <div className="rounded-lg shadow-xl p-4">
-      <h3 className="text-xs font-bold text-gray-600 flex items-center mb-2">
-        <i className="fa-solid fa-heart-pulse mr-2"></i>Presión Arterial
-      </h3>
+    <div className="rounded-lg p-4">
+      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+        <h3 className="text-xs font-bold text-gray-600 flex items-center">
+          <i className="fa-solid fa-heart-pulse mr-2"></i>Presión Arterial
+        </h3>
+        {rango && <SelectorRangoAnios aniosDisponibles={aniosDisponibles} rango={rango} onChange={setRango} />}
+      </div>
       {hayDatos ? (
         <>
           <div className="relative overflow-hidden">
@@ -93,6 +118,11 @@ const PresionArterialChart: React.FC<PresionArterialChartProps> = ({ datos }) =>
               );
             })}
           </div>
+          {rangoMostrado && (
+            <p className="text-[10px] text-gray-400 text-center italic mt-2">
+              El contenido mostrado en esta gráfica comprende un rango del {formatoMesAnioLargo(rangoMostrado.min)} al {formatoMesAnioLargo(rangoMostrado.max)}.
+            </p>
+          )}
         </>
       ) : (
         <div className="h-[200px] flex items-center justify-center text-xs text-gray-400">Sin datos de presión arterial disponibles.</div>

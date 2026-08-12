@@ -1,7 +1,9 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { PerfilMetabolico } from "../types";
+import SelectorRangoAnios from "./SelectorRangoAnios";
 import ShimmerOverlay from "../../saludPoblacional/components/shared/ShimmerOverlay";
+import { RangoAnios, aniosUnicos, anioDeEtiquetaMesAnio, fechaDeEtiquetaMesAnio, formatoMesAnioLargo, rangoPorDefecto } from "../rangoAnios";
 
 interface PerfilMetabolicoChartProps {
   meses: string[];
@@ -10,15 +12,15 @@ interface PerfilMetabolicoChartProps {
 
 // Los tres azules del sistema (index.css: --color-sea-blue/sky-blue/horz-blue).
 const SERIES_METABOLICAS = [
-  { key: "glucosa", label: "Glucosa", color: "#EE7523" },
-  { key: "colesterol", label: "Colesterol", color: "#EF4444" },
+  { key: "glucosa", label: "Glucosa", color: "#002E6D" },
+  { key: "colesterol", label: "Colesterol", color: "#009BDE" },
   { key: "trigliceridos", label: "Triglicéridos", color: "#FFC627" },
 ] as const;
 
 // Umbral de cada indicador: mismo color que su serie, más tenue.
 const COLOR_UMBRAL: Record<string, string> = {
-  glucosa: "#EF4444",
-  colesterol: "#EE7523",
+  glucosa: "#002E6D",
+  colesterol: "#009BDE",
   trigliceridos: "#FFC627",
 };
 
@@ -45,20 +47,40 @@ const TooltipPerfil: React.FC<any> = ({ active, payload, label }) => {
 };
 
 const PerfilMetabolicoChart: React.FC<PerfilMetabolicoChartProps> = ({ meses, perfil }) => {
+  // Rango de años seleccionable (arriba a la derecha del título) — permite
+  // comparar dos o más años en vez de ver siempre el histórico completo.
+  const aniosDisponibles = useMemo(() => aniosUnicos(meses.map(anioDeEtiquetaMesAnio)), [meses]);
+  const [rango, setRango] = useState<RangoAnios | null>(null);
+  useEffect(() => {
+    setRango((prev) => (prev && aniosDisponibles.includes(prev.desde) && aniosDisponibles.includes(prev.hasta) ? prev : rangoPorDefecto(aniosDisponibles)));
+  }, [aniosDisponibles]);
+
   const serie = useMemo(
-    () => meses.map((mes, i) => ({
-      mes,
-      glucosa: perfil.Glucosa[i] ?? null,
-      colesterol: perfil.Colesterol[i] ?? null,
-      trigliceridos: perfil.Trigliceridos[i] ?? null,
-      limGlucosa: perfil.UmbralGlucosa,
-      limColesterol: perfil.UmbralColesterol,
-      limTrigliceridos: perfil.UmbralTrigliceridos,
-    })),
-    [meses, perfil]
+    () => meses
+      .map((mes, i) => ({
+        mes,
+        glucosa: perfil.Glucosa[i] ?? null,
+        colesterol: perfil.Colesterol[i] ?? null,
+        trigliceridos: perfil.Trigliceridos[i] ?? null,
+        limGlucosa: perfil.UmbralGlucosa,
+        limColesterol: perfil.UmbralColesterol,
+        limTrigliceridos: perfil.UmbralTrigliceridos,
+        anio: anioDeEtiquetaMesAnio(mes),
+      }))
+      .filter((p) => rango == null || (p.anio != null && p.anio >= rango.desde && p.anio <= rango.hasta)),
+    [meses, perfil, rango]
   );
 
   const hayDatos = serie.some((p) => p.glucosa != null || p.colesterol != null || p.trigliceridos != null);
+
+  // Rango de fechas efectivamente mostrado (para la leyenda debajo de la
+  // gráfica) — puede ser más angosto que el rango de años seleccionado si
+  // faltan datos en los extremos.
+  const rangoMostrado = useMemo(() => {
+    const fechas = serie.map((p) => fechaDeEtiquetaMesAnio(p.mes)).filter((f): f is Date => f != null);
+    if (fechas.length === 0) return null;
+    return { min: fechas.reduce((a, b) => (b < a ? b : a)), max: fechas.reduce((a, b) => (b > a ? b : a)) };
+  }, [serie]);
 
   // Series ocultas por clic en la leyenda (mismo toggle que Somatometría/Cardiovascular).
   // Los umbrales de referencia no son parte de la leyenda interactiva: se
@@ -74,10 +96,13 @@ const PerfilMetabolicoChart: React.FC<PerfilMetabolicoChartProps> = ({ meses, pe
   };
 
   return (
-    <div className="rounded-lg shadow-xl p-4">
-      <h3 className="text-xs font-bold text-gray-600 flex items-center mb-2">
-        <i className="fa-solid fa-share-nodes mr-2"></i>Perfil Metabólico
-      </h3>
+    <div className="rounded-lg p-4">
+      <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
+        <h3 className="text-xs font-bold text-gray-600 flex items-center">
+          <i className="fa-solid fa-share-nodes mr-2"></i>Perfil Metabólico
+        </h3>
+        {rango && <SelectorRangoAnios aniosDisponibles={aniosDisponibles} rango={rango} onChange={setRango} />}
+      </div>
       {hayDatos ? (
         <>
           <div className="relative overflow-hidden">
@@ -113,6 +138,11 @@ const PerfilMetabolicoChart: React.FC<PerfilMetabolicoChartProps> = ({ meses, pe
               );
             })}
           </div>
+          {rangoMostrado && (
+            <p className="text-[10px] text-gray-400 text-center italic mt-2">
+              El contenido mostrado en esta gráfica comprende un rango del {formatoMesAnioLargo(rangoMostrado.min)} al {formatoMesAnioLargo(rangoMostrado.max)}.
+            </p>
+          )}
         </>
       ) : (
         <div className="h-[210px] flex items-center justify-center text-xs text-gray-400">Sin datos de perfil metabólico disponibles.</div>

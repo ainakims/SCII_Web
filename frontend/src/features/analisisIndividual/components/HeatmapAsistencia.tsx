@@ -44,7 +44,7 @@ const HeatmapAsistencia: React.FC<HeatmapAsistenciaProps> = ({ anios }) => {
 
   if (!anioData) {
     return (
-      <div className="rounded-lg shadow-xl p-4">
+      <div className="rounded-lg p-4">
         <h3 className="text-xs font-bold text-gray-600 mb-2">
           <i className="fa-solid fa-grip mr-2"></i>Riesgo por Indicadores
         </h3>
@@ -57,7 +57,7 @@ const HeatmapAsistencia: React.FC<HeatmapAsistenciaProps> = ({ anios }) => {
   const irAnioSiguiente = () => indice < sortedAnios.length - 1 && setAnioSeleccionado(sortedAnios[indice + 1].Anio);
 
   return (
-    <div className="rounded-lg shadow-xl p-4">
+    <div className="rounded-lg p-4">
       <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
         <h3 className="text-xs font-bold text-gray-600">
           <i className="fa-solid fa-grip mr-2"></i>Riesgo por Indicadores
