@@ -186,7 +186,7 @@ export function ConsultasController(db: DB) {
         { Nombre: "@Matricula",     Valor: String(expediente.Matricula ?? "") },
         { Nombre: "@TipoPaciente",  Valor: expediente.TipoPaciente?.trim() ?? "" },
         { Nombre: "@TipoAtencion",  Valor: expediente.TipoAtencion?.trim() ?? "" },
-        { Nombre: "@Fecha",        Valor: expediente.FechaConsulta ?? "" },
+        { Nombre: "@Fecha",        Valor: expediente.FechaConsulta ? `${expediente.FechaConsulta}:00`.replace("T", " ") : "" },
         { Nombre: "@Enfermedad",    Valor: expediente.TipoEnfermedad?.trim() ?? "" },
         { Nombre: "@Protocolo",     Valor: String(parseInt(expediente.ProtocoloAtencion) || 0) },
         { Nombre: "@Procedimiento", Valor: expediente.Procedimiento?.trim() || null },
