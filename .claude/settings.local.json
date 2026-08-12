@@ -49,7 +49,10 @@
       "Bash(git hash-object *)",
       "Bash(git show *)",
       "Bash(rm -f /tmp/aiService_gpt5.js)",
-      "Bash(xxd backend/package.json)"
+      "Bash(xxd backend/package.json)",
+      "Bash(grep -i \"https-proxy-agent\\\\|^axios$\")",
+      "Bash(cd \"C:\\\\Users\\\\Olivos.victor\\\\Documents\\\\Visual Studio Code\\\\SCII Web\" && ls -la 2>/dev/null; echo \"---\"; find . -maxdepth 2 -iname \"*evaluacion*\" 2>/dev/null)",
+      "Bash(cd \"C:\\\\Users\\\\Olivos.victor\\\\Documents\\\\Visual Studio Code\" && ls -la 2>/dev/null)"
     ]
   }
 }

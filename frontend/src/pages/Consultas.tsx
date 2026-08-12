@@ -381,10 +381,9 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onDelete: (id: number) => 
             rows={3}
             // className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none resize-none"
             className="w-full p-2.5 border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small focus:ring-1 outline-none resize-none"
+            value={consulta.Recomendacion}
             disabled
-          >
-            {consulta.Recomendacion}
-          </textarea>
+          />
         </div>
       )}
       {/* {consulta.Recetas && (() => {
@@ -845,6 +844,7 @@ const Consultas: React.FC = () => {
       setHistoryData(prev => prev.filter(c => c.ID !== id));
       setIsDetailOpen(false);
       setSelectedExp(null);
+      setShowHistory(false);
       exitoModal("Consulta eliminada", "Se ha eliminado la consulta del historial correctamente.");
     } catch (err) {
       console.error("Error al eliminar la consulta:", err);

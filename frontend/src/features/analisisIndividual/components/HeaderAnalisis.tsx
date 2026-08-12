@@ -1,12 +1,21 @@
 import React from "react";
 import { PrioridadYUrgencia, AptitudLaboral } from "../types";
-import { ESTILOS_PRIORIDAD } from "../colores";
+import { ESTILOS_PRIORIDAD, ESTILOS_RIESGO_NIVEL, NOMBRE_RIESGO_NIVEL } from "../colores";
 import ShimmerOverlay from "../../saludPoblacional/components/shared/ShimmerOverlay";
+
+interface RiesgoReciente {
+  nivel: 1 | 2 | 3;
+  fecha: Date;
+}
 
 interface HeaderAnalisisProps {
   prioridad: PrioridadYUrgencia;
   aptitud: AptitudLaboral;
   matricula?: string;
+  // Riesgo (1/2/3) de la toma de indicadores más reciente en SCII_Indicadores
+  // para esta matrícula (independiente del análisis de IA) — null si no hay
+  // ninguna toma registrada con Riesgo 1/2/3.
+  riesgoReciente?: RiesgoReciente | null;
 }
 
 function escapeRegExp(s: string): string {
@@ -94,18 +103,18 @@ const ESTILO_APTITUD = {
 // el resto de los títulos de card del sitio. La única diferencia intencional
 // es que, al tratarse de un dictamen apto/no apto, la card completa toma un
 // tinte verde o rojo bien visible (no un degradado que se pierde hacia blanco).
-const HeaderAnalisis: React.FC<HeaderAnalisisProps> = ({ prioridad, aptitud, matricula }) => (
+const HeaderAnalisis: React.FC<HeaderAnalisisProps> = ({ prioridad, aptitud, matricula, riesgoReciente }) => (
   <div className="flex flex-col gap-4">
-    <div className={`relative overflow-hidden rounded-xl shadow-xl p-6 bg-linear-to-b ${aptitud.Apto ? "from-[#f0fdf4] to-[#f0fdf4]/20 text-green-800" : "from-red-200/50 to-red-100/20 text-red-800"}`}>
+    <div className={`relative overflow-hidden rounded-xl shadow-xl p-6 bg-linear-to-b ${aptitud.Apto ? "from-horz-blue/20 to-gray-100 text-sea-blue" : "from-red-200/50 to-gray-100 text-red-800"}`}>
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <h2 className="text-sm font-bold flex items-center">
           <i className="fa-solid fa-circle-nodes mr-3"></i>
           Evaluación de Aptitud Laboral
         </h2>
-        <span className={`${badgeCls} ${aptitud.Apto ? ESTILO_APTITUD.apto : ESTILO_APTITUD.noApto}`}>
+        {/* <span className={`${badgeCls} ${aptitud.Apto ? ESTILO_APTITUD.apto : ESTILO_APTITUD.noApto}`}>
           <i className={`fa-solid ${aptitud.Apto ? "fa-check" : "fa-xmark"}`}></i>
           {aptitud.Apto ? "Apto" : "No apto"}
-        </span>
+        </span> */}
       </div>
       <p className="text-[13px] leading-relaxed mb-2.5"><span className="font-bold">Puesto: </span>{resaltarPuestoYMatricula(aptitud.Justificacion, matricula)}</p>
       {aptitud.FactoresDeRiesgoDetectados.length > 0 && (
@@ -121,15 +130,27 @@ const HeaderAnalisis: React.FC<HeaderAnalisisProps> = ({ prioridad, aptitud, mat
       <ShimmerOverlay subtle />
     </div>
 
+    {riesgoReciente && (
+      <div className={`rounded-xl shadow-xl p-6 bg-linear-to-b ${ESTILOS_RIESGO_NIVEL[riesgoReciente.nivel]}`}>
+        <h2 className="text-sm font-bold flex items-center mb-2.5">
+          <i className="fa-solid fa-gauge-high mr-3"></i>
+          Nivel de Riesgo: {NOMBRE_RIESGO_NIVEL[riesgoReciente.nivel]}
+        </h2>
+        <p className="text-[13px] leading-relaxed">
+          La toma de indicadores más reciente ({riesgoReciente.fecha.toLocaleDateString("es-MX")}) indicó como resultado un <b>riesgo {NOMBRE_RIESGO_NIVEL[riesgoReciente.nivel].toLowerCase()}</b>. Considerarlo como un personal dentro de este umbral antes de tomar cualquier decisión.
+        </p>
+      </div>
+    )}
+
     <div className="rounded-xl shadow-xl p-6 bg-linear-to-b from-white to-gray-50">
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <h2 className="text-sm font-bold text-gray-800 flex items-center">
           <i className="fa-solid fa-triangle-exclamation text-sea-blue mr-3"></i>
           Nivel de Prioridad Médica
         </h2>
-        <span className={`${badgeCls} ${ESTILOS_PRIORIDAD[prioridad.Prioridad]}`}>
+        {/* <span className={`${badgeCls} ${ESTILOS_PRIORIDAD[prioridad.Prioridad]}`}>
           Prioridad {prioridad.Prioridad}
-        </span>
+        </span> */}
       </div>
       {prioridad.Urgente && (
         <div className="flex items-center gap-2 bg-red-50 text-red-600 text-xs font-semibold px-3 py-2 rounded-lg mb-2">

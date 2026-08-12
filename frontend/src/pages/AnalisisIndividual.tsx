@@ -1,10 +1,11 @@
 import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
-import React, { useCallback, useEffect, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 
 import KpiCard from "../features/saludPoblacional/components/shared/KpiCard";
+import { RegistroValidado } from "../features/saludPoblacional/types";
 import { AnalisisIndividualResult } from "../features/analisisIndividual/types";
 import HeaderAnalisis from "../features/analisisIndividual/components/HeaderAnalisis";
 import AnalisisIndividualSkeleton from "../features/analisisIndividual/components/AnalisisIndividualSkeleton";
@@ -41,40 +42,106 @@ function ultimoValido<T>(valores: T[], etiquetas: string[]): { valor: T; etiquet
 const AnalisisIndividual: React.FC = () => {
   const { matricula: matriculaParam } = useParams<{ matricula: string }>();
   const navigate = useNavigate();
+  const location = useLocation();
   const matricula = matriculaParam ? decodeURIComponent(matriculaParam) : undefined;
+
+  // Personal activo -> Evaluar; Reingresos -> EvaluarInactivos (viaja por
+  // location.state igual que "nombre", puesto por PacientesTabla.tsx al
+  // navegar). Si no viene (refresh directo de la URL, sin pasar por la
+  // tabla), se asume activo por default.
+  const esActivo = (location.state as any)?.activo !== false;
 
   const [resultado, setResultado] = useState<AnalisisIndividualResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
+  // Historial de indicadores del empleado seleccionado (SCII_Valores_Indicadores_Por_Empleado),
+  // mismo shape que /SaludPoblacional/ObtenerDatos pero acotado a esta matrícula.
+  // Todavía sin usarse en las gráficas: se trae aquí, las adecuaciones de UI van después.
+  const [registroEmpleado, setRegistroEmpleado] = useState<RegistroValidado[]>([]);
+
+  // Riesgo (1/2/3) de la toma de indicadores más reciente en SCII_Indicadores
+  // para esta matrícula, independiente del análisis de IA — alimenta la card
+  // "Nivel de Riesgo" en HeaderAnalisis.tsx. Se ignoran lecturas sin Riesgo
+  // 1/2/3 o con fecha inválida; de las que sí califican se toma la más nueva.
+  const riesgoReciente = useMemo(() => {
+    const candidatos: { nivel: 1 | 2 | 3; fecha: Date }[] = [];
+
+    for (const r of registroEmpleado) {
+      if (r.Riesgo !== 1 && r.Riesgo !== 2 && r.Riesgo !== 3) continue;
+      if (!r.Fecha.valida || !r.Fecha.original) continue;
+
+      const fecha = new Date(r.Fecha.original);
+      if (isNaN(fecha.getTime())) continue;
+
+      candidatos.push({ nivel: r.Riesgo, fecha });
+    }
+
+    if (candidatos.length === 0) return null;
+
+    return candidatos.sort((a, b) => b.fecha.getTime() - a.fecha.getTime())[0];
+  }, [registroEmpleado]);
+
   const regresar = useCallback(() => navigate(-1), [navigate]);
+
+  // Evita que el análisis se dispare más de una vez para la misma matrícula
+  // (React.StrictMode en desarrollo monta/desmonta/vuelve a montar los efectos
+  // a propósito, y sin esto se disparaban dos llamadas reales al servicio de
+  // IA en paralelo — la que respondía más tarde pisaba silenciosamente el
+  // resultado de la primera). Cada llamada a generar() aborta cualquier
+  // petición anterior todavía en curso antes de lanzar la nueva.
+  const abortRef = useRef<AbortController | null>(null);
 
   const generar = useCallback(async () => {
     if (!matricula) return;
+
+    abortRef.current?.abort();
+    const controller = new AbortController();
+    abortRef.current = controller;
+
     setLoading(true);
     setError(null);
     try {
-      const res = await fetchWithAuth(`${API_BASE_URL}/AnalisisIndividual/EvaluarInactivos`, {
+      const endpoint = esActivo ? "Evaluar" : "EvaluarInactivos";
+      const res = await fetchWithAuth(`${API_BASE_URL}/AnalisisIndividual/${endpoint}`, {
         method: "POST",
         body: JSON.stringify({ matricula: matricula.trim() }),
+        signal: controller.signal,
       });
       const json = await res.json();
+      if (controller.signal.aborted) return;
       if (json?.ok) {
         setResultado(json.data);
       } else {
         setError(json?.message || "No se pudo generar el análisis.");
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.name === "AbortError") return;
       console.error("Error al generar análisis individual:", err);
       setError("Error de conexión al generar el análisis.");
     } finally {
-      setLoading(false);
+      if (!controller.signal.aborted) setLoading(false);
     }
-  }, [matricula]);
+  }, [matricula, esActivo]);
 
   useEffect(() => {
     if (matricula) generar();
+    return () => { abortRef.current?.abort(); };
   }, [matricula, generar]);
+
+  useEffect(() => {
+    if (!matricula) return;
+    const controller = new AbortController();
+    fetchWithAuth(`${API_BASE_URL}/SaludPoblacional/ObtenerDatosPorEmpleado`, {
+      method: "POST",
+      body: JSON.stringify({ matricula: matricula.trim() }),
+      signal: controller.signal,
+    })
+      .then((res) => res.json())
+      .then((json) => setRegistroEmpleado(json?.ok && Array.isArray(json.data) ? json.data : []))
+      .catch((err) => { if (err?.name !== "AbortError") console.error("Error al obtener indicadores del empleado:", err); });
+    return () => controller.abort();
+  }, [matricula]);
 
   const programarSeguimiento = () => {
     Swal.fire({
@@ -136,17 +203,17 @@ const AnalisisIndividual: React.FC = () => {
                     <KpiCard
                       icon="gauge-high"
                       label="Presión arterial"
-                      value={sistolica && diastolica ? `${sistolica.valor}/${diastolica.valor} mmHg` : "Sin dato"}
+                      value={sistolica && diastolica ? `${sistolica.valor}/${diastolica.valor} mmHg` : "N/A"}
                     />
                     <KpiCard
                       icon="scale-balanced"
                       label="IMC"
-                      value={imc ? `${imc.valor} kg/m²` : "Sin dato"}
+                      value={imc ? `${imc.valor} kg/m²` : "N/A"}
                     />
                     <KpiCard
                       icon="heart-pulse"
                       label="Frecuencia cardiaca"
-                      value={fc ? `${fc.valor} bpm` : "Sin dato"}
+                      value={fc ? `${fc.valor} bpm` : "N/A"}
                     />
                     <KpiCard
                       icon="weight-scale"
@@ -156,7 +223,7 @@ const AnalisisIndividual: React.FC = () => {
                   </div>
                 );
               })()}
-              <HeaderAnalisis prioridad={resultado.PrioridadYUrgencia} aptitud={resultado.AptitudLaboral} matricula={matricula} />
+              <HeaderAnalisis prioridad={resultado.PrioridadYUrgencia} aptitud={resultado.AptitudLaboral} matricula={matricula} riesgoReciente={riesgoReciente} />
               {/* Oculto (no eliminado): "Enfermedades registradas" no se va a ocupar por ahora. */}
               {/* <EnfermedadesBadges enfermedades={resultado.HistoricosYGraficas.Enfermedades} /> */}
               <UltimaTomaSection
@@ -167,7 +234,6 @@ const AnalisisIndividual: React.FC = () => {
                 perfilMetabolico={resultado.HistoricosYGraficas.PerfilMetabolico}
               />
               <MatricesSection
-                meses={resultado.HistoricosYGraficas.Meses}
                 heatmap={resultado.HistoricosYGraficas.HeatmapAsistencia}
                 protocolos={resultado.HistoricosYGraficas.MatrizProtocolos}
               />

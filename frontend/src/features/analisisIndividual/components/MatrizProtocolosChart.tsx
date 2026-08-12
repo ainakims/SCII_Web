@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import { MatrizProtocoloItem } from "../types";
-import ShimmerOverlay from "../../saludPoblacional/components/shared/ShimmerOverlay";
 
 interface MatrizProtocolosChartProps {
   protocolos: MatrizProtocoloItem[];
@@ -53,9 +53,12 @@ const MatrizProtocolosChart: React.FC<MatrizProtocolosChartProps> = ({ protocolo
 
   if (aniosDisponibles.length === 0) {
     return (
-      <Card icon="mdi-table-large" title="Matriz histórica de consultas">
+      <div className="rounded-lg shadow-xl p-4">
+        <h3 className="text-xs font-bold text-gray-600 mb-2">
+          <i className="fa-solid fa-bars-progress mr-2"></i>Histórico de Consultas
+        </h3>
         <div className="h-24 flex items-center justify-center text-xs text-gray-400">Sin protocolos de atención registrados.</div>
-      </Card>
+      </div>
     );
   }
 
@@ -63,36 +66,31 @@ const MatrizProtocolosChart: React.FC<MatrizProtocolosChartProps> = ({ protocolo
   const irAnioSiguiente = () => indice < aniosDisponibles.length - 1 && setAnioSeleccionado(aniosDisponibles[indice + 1]);
 
   return (
-    <Card
-      icon="mdi-table-large"
-      title="Matriz histórica de consultas"
-      badge={
-        <span className="px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-50 text-amber-700 border border-amber-200">
-          {granTotal.toLocaleString("es-MX")} atenciones
-        </span>
-      }
-      subtitle={
-        <div className="flex items-center gap-2">
+    <div className="rounded-lg shadow-xl p-4">
+      <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
+        <h3 className="text-xs font-bold text-gray-600">
+          <i className="fa-solid fa-bars-progress mr-2"></i>Histórico de Consultas
+        </h3>
+        <div className="flex items-center gap-1">
           <button
             onClick={irAnioAnterior}
             disabled={indice <= 0}
             title="Año anterior"
-            className="size-5 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-sea-blue transition-colors cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+            className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
           >
-            <i className="mdi mdi-chevron-left text-sm"></i>
+            <ChevronLeft className="h-4 w-4" />
           </button>
-          <span className="text-xs font-bold text-gray-600 tabular-nums">{anioSeleccionado}</span>
+          <span className="text-xs font-bold text-gray-600 tabular-nums px-1">{anioSeleccionado}</span>
           <button
             onClick={irAnioSiguiente}
             disabled={indice >= aniosDisponibles.length - 1}
             title="Año siguiente"
-            className="size-5 flex items-center justify-center rounded text-gray-400 hover:bg-gray-100 hover:text-sea-blue transition-colors cursor-pointer disabled:opacity-30 disabled:pointer-events-none"
+            className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
           >
-            <i className="mdi mdi-chevron-right text-sm"></i>
+            <ChevronRight className="h-4 w-4" />
           </button>
         </div>
-      }
-    >
+      </div>
       <div className="overflow-x-auto">
         <table className="w-full text-xs border-collapse">
           <thead>
@@ -134,7 +132,7 @@ const MatrizProtocolosChart: React.FC<MatrizProtocolosChartProps> = ({ protocolo
           </tfoot>
         </table>
       </div>
-    </Card>
+    </div>
   );
 };
 

@@ -23,7 +23,7 @@ export function consultController(db: DB) {
       if (idPaciente !== "0" || mat) {
         try {
           const sqlPaciente = `
-            SELECT TOP 1 FechaNacimiento, Sexo, Alergias, Enfermedades, Tratamientos, AlergiasMedicamento
+            SELECT TOP 1 FechaNacimiento, Sexo, CURP, Alergias, Enfermedades, Tratamientos, AlergiasMedicamento
             FROM [TNGCORE].[dbo].[SCII_Pacientes]
             WHERE Estado = 'A' AND (
               (NULLIF(@IdPaciente, '0') IS NOT NULL AND IdPaciente = @IdPaciente)

@@ -153,6 +153,42 @@ const calcularEdad = (fechaNacimiento) => {
     return (edad >= 0 && edad <= 120) ? edad : null;
 };
 
+// Deriva fecha de nacimiento y sexo a partir del CURP: posiciones 5-10 son la fecha de
+// nacimiento (AAMMDD), la posición 11 es H (Hombre) o M (Mujer), y la posición 17 distingue
+// el siglo de nacimiento (dígito = 1900-1999, letra = 2000 en adelante).
+const datosDesdeCURP = (curp) => {
+    const c = String(curp || '').trim().toUpperCase();
+    if (!/^[A-Z]{4}\d{6}[HM][A-Z]{5}[A-Z0-9]\d$/.test(c)) return { fechaNacimiento: null, sexo: null };
+
+    const anio2 = parseInt(c.substring(4, 6), 10);
+    const mes = parseInt(c.substring(6, 8), 10);
+    const dia = parseInt(c.substring(8, 10), 10);
+    const siglo = /[0-9]/.test(c.charAt(16)) ? 1900 : 2000;
+
+    const fechaNacimiento = new Date(siglo + anio2, mes - 1, dia);
+    const fechaValida = !isNaN(fechaNacimiento.getTime()) && fechaNacimiento.getMonth() === mes - 1;
+
+    // El CURP usa H (Hombre) / M (Mujer); el resto del sistema usa 'M' (Masculino) / 'F' (Femenino).
+    const sexoCurp = c.charAt(10);
+    const sexo = sexoCurp === 'H' ? 'M' : sexoCurp === 'M' ? 'F' : null;
+
+    return { fechaNacimiento: fechaValida ? fechaNacimiento : null, sexo };
+};
+
+// Resuelve edad y sexo del paciente priorizando los datos capturados explícitamente
+// (FechaNacimiento/Sexo en SCII_Pacientes) y usando el CURP como respaldo cuando falten,
+// ya que el CURP los codifica de forma confiable.
+const resolverEdadYSexo = (paciente) => {
+    if (!paciente) return { edad: null, sexo: null };
+
+    const desdeCurp = paciente.CURP ? datosDesdeCURP(paciente.CURP) : { fechaNacimiento: null, sexo: null };
+
+    const edad = calcularEdad(paciente.FechaNacimiento) ?? calcularEdad(desdeCurp.fechaNacimiento);
+    const sexo = (paciente.Sexo ? String(paciente.Sexo).trim().toUpperCase().charAt(0) : null) ?? desdeCurp.sexo;
+
+    return { edad, sexo };
+};
+
 // Determina si un antecedente (texto libre) tiene sentido mencionarlo dado el tipo de
 // atención actual: si la atención es por Primeros Auxilios, solo se muestra cuando el
 // propio paciente lo refiere en el padecimiento actual o cuando el protocolo seleccionado
@@ -224,8 +260,7 @@ const analyzeConsultReglas = async (consultData) => {
 
     // Edad y sexo del paciente (solo si está dado de alta y registrado en el sistema).
     // Se usan para adaptar umbrales/sugerencias por edad y género a lo largo del análisis.
-    const edadPaciente = Paciente ? calcularEdad(Paciente.FechaNacimiento) : null;
-    const sexoPaciente = Paciente && Paciente.Sexo ? String(Paciente.Sexo).trim().toUpperCase().charAt(0) : null;
+    const { edad: edadPaciente, sexo: sexoPaciente } = resolverEdadYSexo(Paciente);
 
     // 1. ANÁLISIS HEMODINÁMICO (PRESIÓN ARTERIAL)
     if (SignosVitales.PA) {
@@ -628,8 +663,7 @@ const construirPromptIA = (consultData) => {
         AnalisisDescartados = [],
     } = consultData;
 
-    const edad = Paciente ? calcularEdad(Paciente.FechaNacimiento) : null;
-    const sexo = Paciente && Paciente.Sexo ? String(Paciente.Sexo).trim() : null;
+    const { edad, sexo } = resolverEdadYSexo(Paciente);
     const nombreProtocolo = PROTOCOLOS[String(ProtocoloAtencion)] || ProtocoloAtencion || 'No especificado';
 
     const lineas = [];
@@ -754,7 +788,10 @@ const analyzeConsultIA = async (consultData) => {
             ...(soportaTemperaturaCustom ? { temperature: 0.3 } : {}),
             // "reasoning_effort" acota cuánto piensa antes de responder; "verbosity" acota
             // qué tan largo redacta cada frase de la respuesta. Ambos son propios de GPT-5.
-            ...(esModeloRazonamiento ? { reasoning_effort: 'minimal', verbosity: 'low' } : {}),
+            // No todos los modelos GPT-5 soportan 'minimal' (p. ej. gpt-5.4-mini solo acepta
+            // none/low/medium/high/xhigh), así que se usa 'low' como valor mínimo soportado
+            // de forma consistente en toda la familia.
+            ...(esModeloRazonamiento ? { reasoning_effort: 'low', verbosity: 'low' } : {}),
         },
         {
             headers: {

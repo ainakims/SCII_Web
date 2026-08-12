@@ -253,7 +253,7 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes }) =>
               return (
                 <tr
                   key={`${p.Empl_matricula}-${idx}`}
-                  onClick={() => navigate(`/Expediente/${encodeURIComponent(String(p.Empl_matricula ?? ""))}`, { state: { nombre: p.Empl_Nombres } })}
+                  onClick={() => navigate(`/Expediente/${encodeURIComponent(String(p.Empl_matricula ?? ""))}`, { state: { nombre: p.Empl_Nombres, activo } })}
                   className="group border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors cursor-pointer"
                 >
                   <td className="px-5 py-0 font-semibold text-gray-700">{p.Empl_matricula && p.Empl_matricula !== "0" ? p.Empl_matricula : "EXT"}</td>
