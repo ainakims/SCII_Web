@@ -15,6 +15,7 @@ import Recetas from './pages/Recetas';
 import Inventario from './pages/Inventario';
 import Documentos from './pages/Documentos';
 import Pacientes from './pages/Pacientes';
+import Reingresos from './pages/Reingresos';
 import Configuracion from './pages/Configuracion';
 import SaludPoblacional from './pages/SaludPoblacional';
 import Expediente from './pages/Expediente';
@@ -52,6 +53,7 @@ function App() {
             <Route path="Inventario" element={<Inventario />} />
             <Route path="Documentos" element={<Documentos />} />
             <Route path="Pacientes" element={<Pacientes />} />
+            <Route path="Reingresos" element={<Reingresos />} />
             <Route path="Configuracion" element={<Configuracion />} />
             <Route path="SaludPoblacional" element={<SaludPoblacional />} />
             <Route path="Expediente" element={<Expediente />} />

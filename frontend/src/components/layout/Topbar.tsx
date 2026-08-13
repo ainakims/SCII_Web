@@ -1,4 +1,4 @@
-import React, { FC } from "react";
+import React, { FC, useEffect, useRef, useState } from "react";
 import { Bell, Search, Menu } from "lucide-react";
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useAuth } from "../../context/AuthToken";
@@ -24,6 +24,7 @@ interface User {
   puesto?: string;
   matricula?: string;
   correo?: string;
+  rol?: string;
 }
 
 const PAGE_TITLES: PageTitles = {
@@ -67,6 +68,30 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
     navigate("/LoginToken");
   };
 
+  const [isProfileOpen, setIsProfileOpen] = useState(false);
+  const profileRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!isProfileOpen) return;
+
+    const handleClickOutside = (event: MouseEvent): void => {
+      if (profileRef.current && !profileRef.current.contains(event.target as Node)) {
+        setIsProfileOpen(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, [isProfileOpen]);
+
+  const getInitials = (name: string | undefined): string => {
+    if (!name) return "DR";
+    const parts = name.trim().split(" ");
+    return parts.length >= 2
+      ? (parts[0][0] + parts[1][0]).toUpperCase()
+      : name.substring(0, 2).toUpperCase();
+  };
+
   return (
     <header
       className={`h-16 bg-white/70 backdrop-blur-md border-b border-white/20 flex items-center justify-between px-4 sm:px-5 lg:px-5 fixed top-0 right-0 z-10 transition-all duration-300 ${
@@ -76,9 +101,10 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
       <div className="flex items-center flex-1">
         <button
           onClick={toggleSidebar}
-          className="px-2 -ml-2 text-gray-400 hover:text-sea-blue bg-linear-to-b hover:from-sea-blue/10 hover:to-gray-50 rounded-md cursor-pointer transition-colors"
+          className="w-10 h-10 -ml-2 text-gray-400 hover:text-sea-blue flex items-center justify-center transition-all group cursor-pointer"
         >
-          <i className="mdi mdi-menu text-[25px]"></i>
+          <i className="fa-solid fa-bars"></i>
+          {/* rotate-90 */}
         </button>
 
         {page && (
@@ -138,13 +164,45 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
           <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-red-500 border-2 border-white"></span>
           <i className="mdi mdi-bell-outline text-[22px]"></i>
         </button> */}
-        <button
-          onClick={handleLogout}
-          className="w-10 h-10 ml-1 text-gray-400 hover:text-red-500 bg-linear-to-b hover:from-red-100 hover:to-gray-50 rounded-xl flex items-center justify-center transition-all group cursor-pointer"
-          title="Cerrar Sesión"
-        >
-          <i className="mdi mdi-run-fast"></i>
-        </button>
+        <div className="relative" ref={profileRef}>
+          <button
+            onClick={() => setIsProfileOpen((prev) => !prev)}
+            className="h-9 w-9 rounded-full flex items-center justify-center text-xs font-bold text-white bg-linear-to-b from-sea-blue to-sky-blue shadow-sm hover:opacity-90 transition-all cursor-pointer"
+            title={user?.nombre}
+          >
+            {getInitials(user?.nombre)}
+          </button>
+
+          {isProfileOpen && (
+            <div className="absolute right-0 mt-2 w-64 bg-white rounded-xl shadow-lg border border-gray-100 overflow-hidden z-20">
+              <div className="p-4 flex items-center gap-3 border-b border-gray-100">
+                <div className="h-10 w-10 shrink-0 rounded-full flex items-center justify-center text-sm font-bold text-white bg-linear-to-b from-sea-blue to-sky-blue shadow-sm">
+                  {getInitials(user?.nombre)}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-gray-800 truncate uppercase" title={user?.nombre}>
+                    {user?.nombre || ""}
+                  </p>
+                  <p className="text-xs text-gray-500 truncate" title={user?.puesto}>
+                    {user?.puesto || user?.rol}
+                  </p>
+                  {user?.correo && (
+                    <p className="text-xs text-gray-400 truncate" title={user.correo}>
+                      {user.correo}
+                    </p>
+                  )}
+                </div>
+              </div>
+              <button
+                onClick={handleLogout}
+                className="w-full flex items-center gap-2 px-4 py-3 text-sm text-gray-600 hover:text-red-500 hover:bg-gray-50 transition-all cursor-pointer"
+              >
+                <i className="fa-solid fa-right-from-bracket"></i>
+                Cerrar Sesión
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </header>
   );
