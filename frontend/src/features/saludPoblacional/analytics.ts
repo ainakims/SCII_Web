@@ -458,12 +458,16 @@ export interface DistribucionRiesgoDepto {
 // riesgo — mismo criterio que clasificarRiesgo ya usa en el resto del
 // dashboard. "critico" no aplica a Riesgo (solo 1/2/3), pero se agrupa junto
 // con "alto" por si el catálogo llegara a ampliarse.
+//
+// Se agrupa por Depto_Series (más granular que Depto_nombre, que agrupa varios
+// departamentos reales en categorías amplias — ver RawIndicadorRow en backend)
+// para que cada barra represente un departamento real, no una categoría.
 export function distribucionRiesgoPorDepartamento(estadoActual: RegistroValidado[]): DistribucionRiesgoDepto[] {
   const porDepto = new Map<string, DistribucionRiesgoDepto>();
 
   estadoActual.forEach((r) => {
-    if (!r.Depto_nombre) return;
-    const bucket = porDepto.get(r.Depto_nombre) ?? { depto: r.Depto_nombre, sano: 0, moderado: 0, alto: 0, sinDato: 0 };
+    if (!r.Depto_Series) return;
+    const bucket = porDepto.get(r.Depto_Series) ?? { depto: r.Depto_Series, sano: 0, moderado: 0, alto: 0, sinDato: 0 };
 
     const nivel = clasificarRiesgo(r.Riesgo).nivel;
     if (nivel === "normal") bucket.sano++;
@@ -471,7 +475,7 @@ export function distribucionRiesgoPorDepartamento(estadoActual: RegistroValidado
     else if (nivel === "alto" || nivel === "critico") bucket.alto++;
     else bucket.sinDato++;
 
-    porDepto.set(r.Depto_nombre, bucket);
+    porDepto.set(r.Depto_Series, bucket);
   });
 
   return Array.from(porDepto.values()).sort(
@@ -524,6 +528,84 @@ export function construirConsultasPorDepartamento(consultas: RegistroConsultaVal
         .sort((a, b) => b.count - a.count);
       return { depto, total: lista.reduce((acc, p) => acc + p.count, 0), protocolos: lista };
     })
+    .sort((a, b) => b.total - a.total);
+}
+
+// --- Asistencia anual (visitas por año, comparadas contra el año anterior) ----
+
+export interface VisitasAnio {
+  anio: number;
+  total: number;
+}
+
+// "Visita" = una fila con Fecha válida (un evento, no una persona distinta —
+// la misma persona puede aportar varias visitas en un año). Las filas
+// marcadas esDuplicado (mismo Matricula+Fecha repetido, ver marcarDuplicados)
+// se excluyen para no inflar el conteo con lo que ya se identificó como dato
+// repetido, no como dos visitas reales.
+export function construirVisitasPorAnio(registros: RegistroValidado[]): VisitasAnio[] {
+  const conteo = new Map<number, number>();
+  registros.forEach((r) => {
+    if (!r.Fecha.valida || !r.Fecha.original || r.esDuplicado) return;
+    const anio = new Date(r.Fecha.original).getFullYear();
+    conteo.set(anio, (conteo.get(anio) ?? 0) + 1);
+  });
+  return Array.from(conteo.entries())
+    .map(([anio, total]) => ({ anio, total }))
+    .sort((a, b) => a.anio - b.anio);
+}
+
+export interface ParAnual {
+  label: string;
+  anioAnterior: number;
+  anioActual: number;
+  totalAnterior: number;
+  totalActual: number;
+  cambioPct: number | null;
+}
+
+// Ventana deslizante de tamaño 2 sobre TODOS los años disponibles (sin
+// recortar aquí): cada año consecutivo genera su propio par "anterior/actual"
+// — el recorte a "cuántos periodos mostrar" lo decide el componente que
+// consume esta lista (control de rango en la UI).
+export function construirParesAnuales(visitasPorAnio: VisitasAnio[]): ParAnual[] {
+  const pares: ParAnual[] = [];
+  for (let i = 1; i < visitasPorAnio.length; i++) {
+    const anterior = visitasPorAnio[i - 1];
+    const actual = visitasPorAnio[i];
+    const cambioPct = anterior.total > 0
+      ? Number((((actual.total - anterior.total) / anterior.total) * 100).toFixed(1))
+      : null;
+
+    pares.push({
+      label: `${anterior.anio}/${actual.anio}`,
+      anioAnterior: anterior.anio,
+      anioActual: actual.anio,
+      totalAnterior: anterior.total,
+      totalActual: actual.total,
+      cambioPct,
+    });
+  }
+  return pares;
+}
+
+export interface VisitasDepto {
+  depto: string;
+  total: number;
+}
+
+// Detalle del drill-down: visitas de un año específico, por Depto_Series
+// (más granular que Depto_nombre — mismo criterio ya adoptado en
+// distribucionRiesgoPorDepartamento).
+export function construirVisitasPorDepartamento(registros: RegistroValidado[], anio: number): VisitasDepto[] {
+  const conteo = new Map<string, number>();
+  registros.forEach((r) => {
+    if (!r.Fecha.valida || !r.Fecha.original || r.esDuplicado || !r.Depto_Series) return;
+    if (new Date(r.Fecha.original).getFullYear() !== anio) return;
+    conteo.set(r.Depto_Series, (conteo.get(r.Depto_Series) ?? 0) + 1);
+  });
+  return Array.from(conteo.entries())
+    .map(([depto, total]) => ({ depto, total }))
     .sort((a, b) => b.total - a.total);
 }
 

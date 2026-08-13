@@ -242,7 +242,7 @@ const Expediente: React.FC = () => {
 
               <ExpedienteContenido historico={registros} mensajeVacio="No hay información disponible." />
 
-              <MatricesPoblacionalSection estadoActual={estadoActual} consultas={consultas} />
+              <MatricesPoblacionalSection estadoActual={estadoActual} historico={registros} consultas={consultas} />
             </>
           )}
         </div>

@@ -30,6 +30,24 @@ const selectCls = "text-xs border border-gray-200 rounded-md px-2 py-1 bg-white 
 const ConsultasPorDepartamentoChart: React.FC<ConsultasPorDepartamentoChartProps> = ({ datos, anios, anio, onCambiarAnio }) => {
   const [deptoSeleccionado, setDeptoSeleccionado] = useState<string | null>(null);
 
+  // Leyenda clicable (mismo patrón que "Categoría de la OMS" en
+  // AntropometriaSection.tsx): el departamento oculto se fuerza a total=0 en
+  // el dato que se dibuja, sin perder su conteo real en `datos` (así el botón
+  // de la leyenda sigue mostrando su color/nombre aunque esté "apagado").
+  const [deptosOcultos, setDeptosOcultos] = useState<Set<string>>(new Set());
+  const toggleDepto = (depto: string) => {
+    setDeptosOcultos((prev) => {
+      const next = new Set(prev);
+      if (next.has(depto)) next.delete(depto); else next.add(depto);
+      return next;
+    });
+  };
+
+  const datosVisibles = datos.map((d) => (deptosOcultos.has(d.depto) ? { ...d, total: 0 } : d));
+
+  // El total del denominador de "%" en el tooltip usa siempre `datos`
+  // completo, no `datosVisibles` — ocultar un departamento de la leyenda no
+  // debe cambiar el porcentaje de los demás.
   const total = datos.reduce((acc, d) => acc + d.total, 0);
   const deptoActivo = datos.find((d) => d.depto === deptoSeleccionado) ?? null;
 
@@ -84,7 +102,7 @@ const ConsultasPorDepartamentoChart: React.FC<ConsultasPorDepartamentoChartProps
         <ResponsiveContainer width="100%" height={220}>
           <PieChart>
             <Pie
-              data={datos}
+              data={datosVisibles}
               dataKey="total"
               nameKey="depto"
               innerRadius={50}
@@ -95,7 +113,7 @@ const ConsultasPorDepartamentoChart: React.FC<ConsultasPorDepartamentoChartProps
               animationEasing="ease-out"
               shape={renderSector}
             >
-              {datos.map((d, i) => <Cell key={d.depto} fill={PALETA_DEPTO[i % PALETA_DEPTO.length]} />)}
+              {datosVisibles.map((d, i) => <Cell key={d.depto} fill={PALETA_DEPTO[i % PALETA_DEPTO.length]} />)}
             </Pie>
             <Tooltip
               content={({ active, payload }: any) => {
@@ -114,7 +132,23 @@ const ConsultasPorDepartamentoChart: React.FC<ConsultasPorDepartamentoChartProps
         </ResponsiveContainer>
         <ShimmerOverlay subtle />
       </div>
-      <p className="text-[10px] text-gray-400 text-center mt-1">Clic en una rebanada para ver el detalle por protocolo</p>
+      <div className="flex flex-wrap gap-1.5 justify-center mt-2">
+        {datos.map((d, i) => {
+          const oculto = deptosOcultos.has(d.depto);
+          const color = PALETA_DEPTO[i % PALETA_DEPTO.length];
+          return (
+            <button
+              key={d.depto}
+              type="button"
+              onClick={() => toggleDepto(d.depto)}
+              className={`flex items-center gap-1.5 px-2 py-1 rounded-lg text-[9px] font-semibold bg-gray-50 transition-opacity cursor-pointer hover:opacity-80 ${oculto ? "text-gray-300 opacity-50" : "text-gray-600"}`}
+            >
+              <span className="w-3 h-2 inline-block" style={{ backgroundColor: oculto ? "#d1d5db" : color }}></span>
+              {d.depto}
+            </button>
+          );
+        })}
+      </div>
 
       {deptoActivo && (
         <div className="mt-3 bg-gray-50 border border-gray-100 rounded-lg p-3">

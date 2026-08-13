@@ -11,11 +11,10 @@ interface RiesgoPorDepartamentoChartProps {
 // un departamento con 1 caso de riesgo alto sigue siendo visible como su
 // propia barra en vez de perderse dentro de una pila junto a valores mucho
 // más grandes.
-const SERIES_RIESGO: { key: "sano" | "moderado" | "alto" | "sinDato"; label: string; color: string }[] = [
+const SERIES_RIESGO: { key: "sano" | "moderado" | "alto"; label: string; color: string }[] = [
   { key: "sano", label: "Sano", color: "#009BDE" },
   { key: "moderado", label: "Riesgo moderado", color: "#FFC627" },
-  { key: "alto", label: "Riesgo alto", color: "#EE7523" },
-  { key: "sinDato", label: "Sin dato", color: "#9ca3af" },
+  { key: "alto", label: "Riesgo alto", color: "#EE7523" }
 ];
 
 const tooltipCls = "bg-white shadow-lg rounded-lg p-2.5 text-[11px]";
@@ -77,7 +76,13 @@ const RiesgoPorDepartamentoChart: React.FC<RiesgoPorDepartamentoChartProps> = ({
         <ResponsiveContainer width="100%" height={280}>
           <BarChart data={datosVisibles} margin={{ top: 8, right: 8, left: 0, bottom: 50 }}>
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-            <XAxis dataKey="depto" tick={{ fontSize: 9 }} interval={0} angle={-45} textAnchor="end" height={80} />
+            <XAxis 
+            dataKey="depto"    
+            tick={{ fontSize: 9, fontWeight: 400, dy: 20 }}
+            interval={0} 
+            angle={-45}
+            textAnchor="end" 
+            height={10} />
             <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
             <Tooltip content={<TooltipRiesgoDepto />} cursor={{ fill: "#f8fafc" }} />
             {SERIES_RIESGO.map((s) => (
