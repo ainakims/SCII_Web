@@ -3,7 +3,7 @@
 // nunca convertir NULL en cero, nunca descartar registros silenciosamente, y distinguir
 // "técnicamente inválido" de "clínicamente extremo pero válido".
 
-import { EstadoValor, RawIndicadorRow, RegistroValidado, ValorNormalizado, FechaValidada, EstadoImc } from "../interfaces/salud_poblacional";
+import { EstadoValor, RawIndicadorRow, RegistroValidado, ValorNormalizado, FechaValidada, EstadoImc, RawConsultaRow, RegistroConsultaValidado } from "../interfaces/salud_poblacional";
 
 // Tokens no numéricos conocidos en los campos varchar (Glucosa/Colesterol/Trigliceridos/PA).
 // Ver sección 8 del documento. Cualquier otro texto no numérico se marca INVALIDO.
@@ -215,4 +215,27 @@ export function normalizarRegistro(fila: RawIndicadorRow, esDuplicado: boolean):
 export function normalizarPoblacion(filas: RawIndicadorRow[]): RegistroValidado[] {
   const duplicados = marcarDuplicados(filas);
   return filas.map((f) => normalizarRegistro(f, duplicados.has(f.Id)));
+}
+
+// Normaliza una fila de consulta (@Case=3): solo valida FechaConsulta (sección
+// 12, mismo criterio que Fecha en normalizarRegistro) — el resto de la fila no
+// necesita clasificación clínica para agregarse en MatrizProtocolos, solo el
+// nombre de protocolo/atención y el departamento ya resuelto por el caller.
+export function normalizarConsulta(fila: RawConsultaRow, deptoNombre: string | null): RegistroConsultaValidado {
+  return {
+    Matricula: String(fila.Matricula ?? "").trim(),
+    FechaConsulta: validarFecha(fila.FechaConsulta, { noFutura: true }),
+    TipoAtencion: fila.TipoAtencion ?? null,
+    TipoProtocolo: fila.TipoProtocolo ?? null,
+    Depto_nombre: deptoNombre,
+  };
+}
+
+export function normalizarConsultasPoblacion(
+  filas: RawConsultaRow[],
+  deptoPorMatricula: Map<string, string | null>
+): RegistroConsultaValidado[] {
+  return filas.map((f) =>
+    normalizarConsulta(f, deptoPorMatricula.get(String(f.Matricula ?? "").trim().toUpperCase()) ?? null)
+  );
 }

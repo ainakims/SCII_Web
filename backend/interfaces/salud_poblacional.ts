@@ -94,3 +94,36 @@ export interface RegistroValidado {
 
   esDuplicado: boolean;
 }
+
+// Fila cruda del @Case=3 de SCII_Valores_Indicadores (consultas puntuales, un
+// encuentro clínico por fila) — mismo shape que RegistroConsulta en el
+// servicio SOAP individual (EvaluacionSalud.asmx), pero sin filtrar por
+// matrícula: trae las consultas de toda la plantilla según @Activo.
+export interface RawConsultaRow {
+  Matricula: string;
+  TipoAtencion: string | null;
+  TipoProtocolo: string | null;
+  Procedimiento: string | null;
+  Padecimiento_Sintomas: string | null;
+  PesoenKg: number | null;
+  Altura: number | null;
+  IMC: number | null;
+  Abdomen: string | null;
+  IndiceCinturaTalla: number | null;
+  SpO2: number | null;
+  PresionArterial: string | null;
+  FrecuenciaCardiaca: string | null;
+  FrecuenciaRespiratoria: string | null;
+  FechaConsulta: string | null;
+}
+
+// Registro de consulta ya validado (capa "ValidatedData", mismo principio que
+// RegistroValidado): agrega Depto_nombre (resuelto del catálogo @Case=2, la
+// consulta en sí no trae departamento) para poder agrupar por departamento.
+export interface RegistroConsultaValidado {
+  Matricula: string;
+  FechaConsulta: FechaValidada;
+  TipoAtencion: string | null;
+  TipoProtocolo: string | null;
+  Depto_nombre: string | null;
+}

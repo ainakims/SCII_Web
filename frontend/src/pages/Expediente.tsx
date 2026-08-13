@@ -4,7 +4,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
 
-import { RegistroValidado } from "../features/saludPoblacional/types";
+import { RegistroValidado, RegistroConsultaValidado } from "../features/saludPoblacional/types";
 import { construirEstadoActual } from "../features/saludPoblacional/analytics";
 import { construirPayloadResumenIA } from "../features/saludPoblacional/resumenMedicoIA";
 
@@ -13,6 +13,7 @@ import KpiCards from "../features/saludPoblacional/components/KpiCards";
 import DepartamentoTabla from "../features/saludPoblacional/components/DepartamentoTabla";
 import PacientesTabla, { PacienteResumen } from "../features/saludPoblacional/components/PacientesTabla";
 import ExpedienteContenido from "../features/saludPoblacional/components/ExpedienteContenido";
+import MatricesPoblacionalSection from "../features/saludPoblacional/components/MatricesPoblacionalSection";
 
 const errorModal = (title: string, message: string) => {
   Swal.fire({
@@ -106,6 +107,12 @@ const Expediente: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [vistaTab, setVistaTab] = useState<VistaDeptoTab>("departamentos");
 
+  // Consultas puntuales (Caso 3) de toda la plantilla activa, para la matriz
+  // de "Consultas por Departamento" — se piden en paralelo a `registros`, no
+  // de forma lazy como Personal/Reingresos, porque esa sección se ve de
+  // inmediato al entrar a Expediente.
+  const [consultas, setConsultas] = useState<RegistroConsultaValidado[]>([]);
+
   // Activos y reingresos ya NO se piden juntos por adelantado: cada uno se
   // carga completo (para que paginar dentro del tab sea instantáneo,
   // client-side) pero solo la PRIMERA vez que se abre su propio tab — así
@@ -140,6 +147,13 @@ const Expediente: React.FC = () => {
       }
     };
     fetchData();
+  }, []);
+
+  useEffect(() => {
+    fetchWithAuth(`${API_BASE_URL}/SaludPoblacional/ObtenerConsultas`, { method: "POST", body: JSON.stringify({}) })
+      .then((res) => res.json())
+      .then((json) => setConsultas(json?.ok && Array.isArray(json.data) ? json.data : []))
+      .catch((err) => console.error("Error al obtener consultas poblacionales:", err));
   }, []);
 
   useEffect(() => {
@@ -227,6 +241,8 @@ const Expediente: React.FC = () => {
               </SectionCard>
 
               <ExpedienteContenido historico={registros} mensajeVacio="No hay información disponible." />
+
+              <MatricesPoblacionalSection estadoActual={estadoActual} consultas={consultas} />
             </>
           )}
         </div>

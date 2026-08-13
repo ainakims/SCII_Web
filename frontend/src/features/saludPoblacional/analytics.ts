@@ -5,7 +5,7 @@
 // Principio (sección 32 del documento): cada indicador usa su propio conjunto de
 // valores válidos como denominador; nunca se comparte un único denominador global.
 
-import { RegistroValidado, ValorNormalizado, EstadisticasIndicador, Filtros } from "./types";
+import { RegistroValidado, ValorNormalizado, EstadisticasIndicador, Filtros, RegistroConsultaValidado } from "./types";
 import { clasificarRiesgo, clasificarTipoEmpleado } from "./clinicalRules";
 
 export type IndicadorClave =
@@ -443,6 +443,89 @@ export function pivotPromedio(
 }
 
 // --- Filtros -------------------------------------------------------------------
+
+// --- Matrices de seguimiento poblacional (Riesgo y Consultas por Departamento) --
+
+export interface DistribucionRiesgoDepto {
+  depto: string;
+  sano: number;
+  moderado: number;
+  alto: number;
+  sinDato: number;
+}
+
+// Estado actual (una lectura por persona) agrupado por departamento y nivel de
+// riesgo — mismo criterio que clasificarRiesgo ya usa en el resto del
+// dashboard. "critico" no aplica a Riesgo (solo 1/2/3), pero se agrupa junto
+// con "alto" por si el catálogo llegara a ampliarse.
+export function distribucionRiesgoPorDepartamento(estadoActual: RegistroValidado[]): DistribucionRiesgoDepto[] {
+  const porDepto = new Map<string, DistribucionRiesgoDepto>();
+
+  estadoActual.forEach((r) => {
+    if (!r.Depto_nombre) return;
+    const bucket = porDepto.get(r.Depto_nombre) ?? { depto: r.Depto_nombre, sano: 0, moderado: 0, alto: 0, sinDato: 0 };
+
+    const nivel = clasificarRiesgo(r.Riesgo).nivel;
+    if (nivel === "normal") bucket.sano++;
+    else if (nivel === "leve") bucket.moderado++;
+    else if (nivel === "alto" || nivel === "critico") bucket.alto++;
+    else bucket.sinDato++;
+
+    porDepto.set(r.Depto_nombre, bucket);
+  });
+
+  return Array.from(porDepto.values()).sort(
+    (a, b) => (b.sano + b.moderado + b.alto + b.sinDato) - (a.sano + a.moderado + a.alto + a.sinDato)
+  );
+}
+
+export interface ProtocoloConteo {
+  nombre: string;
+  count: number;
+}
+
+export interface ConsultasDepto {
+  depto: string;
+  total: number;
+  protocolos: ProtocoloConteo[];
+}
+
+// Todos los años con al menos una FechaConsulta válida — alimenta el selector
+// de año del gráfico de consultas por departamento.
+export function aniosDisponiblesConsultas(consultas: RegistroConsultaValidado[]): number[] {
+  const anios = new Set<number>();
+  consultas.forEach((c) => {
+    if (!c.FechaConsulta.valida || !c.FechaConsulta.original) return;
+    anios.add(new Date(c.FechaConsulta.original).getFullYear());
+  });
+  return Array.from(anios).sort((a, b) => a - b);
+}
+
+// Consultas de un año dado, agrupadas por departamento y por protocolo dentro
+// de cada uno (mismo criterio de nombre que ConstruirMatrizProtocolos en el
+// servicio SOAP: TipoProtocolo, con fallback a TipoAtencion).
+export function construirConsultasPorDepartamento(consultas: RegistroConsultaValidado[], anio: number): ConsultasDepto[] {
+  const porDepto = new Map<string, Map<string, number>>();
+
+  consultas.forEach((c) => {
+    if (!c.FechaConsulta.valida || !c.FechaConsulta.original || !c.Depto_nombre) return;
+    if (new Date(c.FechaConsulta.original).getFullYear() !== anio) return;
+
+    const nombreProtocolo = c.TipoProtocolo?.trim() || c.TipoAtencion?.trim() || "Sin clasificar";
+    const protocolos = porDepto.get(c.Depto_nombre) ?? new Map<string, number>();
+    protocolos.set(nombreProtocolo, (protocolos.get(nombreProtocolo) ?? 0) + 1);
+    porDepto.set(c.Depto_nombre, protocolos);
+  });
+
+  return Array.from(porDepto.entries())
+    .map(([depto, protocolos]) => {
+      const lista = Array.from(protocolos.entries())
+        .map(([nombre, count]) => ({ nombre, count }))
+        .sort((a, b) => b.count - a.count);
+      return { depto, total: lista.reduce((acc, p) => acc + p.count, 0), protocolos: lista };
+    })
+    .sort((a, b) => b.total - a.total);
+}
 
 export function aplicarFiltros(registros: RegistroValidado[], filtros: Filtros): RegistroValidado[] {
   return registros.filter((r) => {

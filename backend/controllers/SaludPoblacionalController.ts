@@ -1,8 +1,8 @@
 import { DB } from "../server/config/db";
 import { Request, Response } from "express";
 import { Parametros, TipoConsulta } from "../interfaces/params_web_service";
-import { RawIndicadorRow } from "../interfaces/salud_poblacional";
-import { normalizarPoblacion } from "../services/poblacionValidacion.service";
+import { RawIndicadorRow, RawConsultaRow } from "../interfaces/salud_poblacional";
+import { normalizarPoblacion, normalizarConsultasPoblacion } from "../services/poblacionValidacion.service";
 import { generarResumenMedicoIA } from "../services/iaResumenPoblacional.service";
 
 const SQL_INDICADORES = "[TNGCORE].[dbo].[SCII_Valores_Indicadores]";
@@ -42,21 +42,13 @@ interface FilaCatalogoCase2 {
 export function SaludPoblacionalController(db: DB) {
   const { executeConnection } = db;
 
-  // SCII_Valores_Indicadores reparte en @Case=1 (valores) y @Case=2 (catálogo
-  // del empleado) lo que el proc anterior (SCII_Valores_Indicadores_2)
-  // regresaba en un solo SELECT. Se piden ambos y se combinan aquí por
-  // Matricula para reconstruir el shape que espera RawIndicadorRow /
-  // normalizarPoblacion, sin tocar el resto del pipeline de validación.
-  const obtenerIndicadoresCombinados = async (activo: string): Promise<RawIndicadorRow[]> => {
-    const [filasValores, filasCatalogo] = await Promise.all([
-      executeConnection<FilaValoresCase1>(SQL_INDICADORES, TipoConsulta.ProcedimientoAlmacenado, [
-        { Nombre: "@Case", Valor: "1" },
-        { Nombre: "@Activo", Valor: activo },
-      ]),
-      executeConnection<FilaCatalogoCase2>(SQL_INDICADORES, TipoConsulta.ProcedimientoAlmacenado, [
-        { Nombre: "@Case", Valor: "2" },
-        { Nombre: "@Activo", Valor: activo },
-      ]),
+  // @Case=2 (catálogo del empleado) se reutiliza tanto para combinar con
+  // @Case=1 (valores) como con @Case=3 (consultas) — en ambos casos sirve para
+  // resolver Departamento/FechaNacimiento/etc. a partir de la Matricula.
+  const obtenerCatalogoEmpleados = async (activo: string): Promise<Map<string, FilaCatalogoCase2>> => {
+    const filasCatalogo = await executeConnection<FilaCatalogoCase2>(SQL_INDICADORES, TipoConsulta.ProcedimientoAlmacenado, [
+      { Nombre: "@Case", Valor: "2" },
+      { Nombre: "@Activo", Valor: activo },
     ]);
 
     const catalogoPorMatricula = new Map<string, FilaCatalogoCase2>();
@@ -64,6 +56,22 @@ export function SaludPoblacionalController(db: DB) {
       const clave = String(c.Empl_matricula ?? "").trim().toUpperCase();
       if (clave) catalogoPorMatricula.set(clave, c);
     });
+    return catalogoPorMatricula;
+  };
+
+  // SCII_Valores_Indicadores reparte en @Case=1 (valores) y @Case=2 (catálogo
+  // del empleado) lo que el proc anterior (SCII_Valores_Indicadores_2)
+  // regresaba en un solo SELECT. Se piden ambos y se combinan aquí por
+  // Matricula para reconstruir el shape que espera RawIndicadorRow /
+  // normalizarPoblacion, sin tocar el resto del pipeline de validación.
+  const obtenerIndicadoresCombinados = async (activo: string): Promise<RawIndicadorRow[]> => {
+    const [filasValores, catalogoPorMatricula] = await Promise.all([
+      executeConnection<FilaValoresCase1>(SQL_INDICADORES, TipoConsulta.ProcedimientoAlmacenado, [
+        { Nombre: "@Case", Valor: "1" },
+        { Nombre: "@Activo", Valor: activo },
+      ]),
+      obtenerCatalogoEmpleados(activo),
+    ]);
 
     // El proc anterior armaba esto con un INNER JOIN contra el catálogo de
     // empleados ya filtrado (sin matrículas de prueba/malformadas): una lectura
@@ -98,6 +106,32 @@ export function SaludPoblacionalController(db: DB) {
         });
         return acc;
       }, []);
+  };
+
+  // @Case=3: consultas puntuales de toda la plantilla (según @Activo), sin
+  // filtrar por matrícula — mismo shape de columnas que el Caso 3 individual
+  // de SCII_Valores_Indicadores_Por_Empleado (ver RawConsultaRow). El
+  // departamento no viene en esta fila, se resuelve con el catálogo @Case=2,
+  // igual que Departamento en obtenerIndicadoresCombinados; una consulta sin
+  // empleado correspondiente en el catálogo se descarta (mismo criterio de
+  // "ruido" que @Case=1).
+  const obtenerConsultasPoblacionales = async (activo: string) => {
+    const [filasConsulta, catalogoPorMatricula] = await Promise.all([
+      executeConnection<RawConsultaRow>(SQL_INDICADORES, TipoConsulta.ProcedimientoAlmacenado, [
+        { Nombre: "@Case", Valor: "3" },
+        { Nombre: "@Activo", Valor: activo },
+      ]),
+      obtenerCatalogoEmpleados(activo),
+    ]);
+
+    const filasValidas = (Array.isArray(filasConsulta) ? filasConsulta : []).filter((f) =>
+      catalogoPorMatricula.has(String(f.Matricula ?? "").trim().toUpperCase())
+    );
+
+    const deptoPorMatricula = new Map<string, string | null>();
+    catalogoPorMatricula.forEach((c, matricula) => deptoPorMatricula.set(matricula, c.Departamento));
+
+    return normalizarConsultasPoblacion(filasValidas, deptoPorMatricula);
   };
 
   // Regresa el historial completo de evaluaciones ya normalizado/validado
@@ -164,6 +198,28 @@ export function SaludPoblacionalController(db: DB) {
     }
   };
 
+  // Consultas puntuales (Caso 3) de toda la plantilla activa, ya asociadas a
+  // su departamento — alimenta la matriz de protocolos poblacional del
+  // Expediente (agregación por depto, se hace en el frontend, igual que el
+  // resto del dashboard).
+  const ObtenerConsultas = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const data = await obtenerConsultasPoblacionales("1");
+
+      return res.json({
+        ok: true,
+        data,
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        ok: false,
+        error: "Error interno",
+        message: error.message,
+        stack: error.stack,
+      });
+    }
+  };
+
   const ResumenIA = async (req: Request, res: Response): Promise<Response> => {
     try {
       const { agregados } = req.body;
@@ -184,5 +240,5 @@ export function SaludPoblacionalController(db: DB) {
     }
   };
 
-  return { ObtenerDatos, ObtenerDatosPorEmpleado, ResumenIA };
+  return { ObtenerDatos, ObtenerDatosPorEmpleado, ObtenerConsultas, ResumenIA };
 }

@@ -91,3 +91,13 @@ export interface EstadisticasIndicador {
   p75: number | null;
   desviacion: number | null;
 }
+
+// Registro de consulta puntual (@Case=3), ya con Depto_nombre resuelto —
+// espejo de RegistroConsultaValidado en backend/interfaces/salud_poblacional.ts.
+export interface RegistroConsultaValidado {
+  Matricula: string;
+  FechaConsulta: FechaValidada;
+  TipoAtencion: string | null;
+  TipoProtocolo: string | null;
+  Depto_nombre: string | null;
+}

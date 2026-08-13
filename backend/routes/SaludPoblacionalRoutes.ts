@@ -9,6 +9,7 @@ export default function SaludPoblacionalRoutes(db: DB): Router {
 
   router.post('/ObtenerDatos', ValidarToken, con.ObtenerDatos);
   router.post('/ObtenerDatosPorEmpleado', ValidarToken, con.ObtenerDatosPorEmpleado);
+  router.post('/ObtenerConsultas', ValidarToken, con.ObtenerConsultas);
   router.post('/ResumenIA', ValidarToken, con.ResumenIA);
 
   return router;
