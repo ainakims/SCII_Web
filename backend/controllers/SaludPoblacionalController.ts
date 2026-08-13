@@ -128,8 +128,8 @@ export function SaludPoblacionalController(db: DB) {
       catalogoPorMatricula.has(String(f.Matricula ?? "").trim().toUpperCase())
     );
 
-    const deptoPorMatricula = new Map<string, string | null>();
-    catalogoPorMatricula.forEach((c, matricula) => deptoPorMatricula.set(matricula, c.Departamento));
+    const deptoPorMatricula = new Map<string, { depto: string | null; deptoSeries: string | null }>();
+    catalogoPorMatricula.forEach((c, matricula) => deptoPorMatricula.set(matricula, { depto: c.Departamento, deptoSeries: c.Depto_Series }));
 
     return normalizarConsultasPoblacion(filasValidas, deptoPorMatricula);
   };

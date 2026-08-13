@@ -5,21 +5,20 @@ import {
   construirConsultasPorDepartamento,
   aniosDisponiblesConsultas,
   construirVisitasPorAnio,
-  construirParesAnuales,
+  construirVisitasAnualesConTendencia,
   construirVisitasPorDepartamento,
 } from "../analytics";
 import SectionCard from "./shared/SectionCard";
 import RiesgoPorDepartamentoChart from "./RiesgoPorDepartamentoChart";
 import ConsultasPorDepartamentoChart from "./ConsultasPorDepartamentoChart";
 import VisitasAnualesChart from "./VisitasAnualesChart";
+import VisitasPorDepartamentoChart from "./VisitasPorDepartamentoChart";
 
 interface MatricesPoblacionalSectionProps {
   estadoActual: RegistroValidado[];
   historico: RegistroValidado[];
   consultas: RegistroConsultaValidado[];
 }
-
-const PARES_INICIALES = 2;
 
 // Riesgo por Departamento (estado actual, sin año) + Consultas por
 // Departamento (histórico, navegable por año) — mismo patrón de "una
@@ -39,14 +38,9 @@ const MatricesPoblacionalSection: React.FC<MatricesPoblacionalSectionProps> = ({
     [consultas, anioActivo]
   );
 
-  // Asistencia anual: todos los pares año/año-anterior se calculan una sola
-  // vez; el control de rango solo recorta cuántos se muestran (últimos N).
-  const todosPares = useMemo(() => construirParesAnuales(construirVisitasPorAnio(historico)), [historico]);
-  const [cantidadPares, setCantidadPares] = useState(PARES_INICIALES);
-  const paresVisibles = useMemo(
-    () => todosPares.slice(-Math.min(cantidadPares, todosPares.length)),
-    [todosPares, cantidadPares]
-  );
+  // Asistencia anual: una barra por año, siempre todos los años disponibles
+  // (sin selector de rango — se quitó el control de "últimos N años").
+  const todosAnios = useMemo(() => construirVisitasAnualesConTendencia(construirVisitasPorAnio(historico)), [historico]);
 
   const [anioDetalleVisitas, setAnioDetalleVisitas] = useState<number | null>(null);
   const detalleVisitasPorDepto = useMemo(
@@ -56,10 +50,16 @@ const MatricesPoblacionalSection: React.FC<MatricesPoblacionalSectionProps> = ({
 
   return (
     <SectionCard icon="diagram-next" title="Matrices de Seguimiento" subtitle="Riesgo, consultas y asistencia por departamento">
-      {/* Cada gráfica ocupa toda la fila: todas necesitan ancho completo para
-          que las etiquetas (departamentos, periodos) se lean bien. */}
+      {/* Riesgo por Departamento ocupa toda la fila (necesita ancho completo
+          para que las etiquetas de departamento se lean bien). Las otras tres
+          — Consultas, Asistencia anual y su detalle por departamento — van en
+          una sola fila de 3 columnas: la tercera empieza vacía (nadie ha
+          hecho clic en un periodo todavía) y muestra un placeholder que
+          indica qué hacer, en vez de dejar un hueco sin explicación. */}
       <div className="flex flex-col gap-6">
         <RiesgoPorDepartamentoChart datos={riesgoPorDepto} />
+      </div>
+      <div className="flex flex-col lg:flex-row gap-6">
         <ConsultasPorDepartamentoChart
           datos={consultasPorDepto}
           anios={aniosDisponibles}
@@ -67,13 +67,12 @@ const MatricesPoblacionalSection: React.FC<MatricesPoblacionalSectionProps> = ({
           onCambiarAnio={setAnioSeleccionado}
         />
         <VisitasAnualesChart
-          pares={paresVisibles}
-          cantidadPares={cantidadPares}
-          cantidadMaxima={todosPares.length}
-          onCambiarCantidad={setCantidadPares}
+          anios={todosAnios}
+          onSeleccionarAnio={setAnioDetalleVisitas}
+        />
+        <VisitasPorDepartamentoChart
           detallePorDepto={detalleVisitasPorDepto}
           anioDetalle={anioDetalleVisitas}
-          onSeleccionarPar={setAnioDetalleVisitas}
         />
       </div>
     </SectionCard>

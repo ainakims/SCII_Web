@@ -12,7 +12,7 @@ interface RiesgoPorDepartamentoChartProps {
 // propia barra en vez de perderse dentro de una pila junto a valores mucho
 // más grandes.
 const SERIES_RIESGO: { key: "sano" | "moderado" | "alto"; label: string; color: string }[] = [
-  { key: "sano", label: "Sano", color: "#009BDE" },
+  { key: "sano", label: "Sano", color: "#54BBAB"},
   { key: "moderado", label: "Riesgo moderado", color: "#FFC627" },
   { key: "alto", label: "Riesgo alto", color: "#EE7523" }
 ];
@@ -78,10 +78,10 @@ const RiesgoPorDepartamentoChart: React.FC<RiesgoPorDepartamentoChartProps> = ({
             <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
             <XAxis 
             dataKey="depto"    
-            tick={{ fontSize: 9, fontWeight: 400, dy: 20 }}
-            interval={0} 
+            tick={{ fontSize: 9, fontWeight: 400 }}
+            interval={0}
             angle={-45}
-            textAnchor="end" 
+            textAnchor="end"
             height={10} />
             <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
             <Tooltip content={<TooltipRiesgoDepto />} cursor={{ fill: "#f8fafc" }} />

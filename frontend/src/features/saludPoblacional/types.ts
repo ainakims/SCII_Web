@@ -100,4 +100,5 @@ export interface RegistroConsultaValidado {
   TipoAtencion: string | null;
   TipoProtocolo: string | null;
   Depto_nombre: string | null;
+  Depto_Series: string | null;
 }

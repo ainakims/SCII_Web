@@ -505,20 +505,22 @@ export function aniosDisponiblesConsultas(consultas: RegistroConsultaValidado[])
   return Array.from(anios).sort((a, b) => a - b);
 }
 
-// Consultas de un año dado, agrupadas por departamento y por protocolo dentro
-// de cada uno (mismo criterio de nombre que ConstruirMatrizProtocolos en el
-// servicio SOAP: TipoProtocolo, con fallback a TipoAtencion).
+// Consultas de un año dado, agrupadas por departamento (Depto_Series, mismo
+// criterio granular que distribucionRiesgoPorDepartamento — se excluyen las
+// consultas sin Depto_Series) y por protocolo dentro de cada uno (mismo
+// criterio de nombre que ConstruirMatrizProtocolos en el servicio SOAP:
+// TipoProtocolo, con fallback a TipoAtencion).
 export function construirConsultasPorDepartamento(consultas: RegistroConsultaValidado[], anio: number): ConsultasDepto[] {
   const porDepto = new Map<string, Map<string, number>>();
 
   consultas.forEach((c) => {
-    if (!c.FechaConsulta.valida || !c.FechaConsulta.original || !c.Depto_nombre) return;
+    if (!c.FechaConsulta.valida || !c.FechaConsulta.original || !c.Depto_Series) return;
     if (new Date(c.FechaConsulta.original).getFullYear() !== anio) return;
 
     const nombreProtocolo = c.TipoProtocolo?.trim() || c.TipoAtencion?.trim() || "Sin clasificar";
-    const protocolos = porDepto.get(c.Depto_nombre) ?? new Map<string, number>();
+    const protocolos = porDepto.get(c.Depto_Series) ?? new Map<string, number>();
     protocolos.set(nombreProtocolo, (protocolos.get(nombreProtocolo) ?? 0) + 1);
-    porDepto.set(c.Depto_nombre, protocolos);
+    porDepto.set(c.Depto_Series, protocolos);
   });
 
   return Array.from(porDepto.entries())
@@ -555,38 +557,26 @@ export function construirVisitasPorAnio(registros: RegistroValidado[]): VisitasA
     .sort((a, b) => a.anio - b.anio);
 }
 
-export interface ParAnual {
-  label: string;
-  anioAnterior: number;
-  anioActual: number;
-  totalAnterior: number;
-  totalActual: number;
+export interface VisitaAnioConTendencia extends VisitasAnio {
+  // % de cambio contra el año inmediato anterior en la serie COMPLETA (no
+  // contra el primer año visible, si el control de rango recorta cuántos
+  // años se muestran) — null si es el primer año con datos, sin punto de
+  // comparación.
   cambioPct: number | null;
 }
 
-// Ventana deslizante de tamaño 2 sobre TODOS los años disponibles (sin
-// recortar aquí): cada año consecutivo genera su propio par "anterior/actual"
-// — el recorte a "cuántos periodos mostrar" lo decide el componente que
-// consume esta lista (control de rango en la UI).
-export function construirParesAnuales(visitasPorAnio: VisitasAnio[]): ParAnual[] {
-  const pares: ParAnual[] = [];
-  for (let i = 1; i < visitasPorAnio.length; i++) {
+// Una barra por año (ya no pares "año/año anterior" agrupados) — la
+// tendencia contra el año previo se conserva para el tooltip, calculada
+// sobre TODOS los años disponibles antes de que el componente recorte a
+// "últimos N".
+export function construirVisitasAnualesConTendencia(visitasPorAnio: VisitasAnio[]): VisitaAnioConTendencia[] {
+  return visitasPorAnio.map((v, i) => {
     const anterior = visitasPorAnio[i - 1];
-    const actual = visitasPorAnio[i];
-    const cambioPct = anterior.total > 0
-      ? Number((((actual.total - anterior.total) / anterior.total) * 100).toFixed(1))
+    const cambioPct = anterior && anterior.total > 0
+      ? Number((((v.total - anterior.total) / anterior.total) * 100).toFixed(1))
       : null;
-
-    pares.push({
-      label: `${anterior.anio}/${actual.anio}`,
-      anioAnterior: anterior.anio,
-      anioActual: actual.anio,
-      totalAnterior: anterior.total,
-      totalActual: actual.total,
-      cambioPct,
-    });
-  }
-  return pares;
+    return { ...v, cambioPct };
+  });
 }
 
 export interface VisitasDepto {
@@ -607,6 +597,44 @@ export function construirVisitasPorDepartamento(registros: RegistroValidado[], a
   return Array.from(conteo.entries())
     .map(([depto, total]) => ({ depto, total }))
     .sort((a, b) => b.total - a.total);
+}
+
+export interface SegmentoAgrupado {
+  depto: string;
+  total: number;
+  esOtros: boolean;
+  // Solo presente cuando esOtros=true: el desglose real de los departamentos
+  // que se agruparon, para mostrarlo en el tooltip.
+  detalle?: VisitasDepto[];
+}
+
+const UMBRAL_OTROS = 0.04;
+
+// Agrupa departamentos con menos de UMBRAL_OTROS (4%) del total en una sola
+// categoría "Otros" — evita rebanadas/segmentos tan chicos que no se puedan
+// seleccionar o leer en el gráfico. El detalle real de qué queda dentro de
+// "Otros" se conserva para el tooltip, no se pierde.
+export function agruparDepartamentosPequenos(datos: VisitasDepto[], umbral = UMBRAL_OTROS): SegmentoAgrupado[] {
+  const total = datos.reduce((acc, d) => acc + d.total, 0);
+  if (!total) return [];
+
+  const grandes: SegmentoAgrupado[] = [];
+  const pequenos: VisitasDepto[] = [];
+  datos.forEach((d) => {
+    if (d.total / total < umbral) pequenos.push(d);
+    else grandes.push({ depto: d.depto, total: d.total, esOtros: false });
+  });
+
+  if (pequenos.length > 0) {
+    grandes.push({
+      depto: "Otros",
+      total: pequenos.reduce((acc, d) => acc + d.total, 0),
+      esOtros: true,
+      detalle: pequenos.slice().sort((a, b) => b.total - a.total),
+    });
+  }
+
+  return grandes.sort((a, b) => b.total - a.total);
 }
 
 export function aplicarFiltros(registros: RegistroValidado[], filtros: Filtros): RegistroValidado[] {

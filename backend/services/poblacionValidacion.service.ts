@@ -221,21 +221,27 @@ export function normalizarPoblacion(filas: RawIndicadorRow[]): RegistroValidado[
 // 12, mismo criterio que Fecha en normalizarRegistro) — el resto de la fila no
 // necesita clasificación clínica para agregarse en MatrizProtocolos, solo el
 // nombre de protocolo/atención y el departamento ya resuelto por el caller.
-export function normalizarConsulta(fila: RawConsultaRow, deptoNombre: string | null): RegistroConsultaValidado {
+export function normalizarConsulta(
+  fila: RawConsultaRow,
+  deptoNombre: string | null,
+  deptoSeries: string | null
+): RegistroConsultaValidado {
   return {
     Matricula: String(fila.Matricula ?? "").trim(),
     FechaConsulta: validarFecha(fila.FechaConsulta, { noFutura: true }),
     TipoAtencion: fila.TipoAtencion ?? null,
     TipoProtocolo: fila.TipoProtocolo ?? null,
     Depto_nombre: deptoNombre,
+    Depto_Series: deptoSeries,
   };
 }
 
 export function normalizarConsultasPoblacion(
   filas: RawConsultaRow[],
-  deptoPorMatricula: Map<string, string | null>
+  deptoPorMatricula: Map<string, { depto: string | null; deptoSeries: string | null }>
 ): RegistroConsultaValidado[] {
-  return filas.map((f) =>
-    normalizarConsulta(f, deptoPorMatricula.get(String(f.Matricula ?? "").trim().toUpperCase()) ?? null)
-  );
+  return filas.map((f) => {
+    const catalogo = deptoPorMatricula.get(String(f.Matricula ?? "").trim().toUpperCase());
+    return normalizarConsulta(f, catalogo?.depto ?? null, catalogo?.deptoSeries ?? null);
+  });
 }

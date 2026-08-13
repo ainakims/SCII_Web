@@ -385,7 +385,7 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
                     interval={0}
                     angle={-45}
                     textAnchor="start"
-                    height={90}
+                    height={0}
                   />
                   <YAxis type="number" dataKey="y" name="IMC" tick={{ fontSize: 10 }} label={{ value: "", angle: -90, position: "insideLeft", fontSize: 11 }} />
                   <YAxis yAxisId="hover" type="number" domain={[0, 1]} hide />
