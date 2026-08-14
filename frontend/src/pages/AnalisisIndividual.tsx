@@ -191,18 +191,26 @@ const AnalisisIndividual: React.FC = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matricula, generar]);
 
+  // Evita que la consulta se dispare más de una vez para la misma matrícula
+  // (React.StrictMode en desarrollo monta/desmonta/vuelve a montar los
+  // efectos a propósito). A diferencia de generar(), aquí no hace falta
+  // cancelar la petición en curso al reintentar: basta con no volver a
+  // pedirla si ya se solicitó para esta matrícula. Si el ref sigue
+  // apuntando a la matrícula previa se vuelve a disparar la consulta.
+  const registroSolicitadoRef = useRef<string | null>(null);
+
   useEffect(() => {
     if (!matricula) return;
-    const controller = new AbortController();
+    if (registroSolicitadoRef.current === matricula) return;
+    registroSolicitadoRef.current = matricula;
+
     fetchWithAuth(`${API_BASE_URL}/SaludPoblacional/ObtenerDatosPorEmpleado`, {
       method: "POST",
       body: JSON.stringify({ matricula: matricula.trim() }),
-      signal: controller.signal,
     })
       .then((res) => res.json())
       .then((json) => setRegistroEmpleado(json?.ok && Array.isArray(json.data) ? json.data : []))
-      .catch((err) => { if (err?.name !== "AbortError") console.error("Error al obtener indicadores del empleado:", err); });
-    return () => controller.abort();
+      .catch((err) => console.error("Error al obtener indicadores del empleado:", err));
   }, [matricula]);
 
   useEffect(() => {

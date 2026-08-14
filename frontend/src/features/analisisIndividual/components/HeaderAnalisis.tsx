@@ -193,9 +193,9 @@ const HeaderAnalisis: React.FC<HeaderAnalisisProps> = ({ prioridad, aptitud, mat
           Evaluación de Aptitud Laboral
         </h2>
         <div className="flex items-center gap-2.5">
-          <span className={`${badgeCls} ${aptitud.NivelRiesgo === "Verde" ? ESTILO_APTITUD.apto : aptitud.NivelRiesgo === "Rojo" ? ESTILO_APTITUD.noApto : "bg-linear-to-r from-amber-200 to-amber-100/50 text-amber-700"}`}>
+          {/* <span className={`${badgeCls} ${aptitud.NivelRiesgo === "Verde" ? ESTILO_APTITUD.apto : aptitud.NivelRiesgo === "Rojo" ? ESTILO_APTITUD.noApto : "bg-linear-to-r from-amber-200 to-amber-100/50 text-amber-700"}`}>
             {aptitud.Dictamen}
-          </span>
+          </span> */}
           <TogglecriteriosAplicados criterios={aptitud.CriteriosAplicados} acento={ESTILOS_NIVEL_APTITUD[aptitud.NivelRiesgo].acento} />
         </div>
       </div>

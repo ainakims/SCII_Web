@@ -1,6 +1,6 @@
 import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import PacientesTabla, { PacienteResumen } from "../features/saludPoblacional/components/PacientesTabla";
 
@@ -48,7 +48,17 @@ const Reingresos: React.FC = () => {
     return () => window.removeEventListener("resize", updateHeight);
   }, []);
 
+  // Evita que la consulta se dispare más de una vez (React.StrictMode en
+  // desarrollo monta/desmonta/vuelve a montar los efectos a propósito). El
+  // ref persiste entre ese montaje/desmontaje simulado, así que la segunda
+  // invocación del efecto se corta aquí y la petición real (la de la primera
+  // invocación) sigue su curso normal hasta resolver.
+  const yaSolicitadoRef = useRef(false);
+
   useEffect(() => {
+    if (yaSolicitadoRef.current) return;
+    yaSolicitadoRef.current = true;
+
     fetchWithAuth(`${API_BASE_URL}/Pacientes/ObtenerPacientes`, {
       method: "POST",
       body: JSON.stringify({ esActivo: "0" }),

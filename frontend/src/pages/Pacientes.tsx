@@ -159,7 +159,12 @@ const Pacientes: React.FC = () => {
 
   const [formData, setFormData] = useState<FormData>(DEFAULT_FORM);
 
+  // Evita que la consulta se dispare más de una vez (React.StrictMode en
+  // desarrollo monta/desmonta/vuelve a montar los efectos a propósito).
+  const proveedorSolicitadoRef = useRef(false);
   useEffect(() => {
+    if (proveedorSolicitadoRef.current) return;
+    proveedorSolicitadoRef.current = true;
     ObtenerProveedor();
   }, []);
 
@@ -179,7 +184,12 @@ const Pacientes: React.FC = () => {
     return () => window.removeEventListener("resize", updateHeight);
   }, []);
 
+  // Mismo motivo que proveedorSolicitadoRef: evita el doble disparo de
+  // StrictMode en la carga inicial de pacientes.
+  const pacientesSolicitadosRef = useRef(false);
   useEffect(() => {
+    if (pacientesSolicitadosRef.current) return;
+    pacientesSolicitadosRef.current = true;
     ObtenerPacientes();
   }, []);
 
