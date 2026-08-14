@@ -3,9 +3,11 @@ import { fetchWithAuth } from "../services/api";
 import React, { useRef, useEffect, useLayoutEffect, useState, ChangeEvent, FormEvent } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  Search,
   Phone,
   ChevronRight,
+  ChevronLeft,
+  ChevronFirst,
+  ChevronLast,
   Edit2,
   Trash2,
   UserCog,
@@ -44,6 +46,28 @@ interface EmpleadoAPI {
   // Empl_Apellidos: string;
 }
 
+// Mismo patrón visual que PacientesTablaSkeleton.tsx (Pacientes.tsx/Reingresos.tsx):
+// barra de encabezado con degradado + filas repetidas, para que la tabla de
+// Configuración no muestre un spinner suelto dentro del <tbody> mientras carga.
+const ConfiguracionTablaSkeleton: React.FC = () => (
+  <div className="h-full rounded-lg bg-gray-50 overflow-hidden animate-pulse">
+    <div className="h-10 bg-linear-to-r from-white to-gray-100"></div>
+    {Array.from({ length: 9 }).map((_, i) => (
+      <div key={i} className="flex items-center gap-5 px-5 py-3 border-b border-gray-100 last:border-0">
+        <div className="h-3 w-14 rounded bg-gray-200"></div>
+        <div className="h-3 w-16 rounded bg-gray-200"></div>
+        <div className="flex-1 space-y-1.5">
+          <div className="h-3 w-40 rounded bg-gray-200"></div>
+          <div className="h-2.5 w-24 rounded bg-gray-100"></div>
+        </div>
+        <div className="h-3 w-28 rounded bg-gray-200"></div>
+        <div className="h-3 w-16 rounded bg-gray-200"></div>
+        <div className="h-3 w-20 rounded bg-gray-200"></div>
+      </div>
+    ))}
+  </div>
+);
+
 const Configuracion: React.FC = () => {
   const { user } = useAuth() as { user: { rol?: string; matricula?: string } };
   const navigate = useNavigate();
@@ -56,6 +80,7 @@ const Configuracion: React.FC = () => {
 
   const [medicos, setMedicos] = useState<Medico[]>([]);
   const [searchTerm, setSearchTerm] = useState<string>("");
+  const [showFiltros, setShowFiltros] = useState<boolean>(true);
   const [isPanelOpen, setIsPanelOpen] = useState<boolean>(false);
   const [emailEdit, setEmailEdit] = useState<boolean>(false);
   const [loading, setLoading] = useState<boolean>(false);
@@ -490,21 +515,69 @@ const Configuracion: React.FC = () => {
       (m.Cedula || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Ordenamiento por columna, mismo patrón que PacientesTabla.tsx (cycleSort/sortIcon).
+  type SortCol = "estado" | "matricula" | "nombre" | "especialidad" | "rol" | null;
+  type SortDir = "asc" | "desc" | "none";
+  const [sortCol, setSortCol] = useState<SortCol>(null);
+  const [sortDir, setSortDir] = useState<SortDir>("none");
+
+  const cycleSort = (col: SortCol) => {
+    if (sortCol !== col) { setSortCol(col); setSortDir("asc"); return; }
+    setSortDir((d) => (d === "asc" ? "desc" : d === "desc" ? "none" : "asc"));
+    if (sortDir === "desc") setSortCol(null);
+  };
+
+  const sortIcon = (col: SortCol) => {
+    if (sortCol !== col || sortDir === "none") return "fa-sort";
+    return sortDir === "asc" ? "fa-sort-up" : "fa-sort-down";
+  };
+
+  const medicosOrdenados = (() => {
+    if (!sortCol || sortDir === "none") return filteredMedicos;
+    const factor = sortDir === "asc" ? 1 : -1;
+    const valor = (m: Medico): string => {
+      if (sortCol === "estado") return m.Activo === "true" ? "1" : "0";
+      if (sortCol === "matricula") return m.Matricula ?? "";
+      if (sortCol === "nombre") return m.Nombre ?? "";
+      if (sortCol === "especialidad") return m.Categoria_desc ?? "";
+      if (sortCol === "rol") return m.Rol ?? "";
+      return "";
+    };
+    return [...filteredMedicos].sort((a, b) => factor * valor(a).localeCompare(valor(b), "es", { numeric: true }));
+  })();
+
+  // Paginado client-side, mismo criterio que PacientesTabla.tsx.
+  const ITEMS_POR_PAGINA = 100;
+  const [pagina, setPagina] = useState(1);
+  useEffect(() => { setPagina(1); }, [searchTerm, sortCol, sortDir]);
+  const totalPaginas = Math.max(1, Math.ceil(medicosOrdenados.length / ITEMS_POR_PAGINA));
+  const paginaSegura = Math.min(pagina, totalPaginas);
+  const indiceInicio = (paginaSegura - 1) * ITEMS_POR_PAGINA;
+  const medicosMostrados = medicosOrdenados.slice(indiceInicio, indiceInicio + ITEMS_POR_PAGINA);
+
+  // Mismo criterio que getPageNumbers() en Pacientes.tsx/PacientesTabla.tsx:
+  // ventana de 3 números centrada en la página actual.
+  const getPageNumbers = (): number[] => {
+    const pages: number[] = [];
+    const maxVisible = 3;
+    let start = Math.max(1, paginaSegura - 2);
+    const end = Math.min(totalPaginas, start + maxVisible - 1);
+    if (end - start < maxVisible - 1) start = Math.max(1, end - maxVisible + 1);
+    for (let i = start; i <= end; i++) pages.push(i);
+    return pages;
+  };
+
   return (
     <div className="relative flex w-full overflow-hidden">
-      <div
-        className="flex-1 mt-14 transition-all duration-300 ease-in-out"
-        // style={{ marginRight: isPanelOpen ? 420 : 0 }}
-      >
+      <div className="flex-1 mt-14 transition-all duration-300 ease-in-out">
         <div
-          // ref={pageContainerRef}
-          className="max-w-7xl mx-auto px-4 pb-6 flex flex-col gap-6"
+          className="max-w-7xl mx-auto px-4 pb-0 flex flex-col gap-6"
           style={{ height: pageHeight }}
         >
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4 shrink-0">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-xl shadow-xs shadow-restore gap-4 shrink-0">
             <div>
-              <h1 className="text-2xl font-bold text-sea-blue flex items-center">
-                Gestión de Perfiles
+              <h1 className="text-2xl font-bold bg-linear-to-r from-sea-blue to-sky-blue bg-clip-text text-transparent flex items-center">
+                Configuración
               </h1>
               <p className="text-sm text-gray-500 mt-1">
                 Alta, baja y modificación de personal.
@@ -514,7 +587,7 @@ const Configuracion: React.FC = () => {
               onClick={openPanelNew}
               className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
             >
-              <i className="mdi mdi-plus-thick mr-2"></i>
+              <i className="fa-solid fa-plus text-xs mr-2"></i>
               Nuevo
             </button>
           </div>
@@ -522,171 +595,242 @@ const Configuracion: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col flex-1 min-h-0"
+            className="bg-white rounded-xl shadow-xs overflow-hidden p-6 mb-1 flex flex-col flex-1 min-h-0"
           >
-            <div className="flex items-center justify-between px-6 py-[21px] bg-linear-to-r from-white to-gray-100 rounded-t-xl shrink-0">
-              <div className="relative w-92">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none transition-colors border-gray-100 shadow-md focus:border-clinical-blue focus:ring-1`}
-                  placeholder="Buscar por nombre o cuenta"
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                />
-              </div>
-              <span className="text-xs font-bold text-gray-400">
-                {filteredMedicos.length} perfiles
-              </span>
-            </div>
+            <h2 className="text-sm font-bold text-gray-800 flex items-center mb-4 shrink-0">
+              <i className="fa-solid fa-user-gear text-sea-blue mr-3"></i>
+              Usuarios
+            </h2>
 
-            <div className="flex-1 min-h-0 flex flex-col">
-              <div className="rounded-lg flex-1 min-h-0 flex flex-col">
-                <div className="flex-1 overflow-y-auto">
-                  <table className="table-fixed w-full text-xs">
-                    <thead className="sticky top-0 z-10">
-                      <tr className="bg-linear-to-r from-white to-gray-100">
-                        <th className="px-3 py-2 pl-6 text-left font-medium text-gray-700 mb-1 w-[108px]">
-                          <span className="flex items-center gap-1">
-                            Estado
-                            <i className={`mdi mdi-sort-ascending text-sm transition-colors text-white group-hover:text-gray-400"}`}></i>
-                          </span>
-                        </th>
-                        <th className="px-3 py-2 pl-6 text-left font-medium text-gray-700 mb-1 w-[100px]">
-                          Matrícula
-                        </th>
-                        <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-[300px]">
-                          Nombre
-                        </th>
-                        <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-[300px]">
-                          Especialidad / Puesto
-                        </th>
-                        <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-[120px]">
-                          Cédula
-                        </th>
-                        <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-[100px]">
-                          Rol
-                        </th>
-                        <th className="px-3 py-2 text-center font-medium text-gray-700 mb-1 w-[100px]">
-                          Acciones
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {loading ? (
-                        <tr>
-                          <td colSpan={7} className="px-6 py-12 text-center text-gray-400">
-                            <div className="flex flex-col items-center gap-2">
-                              <div className="w-12 h-12 rounded-full animate-spin bg-linear-to-r from-sea-blue to-sky-blue p-[4px] mt-2">
-                                <div className="w-full h-full rounded-full bg-white"></div>
-                              </div>
-                              <span className="text-xs mt-3">
-                                Cargando personal...
-                              </span>
-                            </div>
-                          </td>
+            <div className="flex-1 min-h-0">
+              {loading ? (
+                <ConfiguracionTablaSkeleton />
+              ) : (
+                <div className="flex flex-col h-full min-h-0 bg-white rounded-lg shadow-xs pb-0">
+                  <div className="flex-1 min-h-0 overflow-auto rounded-lg">
+                    <table className="w-full text-xs table-fixed">
+                      <thead className="sticky top-0 z-10 bg-gray-50">
+                        <tr className="text-gray-700 text-left">
+                          <th onClick={() => cycleSort("estado")} className="px-5 py-3 font-semibold w-[100px] cursor-pointer select-none group">
+                            <span className="flex items-center gap-1">
+                              <i className="fa-solid fa-shield-halved text-[10px] text-gray-400 group-hover:text-gray-500 mr-1"></i>
+                              Estado
+                              <i className={`fa-solid ${sortIcon("estado")} text-[10px] transition-colors ${sortCol === "estado" && sortDir !== "none" ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`}></i>
+                            </span>
+                          </th>
+                          <th onClick={() => cycleSort("matricula")} className="px-5 py-3 font-semibold w-[100px] cursor-pointer select-none group">
+                            <span className="flex items-center gap-1">
+                              <i className="fa-brands fa-slack text-[10px] text-gray-400 group-hover:text-gray-500 mr-1"></i>
+                              Matrícula
+                              <i className={`fa-solid ${sortIcon("matricula")} text-[10px] transition-colors ${sortCol === "matricula" && sortDir !== "none" ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`}></i>
+                            </span>
+                          </th>
+                          <th onClick={() => cycleSort("nombre")} className="px-5 py-3 font-semibold cursor-pointer select-none group">
+                            <span className="flex items-center gap-1">
+                              <i className="fa-solid fa-user text-[10px] text-gray-400 group-hover:text-gray-500 mr-1"></i>
+                              Nombre
+                              <i className={`fa-solid ${sortIcon("nombre")} text-[10px] transition-colors ${sortCol === "nombre" && sortDir !== "none" ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`}></i>
+                            </span>
+                          </th>
+                          <th onClick={() => cycleSort("especialidad")} className="px-5 py-3 font-semibold w-[220px] cursor-pointer select-none group">
+                            <span className="flex items-center gap-1">
+                              <i className="fa-solid fa-screwdriver-wrench text-[10px] text-gray-400 group-hover:text-gray-500 mr-1"></i>
+                              Especialidad / Puesto
+                              <i className={`fa-solid ${sortIcon("especialidad")} text-[10px] transition-colors ${sortCol === "especialidad" && sortDir !== "none" ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`}></i>
+                            </span>
+                          </th>
+                          <th onClick={() => cycleSort("rol")} className="px-5 py-3 font-semibold w-[110px] cursor-pointer select-none group">
+                            <span className="flex items-center gap-1">
+                              <i className="fa-solid fa-user-shield text-[10px] text-gray-400 group-hover:text-gray-500 mr-1"></i>
+                              Rol
+                              <i className={`fa-solid ${sortIcon("rol")} text-[10px] transition-colors ${sortCol === "rol" && sortDir !== "none" ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`}></i>
+                            </span>
+                          </th>
+                          <th className="px-5 py-3 font-semibold w-[110px]">
+                            <span className="flex items-center gap-1.5"><i className="fa-solid fa-arrow-pointer text-[10px] text-gray-400"></i>Acciones</span>
+                          </th>
+                          <th className="w-8 pl-1 pr-3 py-3 text-center">
+                            <i
+                              onClick={(e) => { e.stopPropagation(); setShowFiltros((v) => !v); }}
+                              title={showFiltros ? "Ocultar filtros" : "Mostrar filtros"}
+                              className={`fa-solid ${showFiltros ? "fa-filter-circle-xmark" : "fa-filter"} cursor-pointer text-xs transition-colors ${showFiltros || searchTerm ? "text-sea-blue" : "text-gray-300 hover:text-gray-400"}`}
+                            ></i>
+                          </th>
                         </tr>
-                      ) : filteredMedicos.length > 0 ? (
-                        filteredMedicos.map((medico) => (
-                          <motion.tr
-                            initial={{ opacity: 0, y: -1 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.2 }}
-                            key={`${medico.ID || Math.random()}`}
-                            className="group hover:bg-gray-50/80 transition-colors"
-                          >
-                            <td className="px-3 pl-6 text-left font-medium text-gray-700 mb-1">
-                              {medico.Activo == "true" ?
-                                <span className="flex items-center bg-linear-to-r from-sky-blue/20 to-gray-100 text-sea-blue text-xs font-semibold px-1.5 py-0.5 rounded-md">
-                                  <i className="mdi mdi-shield-check mr-2"></i>
-                                  Activo
-                                </span>
-                                :
-                                <span className="flex items-center bg-linear-to-r from-red-200 to-gray-100 text-red-700 text-xs font-semibold px-1.5 py-0.5 rounded-md">
-                                  <i className="mdi mdi-cancel mr-2"></i>
-                                  Baja
-                                </span>
-                              }
+                        {showFiltros && (
+                          <tr className="bg-gray-50 text-left">
+                            <td colSpan={3} className="px-5 py-2">
+                              <div className="relative w-94">
+                                <i className="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                <input
+                                  type="text"
+                                  value={searchTerm}
+                                  onChange={(e) => setSearchTerm(e.target.value)}
+                                  placeholder="Buscar por nombre o cuenta"
+                                  className="w-full h-7 pl-8 pr-7 py-1 rounded-md text-xs shadow-xs bg-white outline-none focus:ring-1 focus:ring-sea-blue"
+                                />
+                                {searchTerm && (
+                                  <button
+                                    type="button"
+                                    onClick={() => setSearchTerm("")}
+                                    title="Limpiar búsqueda"
+                                    className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
+                                  >
+                                    <i className="fa-solid fa-circle-xmark text-xs"></i>
+                                  </button>
+                                )}
+                              </div>
                             </td>
-                            <td className="px-3 pl-6 text-left font-medium text-gray-700 mb-1">
-                              {medico.Matricula}
-                            </td>
-                            <td className="px-2 py-1.5">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="overflow-hidden min-w-0">
-                                  <p title={medico.Nombre} className="text-[12px] font-bold uppercase text-gray-600 block truncate">
-                                    {medico.Nombre}
-                                  </p>
-                                  <p className="text-[11px] text-gray-400 font-medium truncate">
-                                    {medico.Usuario || "Sin cuenta"}
-                                  </p>
+                            <td colSpan={4} className="px-5 py-2"></td>
+                          </tr>
+                        )}
+                      </thead>
+                      <tbody>
+                        {medicosMostrados.length > 0 ? (
+                          medicosMostrados.map((medico) => (
+                            <motion.tr
+                              initial={{ opacity: 0, y: -1 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, x: -20 }}
+                              transition={{ duration: 0.2 }}
+                              key={`${medico.ID || Math.random()}`}
+                              className="group border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors"
+                            >
+                              <td className="px-5 py-2 text-left font-bold text-gray-700">
+                                <span className="inline-flex items-center gap-1.5">
+                                  <i className={`fa-solid ${medico.Activo == "true" ? "fa-circle-check text-aqua-green" : "fa-triangle-exclamation text-red-500"} text-xs shrink-0`}></i>
+                                  {medico.Activo == "true" ? "Activo" : "Baja"}
+                                </span>
+                              </td>
+                              <td className="px-5 py-0 text-left font-bold tracking-wide text-gray-700 group-hover:text-sea-blue transition-colors">
+                                {medico.Matricula === "0" ? "" : medico.Matricula}
+                              </td>
+                              <td className="px-5 py-0">
+                                <p title={medico.Nombre} className="font-bold uppercase text-gray-600 truncate group-hover:text-sea-blue transition-colors">
+                                  {medico.Nombre}
+                                </p>
+                                <p className="text-[10px] text-gray-400 uppercase truncate group-hover:font-semibold transition-all">
+                                  {medico.Usuario || "Sin cuenta"}
+                                </p>
+                              </td>
+                              <td className="px-5 py-2 text-gray-500 truncate group-hover:font-semibold transition-all">
+                                {medico.Categoria_desc || "EXTERNO"}
+                              </td>
+                              <td className="px-5 py-2 text-gray-500 truncate group-hover:font-semibold transition-all">
+                                {medico.Rol || "Usuario"}
+                              </td>
+                              <td className="px-2 pr-0 whitespace-nowrap">
+                                <div className="flex items-center gap-1">
+                                  <button
+                                    onClick={() => openPanelEdit(medico)}
+                                    className="w-6 text-gray-400 hover:text-sky-blue transition-all cursor-pointer"
+                                    title="Editar"
+                                  >
+                                    <i className="fa-solid fa-pencil text-xs"></i>
+                                  </button>
+                                  {medico.Activo == "true" ?
+                                    <button
+                                      onClick={() => handleDelete(0, medico.ID, medico.Nombre)}
+                                      className="w-6 text-gray-400 hover:text-red-400 transition-all cursor-pointer"
+                                      title="Dar de Baja"
+                                    >
+                                      <i className="fa-solid fa-ban text-xs"></i>
+                                    </button>
+                                  :
+                                    <button
+                                      className="w-6 text-gray-400 hover:text-sky-blue transition-all cursor-pointer"
+                                      onClick={() => handleDelete(1, medico.ID, medico.Nombre)}
+                                      title="Reactivar"
+                                    >
+                                      <i className="fa-solid fa-rotate-right text-xs"></i>
+                                    </button>
+                                  }
                                 </div>
+                              </td>
+                              <td className="w-8 pl-1 pr-3 py-2"></td>
+                            </motion.tr>
+                          ))
+                        ) : (
+                          <tr>
+                            <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
+                              <div className="flex flex-col items-center gap-2">
+                                <div className="bg-linear-to-b from-gray-200/50 to-gray-50 shadow-md w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                                  <CircleAlert className="h-8 w-8 text-gray-400/50" />
+                                </div>
+                                <p className="text-gray-500 text-xs">
+                                  No se encontraron usuarios registrados
+                                </p>
                               </div>
                             </td>
-                            <td className="px-3 text-left font-medium text-gray-700 mb-1">
-                              {medico.Categoria_desc || "EXTERNO"}
-                            </td>
-                            <td className="px-3 text-left font-medium text-gray-700 mb-1">
-                              {medico.Cedula || ""}
-                            </td>
-                            <td className="px-3 text-left font-medium text-gray-700 mb-1">
-                              {/* { medico.Id_Rol == 1 ? <i className="mdi mdi-security mr-2"></i>
-                              : medico.Id_Rol == 2 ? <i className="mdi mdi-stethoscope mr-2"></i>
-                              : medico.Id_Rol == 4 ? <i className="mdi mdi-account mr-2"></i>
-                              : <></>
-                              } */}
-                              {medico.Rol || "Usuario"}
-                            </td>
-                            <td className="px-2 pr-0 whitespace-nowrap">
-                              <div className="flex items-center gap-1">
-                                <button
-                                  onClick={() => openPanelEdit(medico)}
-                                  className="w-9 h-9 text-gray-400 hover:text-sky-blue bg-linear-to-b hover:from-sky-blue/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
-                                  title="Editar"
-                                >
-                                  <i className="mdi mdi-account-edit-outline text-lg"></i>
-                                </button>
-                                {medico.Activo == "true" ?
-                                  <button
-                                    onClick={() => handleDelete(0, medico.ID, medico.Nombre)}
-                                    className="w-9 h-9 text-gray-400 hover:text-red-500 bg-linear-to-b hover:from-red-100 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
-                                    title="Dar de Baja"
-                                  >
-                                    <i className="mdi mdi-trash-can-outline text-lg"></i>
-                                  </button>
-                                :
-                                  <button
-                                    className="w-9 h-9 text-gray-400 hover:text-aqua-green bg-linear-to-b hover:from-aqua-green/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
-                                    onClick={() => handleDelete(1, medico.ID, medico.Nombre)}
-                                    title="Reactivar"
-                                  >
-                                    <i className="mdi mdi-cached text-lg"></i>
-                                  </button>
-                                }
-                              </div>
-                            </td>
-                          </motion.tr>
-                        ))
-                      ) : (
-                        <tr>
-                          <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                            <div className="flex flex-col items-center gap-2">
-                              {/* <i className="mdi mdi-loading mdi-spin text-3xl text-sea-blue"></i> */}
-                              <div className="bg-linear-to-b from-gray-200/50 to-gray-50 shadow-md w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <CircleAlert className="h-8 w-8 text-gray-400/50" />
-                              </div>
-                              <p className="text-gray-500 text-xs">
-                                No se encontraron usuarios registrados
-                              </p>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>                
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4 items-center px-5 py-3 shrink-0">
+                    <div className="col-span-1 flex items-center">
+                      <span className="text-xs font-bold text-gray-400">
+                        {paginaSegura} de {totalPaginas} páginas · {filteredMedicos.length.toLocaleString("es-MX")} resultados
+                      </span>
+                    </div>
+                    <div className="col-span-1 flex justify-end">
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => setPagina(1)}
+                          disabled={paginaSegura === 1}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+                          title="Primera página"
+                        >
+                          <ChevronFirst className="h-4 w-4" />
+                        </button>
+                        <button
+                          title="Anterior"
+                          onClick={() => setPagina((p) => Math.max(p - 1, 1))}
+                          disabled={paginaSegura === 1}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+                        >
+                          <ChevronLeft className="h-4 w-4" />
+                        </button>
+
+                        <div className="flex gap-1 items-center">
+                          {getPageNumbers()[0] > 1 && <span className="text-slate-400 px-1 text-xs">...</span>}
+                          {getPageNumbers().map((page) => (
+                            <button
+                              title={`Pág. ${page}`}
+                              key={page}
+                              onClick={() => setPagina(page)}
+                              className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs cursor-pointer shadow-xs font-semibold transition-all ${paginaSegura === page ? "text-white bg-linear-to-b from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80" : "hover:bg-gray-100"}`}
+                            >
+                              {page}
+                            </button>
+                          ))}
+                          {getPageNumbers()[getPageNumbers().length - 1] < totalPaginas && (
+                            <span className="text-slate-400 px-1 text-xs">...</span>
+                          )}
+                        </div>
+
+                        <button
+                          title="Siguiente"
+                          onClick={() => setPagina((p) => Math.min(p + 1, totalPaginas))}
+                          disabled={paginaSegura === totalPaginas}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 hover:text-sea-blue text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+                        >
+                          <ChevronRight className="h-4 w-4" />
+                        </button>
+                        <button
+                          onClick={() => setPagina(totalPaginas)}
+                          disabled={paginaSegura === totalPaginas}
+                          className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 hover:text-sea-blue text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
+                          title="Última página"
+                        >
+                          <ChevronLast className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-              </div>
+              )}
             </div>
           </motion.div>
         </div>
