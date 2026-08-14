@@ -96,10 +96,10 @@ const PerfilMetabolicoChart: React.FC<PerfilMetabolicoChartProps> = ({ meses, pe
   };
 
   return (
-    <div className="rounded-lg p-4">
+    <div className="p-6">
       <div className="flex items-center justify-between gap-2 mb-2 flex-wrap">
-        <h3 className="text-xs font-bold text-gray-600 flex items-center">
-          <i className="fa-solid fa-share-nodes mr-2"></i>Perfil Metabólico
+        <h3 className="text-sm font-bold text-gray-800 flex items-center">
+          <i className="fa-solid fa-share-nodes text-sea-blue mr-2"></i>Perfil Metabólico
         </h3>
         {rango && <SelectorRangoAnios aniosDisponibles={aniosDisponibles} rango={rango} onChange={setRango} />}
       </div>
@@ -107,7 +107,7 @@ const PerfilMetabolicoChart: React.FC<PerfilMetabolicoChartProps> = ({ meses, pe
         <>
           <div className="relative overflow-hidden">
           <ResponsiveContainer width="100%" height={210}>
-            <LineChart data={serie} margin={{ top: 8, right: 16, left: 0, bottom: 8 }}>
+            <LineChart data={serie} margin={{ top: 0, right: 16, left: 0, bottom: 0 }}>
               <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
               <XAxis dataKey="mes" tick={{ fontSize: 9 }} />
               <YAxis tick={{ fontSize: 9 }} width={30} />
@@ -139,9 +139,12 @@ const PerfilMetabolicoChart: React.FC<PerfilMetabolicoChartProps> = ({ meses, pe
             })}
           </div>
           {rangoMostrado && (
-            <p className="text-[10px] text-gray-400 text-center italic mt-2">
-              El contenido mostrado en esta gráfica comprende un rango del {formatoMesAnioLargo(rangoMostrado.min)} al {formatoMesAnioLargo(rangoMostrado.max)}.
-            </p>
+            <div className="mt-3 rounded-lg px-3 py-2 bg-gray-100 text-gray-600 flex items-center gap-2">
+              <i className="fa-solid fa-circle-info text-xs shrink-0"></i>
+              <p className="text-[11px] italic leading-relaxed text-left">
+                El contenido mostrado comprende un rango del <b>{formatoMesAnioLargo(rangoMostrado.min)} al {formatoMesAnioLargo(rangoMostrado.max)}</b>.
+              </p>
+            </div>
           )}
         </>
       ) : (

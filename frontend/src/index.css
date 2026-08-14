@@ -131,3 +131,32 @@ svg:focus {
 .animate-brain-pulse {
   animation: brain-pulse 1.8s ease-in-out infinite;
 }
+
+/* Ícono del título "Evaluación de Aptitud Laboral" (HeaderAnalisis.tsx): da
+   una vuelta completa cada 5s y se queda quieto el resto del ciclo, en vez de
+   girar sin parar — para que se sienta "vivo" sin distraer todo el tiempo. */
+@keyframes spin-periodic {
+  0%   { transform: rotate(0deg); }
+  15%  { transform: rotate(360deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.animate-spin-periodic {
+  display: inline-block;
+  animation: spin-periodic 5s ease-in-out infinite;
+}
+
+/* La sombra de las cards (shadow-xl) se ve como una línea/sombreado suelto
+   debajo del borde redondeado cuando la card llega hasta el borde inferior
+   de la pantalla (ej. tabla de Reingresos) — se quita en toda la app, ya
+   que shadow-xl se usa igual en Dashboard, Documentos, Pacientes, etc. */
+.shadow-xl {
+  box-shadow: none !important;
+}
+
+/* Excepción puntual: las cards de título/contenido de Reingresos.tsx sí
+   conservan la sombra (pedido explícito), el resto del sistema se queda sin
+   ella. Mismo valor que Tailwind v4 le da a shadow-xl. */
+.shadow-xl.shadow-restore {
+  box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1) !important;
+}

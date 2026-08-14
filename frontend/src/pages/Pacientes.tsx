@@ -3,23 +3,33 @@ import { fetchWithAuth } from "../services/api";
 import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
-  Search,
-  ChevronLeft,
-  ChevronRight,
-  ChevronFirst,
-  ChevronLast,
-  Settings,
-  Trash2,
   Camera,
   Upload,
   UserCog,
   ShieldAlert,
-  CircleAlert,
 } from "lucide-react";
 import Swal from "sweetalert2";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthToken";
-// import { EdicionPaciente } from "../../../backend/controllers/PacientesController";
+import PacientesTabla, { PacienteResumen } from "../features/saludPoblacional/components/PacientesTabla";
+
+const PacientesTablaSkeleton: React.FC = () => (
+  <div className="h-full rounded-lg bg-gray-50 overflow-hidden animate-pulse">
+    <div className="h-10 bg-linear-to-r from-white to-gray-100"></div>
+    {Array.from({ length: 9 }).map((_, i) => (
+      <div key={i} className="flex items-center gap-5 px-5 py-3 border-b border-gray-100 last:border-0">
+        <div className="h-3 w-14 rounded bg-gray-200"></div>
+        <div className="flex-1 space-y-1.5">
+          <div className="h-3 w-40 rounded bg-gray-200"></div>
+          <div className="h-2.5 w-24 rounded bg-gray-100"></div>
+        </div>
+        <div className="h-3 w-28 rounded bg-gray-200"></div>
+        <div className="h-3 w-24 rounded bg-gray-200"></div>
+        <div className="h-3 w-16 rounded bg-gray-200"></div>
+      </div>
+    ))}
+  </div>
+);
 
 interface Paciente {
   IdPaciente?: number;
@@ -143,60 +153,9 @@ const Pacientes: React.FC = () => {
   const pageContainerRef = useRef<HTMLDivElement>(null);
   const [pageHeight, setPageHeight] = useState<number>(() => Math.max(window.innerHeight - 150, 400));
 
-  const [searchTerm, setSearchTerm] = useState<string>("");
   const [loadingPacientes, setLoadingPacientes] = useState<boolean>(false);
   const [curpDuplicado, setCurpDuplicado] = useState<boolean>(false);
   const [checkingCurp, setCheckingCurp] = useState<boolean>(false);
-  const [currentPage, setCurrentPage] = useState<number>(1);
-  const itemsPerPage = 100;
-  const [tabView, setTabView] = useState<"activos" | "inactivos">("activos");
-
-  const [showFiltros, setShowFiltros] = useState<boolean>(true);
-  const [filtroTipoEmpleado, setFiltroTipoEmpleado] = useState<string>("");
-  const [filtroTipoContrato, setFiltroTipoContrato] = useState<string>("");
-  const [filtroSexo, setFiltroSexo] = useState<string>("");
-
-  type SortCol = "matricula" | "nombre" | "especialidad" | "consulta" | "perfil" | null;
-  type SortDir = "asc" | "desc" | "none";
-  const [sortCol, setSortCol] = useState<SortCol>(null);
-  const [sortDir, setSortDir] = useState<SortDir>("none");
-
-  const cycleSort = (col: SortCol) => {
-    if (sortCol !== col) { setSortCol(col); setSortDir("asc"); return; }
-    setSortDir(d => d === "asc" ? "desc" : d === "desc" ? "none" : "asc");
-    if (sortDir === "desc") setSortCol(null);
-  };
-
-  const sortIcon = (col: SortCol) => {
-    if (sortCol !== col || sortDir === "none") return "mdi-sort";
-    return sortDir === "asc" ? "mdi-sort-ascending" : "mdi-sort-descending";
-  };
-
-  const filtered = pacientes.filter((p) =>
-    `${p.Empl_Nombres} ${p.Empl_matricula} ${p.Categoria_desc}`
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase())
-    && (!filtroTipoEmpleado || p.Empl_tipo_empleado === filtroTipoEmpleado)
-    && (!filtroTipoContrato || p.Empl_tipo_contrato === filtroTipoContrato)
-    && (!filtroSexo || p.Sexo === filtroSexo),
-  );
-
-  const sorted = [...filtered].sort((a, b) => {
-    if (!sortCol || sortDir === "none") return 0;
-    let va = "", vb = "";
-    if (sortCol === "matricula")    { va = a.Empl_matricula ?? ""; vb = b.Empl_matricula ?? ""; }
-    if (sortCol === "nombre")       { va = a.Empl_Nombres ?? "";   vb = b.Empl_Nombres ?? ""; }
-    if (sortCol === "especialidad") { va = a.Especialidad ?? "";   vb = b.Especialidad ?? ""; }
-    if (sortCol === "consulta")     { va = (tabView === "activos" ? a.FechaConsulta : a.Empl_fecha_baja) ?? "";  vb = (tabView === "activos" ? b.FechaConsulta : b.Empl_fecha_baja) ?? ""; }
-    if (sortCol === "perfil")     { va = a.FechaNacimiento ?? "";  vb = b.FechaNacimiento ?? ""; }
-    const cmp = va.localeCompare(vb, "es", { numeric: true });
-    return sortDir === "asc" ? cmp : -cmp;
-  });
-
-  const indexOfLast = currentPage * itemsPerPage;
-  const indexOfFirst = indexOfLast - itemsPerPage;
-  const filterPages = sorted.slice(indexOfFirst, indexOfLast);
-  const totalPages = Math.ceil(filtered.length / itemsPerPage);
 
   const [formData, setFormData] = useState<FormData>(DEFAULT_FORM);
 
@@ -222,12 +181,7 @@ const Pacientes: React.FC = () => {
 
   useEffect(() => {
     ObtenerPacientes();
-    setCurrentPage(1);
-  }, [tabView]);
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [filtroTipoEmpleado, filtroTipoContrato, filtroSexo]);
+  }, []);
 
   useEffect(() => {
     if (formData.fechaNacimiento) {
@@ -241,7 +195,7 @@ const Pacientes: React.FC = () => {
     try {
       const res = await fetchWithAuth(`${API_BASE_URL}/Pacientes/ObtenerPacientes`, {
         method: "POST",
-        body: JSON.stringify({ esActivo: tabView === "activos" ? "1" : "0" }),
+        body: JSON.stringify({ esActivo: "1" }),
       });
 
       if (res.ok) {
@@ -570,31 +524,17 @@ const Pacientes: React.FC = () => {
     }
   };
 
-  const getPageNumbers = (): number[] => {
-    const pages: number[] = [];
-    const maxVisible = 3;
-    let start = Math.max(1, currentPage - 2);
-    let end = Math.min(totalPages, start + maxVisible - 1);
-    if (end - start < maxVisible - 1) {
-      start = Math.max(1, end - maxVisible + 1);
-    }
-    for (let i = start; i <= end; i++) pages.push(i);
-    return pages;
-  };
-
   return (
     <div className="relative flex w-full overflow-hidden">
-      <div className="flex-1 mt-14 transition-all duration-300 ease-in-out"> {/* style={{ marginRight: isModalOpen ? 300 : 0 }} */}
+      <div className="flex-1 mt-14 transition-all duration-300 ease-in-out">
         <div
-          // ref={pageContainerRef}
-          className="max-w-7xl mx-auto px-4 pb-6 flex flex-col gap-6"
+          className="max-w-7xl mx-auto px-4 pb-0 flex flex-col gap-6"
           style={{ height: pageHeight }}
         >
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white/70 backdrop-blur-xl p-4 sm:p-6 rounded-xl shadow-xl gap-4 shrink-0">
-            {/* bg-linear-to-r from-white to-gray-50 */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-xl shadow-xs shadow-restore gap-4 shrink-0">
             <div>
-              <h1 className="text-2xl font-bold text-sea-blue flex items-center">
-                Expediente de Pacientes
+              <h1 className="text-2xl font-bold bg-linear-to-r from-sea-blue to-sky-blue bg-clip-text text-transparent flex items-center">
+                Pacientes
               </h1>
               <p className="text-sm text-gray-500 mt-1">
                 Directorio médico y expedientes clínicos.
@@ -604,7 +544,7 @@ const Pacientes: React.FC = () => {
               onClick={() => handleOpenModal()}
               className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
             >
-              <i className="mdi mdi-account-plus mr-2"></i>
+              <i className="fa-solid fa-user-plus text-xs mr-2"></i>
               Agregar
             </button>
           </div>
@@ -612,357 +552,27 @@ const Pacientes: React.FC = () => {
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl overflow-hidden flex flex-col flex-1 min-h-0"
+            className="bg-white rounded-xl shadow-xs overflow-hidden p-6 mb-1 flex flex-col flex-1 min-h-0"
           >
-            <div className="flex items-center justify-between px-6 py-[21px] bg-linear-to-r from-white to-gray-100 rounded-t-xl shrink-0">
-              <div className="relative w-92">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                <input
-                  type="text"
-                  // className="w-full pl-9 pr-4 py-2 bg-white border border-gray-300 rounded-lg text-sm focus:border-clinical-blue focus:ring-1 focus:ring-clinical-blue outline-none transition-shadow"
-                  className={`w-full bg-white border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none transition-colors border-gray-100 shadow-md focus:border-clinical-blue focus:ring-1`}
-                  placeholder="Buscar por nombre o matrícula"
-                  value={searchTerm}
-                  onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }}
+            <h2 className="text-sm font-bold text-gray-800 flex items-center mb-4 shrink-0">
+              <i className="fa-solid fa-user-group text-sea-blue mr-3"></i>
+              Pacientes
+            </h2>
+            <div className="flex-1 min-h-0">
+              {loadingPacientes ? (
+                <PacientesTablaSkeleton />
+              ) : (
+                <PacientesTabla
+                  activo={true}
+                  pacientes={pacientes as PacienteResumen[]}
+                  fillHeight
+                  basePath="/Pacientes"
+                  showFecha={false}
+                  onEdit={(p) => handleOpenModal(p as unknown as Paciente)}
+                  onDelete={(p) => handleDelete(p.IdPaciente)}
+                  onVerDocumentos={(p) => navigate("/Documentos", { state: { matricula: String(p.Empl_matricula ?? "") } })}
                 />
-              </div>
-              <div className="flex items-center gap-1 bg-white border border-gray-100 shadow-md rounded-lg p-1">
-                <button
-                  onClick={() => setTabView("activos")}
-                  className={`flex items-center gap-1.5 px-4 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${tabView === "activos" ? "bg-linear-to-r from-sea-blue to-sky-blue text-white shadow-md" : "text-gray-500 hover:text-sea-blue"}`}
-                >
-                  <i className="mdi mdi-account-check"></i>
-                  Activos
-                </button>
-                <button
-                  onClick={() => setTabView("inactivos")}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${tabView === "inactivos" ? "bg-linear-to-r from-sea-blue to-sky-blue text-white shadow-md" : "text-gray-500 hover:text-sea-blue"}`}
-                >
-                  <i className="mdi mdi-account-off"></i>
-                  Inactivos
-                </button>
-              </div>
-            </div>
-
-            <div className="flex-1 min-h-0 flex flex-col">
-              <div className="rounded-lg flex-1 min-h-0 flex flex-col">
-                <div className="flex-1 overflow-y-auto">
-                  <table className="table-fixed w-full text-xs">
-                    <thead className="sticky top-0 z-10">
-                      <tr className="bg-linear-to-r from-white to-gray-100">
-                        {/* <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1">
-                          Tipo
-                        </th> */}
-                        {(["matricula","nombre","especialidad","consulta","perfil"] as SortCol[]).map((col, i) => {
-                          const labels: Record<string, string> = { matricula: "Matrícula", nombre: "Paciente", especialidad: "Especialidad", consulta: tabView === "activos" ? "Última consulta" : "Fecha de baja", perfil: "Perfil"};
-                          const widths: Record<string, string> = { matricula: "w-[110px]", nombre: "w-auto", especialidad: "w-[210px]", consulta: "w-[145px]", perfil: "w-[142px]" };
-                          const active = sortCol === col && sortDir !== "none";
-                          return (
-                            <th key={col} onClick={() => cycleSort(col)} className={`px-3 py-2 ${i === 0 ? "pl-6" : ""} text-left font-medium text-gray-700 mb-1 ${widths[col!]} cursor-pointer select-none group`}>
-                              <span className="flex items-center gap-1">
-                                {labels[col!]}
-                                <i className={`mdi ${sortIcon(col)} text-sm transition-colors ${active ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`} />
-                                {/* {col === "matricula" && (
-                                  
-                                )} */}
-                              </span>
-                            </th>
-                          );
-                        })}
-                        {/* <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-[142px]">
-                          Perfil
-                        </th> */}
-                        <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-[100px]">
-                          Riesgo
-                        </th>
-                        <th className="px-3 py-2 text-center font-medium text-gray-700 mb-1 w-[100px]">
-                          Acciones
-                        </th>
-                        <th className="px-3 py-2 text-center font-medium mb-1 w-[40px]">
-                          <i
-                            onClick={(e) => { e.stopPropagation(); setShowFiltros((v) => !v); }}
-                            title="Filtrar"
-                            className={`mdi mdi-filter-variant cursor-pointer text-sm transition-colors ml-0.5 ${showFiltros || filtroTipoEmpleado || filtroTipoContrato || filtroSexo ? "text-sea-blue" : "text-gray-300 hover:text-gray-400"}`}
-                          />
-                        </th>
-                      </tr>
-                      {showFiltros && (
-                        <tr className="bg-linear-to-r from-white to-gray-100">
-                          <td colSpan={8} className="px-6 py-2">
-                            <div className="flex items-center justify-end gap-4">
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] font-medium text-gray-500">Tipo de empleado</span>
-                                <select
-                                  value={filtroTipoEmpleado}
-                                  onChange={(e) => setFiltroTipoEmpleado(e.target.value)}
-                                  className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
-                                >
-                                  <option value="">Todos</option>
-                                  <option value="C">Confianza</option>
-                                  <option value="O">Sindicalizado</option>
-                                  <option value="EX">Externo</option>
-                                </select>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] font-medium text-gray-500">Tipo de contrato</span>
-                                <select
-                                  value={filtroTipoContrato}
-                                  onChange={(e) => setFiltroTipoContrato(e.target.value)}
-                                  className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
-                                >
-                                  <option value="">Todos</option>
-                                  <option value="E">Eventual</option>
-                                  <option value="P">Planta</option>
-                                  <option value="C">Por contrato</option>
-                                  <option value="EX">Subcontrato</option>
-                                </select>
-                              </div>
-                              <div className="flex items-center gap-1.5">
-                                <span className="text-[11px] font-medium text-gray-500">Sexo</span>
-                                <select
-                                  value={filtroSexo}
-                                  onChange={(e) => setFiltroSexo(e.target.value)}
-                                  className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
-                                >
-                                  <option value="">Todos</option>
-                                  <option value="M">Masculino</option>
-                                  <option value="F">Femenino</option>
-                                </select>
-                              </div>
-                              {(filtroTipoEmpleado || filtroTipoContrato || filtroSexo) && (
-                                <button
-                                  onClick={() => { setFiltroTipoEmpleado(""); setFiltroTipoContrato(""); setFiltroSexo(""); }}
-                                  className="text-[11px] font-medium text-gray-400 hover:text-red-500 transition-colors cursor-pointer"
-                                >
-                                  <i className="mdi mdi-creation mr-2"></i>Limpiar filtros
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </thead>
-                    <tbody>
-                      <AnimatePresence mode="wait">
-                        {!loadingPacientes && filterPages.map((p, idx) => (
-                          <motion.tr
-                            initial={{ opacity: 0, y: -1 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, x: -20 }}
-                            transition={{ duration: 0.2 }}
-                            key={`${p.Empl_matricula}-${idx}`}
-                            className="group hover:bg-gray-50/80 transition-colors"
-                          >
-                            {/* Tipo */}
-                            {/* <td className="px-3 py-2 font-medium text-gray-700 mb-1">
-                              <div>
-                                <span className="inline-flex items-center justify-center px-1.5 py-1 text-[10px] font-semibold text-gray-400 group-hover:text-aqua-green group-hover:bg-aqua-green/10 rounded transition-all">
-                                  <i
-                                    className={`mdi mdi-${p.Tipo ? TIPO_ICON[p.Tipo] ?? "" : ""} text-[12px] mr-1 group-hover:scale-110 transition-transform`}
-                                  ></i>
-                                  {p.Tipo ? (TIPO_LABEL[p.Tipo] ?? "") : ""}
-                                </span>
-                              </div>
-                            </td> */}
-
-                            <td className="px-3 pl-6 text-left font-medium text-gray-700 mb-1">
-                              {p.Empl_matricula !== "0" ? p.Empl_matricula : 'EXT'}
-                            </td>
-
-                            <td className="px-2 py-1.5">
-                              <div className="flex items-center justify-between gap-3">
-                                <div className="overflow-hidden min-w-0">
-                                  {/* {p.Empl_matricula == "0" && p.CURP} */}
-                                  <p title={p.Empl_Nombres} className="text-[12px] font-bold uppercase text-gray-600 block truncate">
-                                    {p.Empl_Nombres}
-                                  </p>
-                                  <p title={p.Categoria_desc || p.Compania} className="text-[11px] text-gray-400 font-medium uppercase truncate">
-                                    {p.Categoria_desc || p.Compania}
-                                  </p>
-                                </div>
-                              </div>
-                            </td>
-
-                            <td className="px-3 font-medium text-gray-700 mb-1">
-                              {p.Especialidad}
-                            </td>
-
-                            <td className="px-3 font-medium text-gray-700 mb-1">
-                              {(() => {
-                                const fecha = tabView === "activos" ? p.FechaConsulta : p.Empl_fecha_baja;
-                                return fecha ? new Date(fecha).toLocaleTimeString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric" }) : "";
-                              })()}
-                            </td>
-
-                            <td className="px-3 font-medium text-gray-700 mb-1">
-                              <div className="grid grid-cols-3 gap-0">
-                                <div className="col-span-1">
-                                  {p.Sexo && (
-                                    <span>
-                                      <i className={`mdi mdi-${p.Sexo === "M" ? "gender-male" : "gender-female"} mr-1`}></i>
-                                      {p.Sexo}
-                                    </span>
-                                  )}
-                                </div>
-                                <div className="col-span-2">
-                                  {p.FechaNacimiento && (
-                                    <span>
-                                      <i className="mdi mdi-human-cane mr-1"></i>
-                                      {`${Math.floor((Date.now() - new Date(p.FechaNacimiento).getTime()) / 31_557_600_000)} años`}
-                                    </span>
-                                  )}
-                                </div>
-                              </div>
-                            </td>
-
-                            <td className="px-3 font-medium text-gray-700 mb-1">
-                              {p.Riesgo}
-                            </td>
-
-                            <td colSpan={2} className="px-2 pr-0 whitespace-nowrap">
-                              <div className="flex items-center gap-1">
-                                {p.Empl_matricula && Number(p.Empl_matricula) > 0 && p.IdPaciente == null ? (
-                                  <button
-                                    onClick={() => { handleOpenModal(p); setEditingId(null); }}
-                                    // Edit
-                                    className="w-9 h-9 text-gray-400 hover:text-sky-blue bg-linear-to-b hover:from-sky-blue/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
-                                    title="Registrar"
-                                  >
-                                    <i className="mdi mdi-account-plus-outline text-lg"></i>
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => handleOpenModal(p)}
-                                    className="w-9 h-9 text-gray-400 hover:text-sky-blue bg-linear-to-b hover:from-sky-blue/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
-                                    title="Editar"
-                                  >
-                                    <i className="mdi mdi-pencil-outline text-lg"></i>
-                                  </button>
-                                )}
-                                {p.Empl_matricula && Number(p.Empl_matricula) === 0 ? (
-                                  <button 
-                                    onClick={() => handleDelete(p.IdPaciente)}
-                                    className="w-9 h-9 text-gray-400 hover:text-red-500 bg-linear-to-b hover:from-red-100 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
-                                    title="Eliminar"
-                                  >
-                                    <i className="mdi mdi-trash-can-outline text-lg"></i>
-                                  </button>
-                                ) : (
-                                  <button
-                                    onClick={() => navigate("/Documentos", { state: { matricula: String(p.Empl_matricula ?? "") } })}
-                                    className="w-9 h-9 text-gray-400 hover:text-sky-blue bg-linear-to-b hover:from-sky-blue/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
-                                    title="Documentación"
-                                  >
-                                    <i className="mdi mdi-file-outline text-lg"></i>
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-
-                            
-                          </motion.tr>
-                        ))}
-                      </AnimatePresence>
-
-                      {loadingPacientes ? (
-                        <tr>
-                          <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                            <div className="flex flex-col items-center gap-2">
-                              <div className="w-12 h-12 rounded-full animate-spin bg-linear-to-r from-sea-blue to-sky-blue p-[4px] mt-2">
-                                <div className="w-full h-full rounded-full bg-white"></div>
-                              </div>
-                              <span className="text-xs mt-3">
-                                Cargando pacientes...
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : filtered.length === 0 && (
-                        <tr>
-                          <td colSpan={7} className="px-6 py-12 text-center text-gray-500">
-                            <div className="flex flex-col items-center justify-center gap-2">
-                              {/* <i className="mdi mdi-loading mdi-spin text-3xl text-sea-blue"></i> */}
-                              <div className="bg-linear-to-b from-gray-200/50 to-gray-50 shadow-md w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                                <CircleAlert className="h-8 w-8 text-gray-400/50" />
-                                {/* UserCog */}
-                              </div>
-                              <p className="text-gray-500 text-xs">
-                                No se encontraron pacientes que coincidan con la búsqueda
-                              </p>
-                            </div>
-                          </td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-                <div className="grid grid-cols-2 gap-4 border-t border-gray-100 items-center h-10 shrink-0">
-                  <div className="col-span-1 pl-6 flex items-center">
-                    <span className="text-xs font-bold text-gray-400">
-                      {currentPage} de {totalPages} páginas · {filtered.length} pacientes
-                    </span>
-                  </div>
-                  <div className="col-span-1 flex justify-end pr-6">
-                    <div className="flex items-center gap-1">
-                      <button
-                        onClick={() => setCurrentPage(1)}
-                        disabled={currentPage === 1}
-                        className="p-1.5 rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-                        title="Primer página"
-                      >
-                        <ChevronFirst className="h-4 w-4" />
-                      </button>
-                      <button
-                        title="Anterior"
-                        onClick={() =>
-                          setCurrentPage((prev) => Math.max(prev - 1, 1))
-                        }
-                        disabled={currentPage === 1}
-                        className="p-1.5 rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-                      >
-                        <ChevronLeft className="h-4 w-4" />
-                      </button>
-
-                      <div className="flex gap-1 items-center">
-                        {getPageNumbers()[0] > 1 && (
-                          <span className="text-slate-400 px-1">...</span>
-                        )}
-                        {getPageNumbers().map((page) => (
-                          <button
-                            title={`Pág. ${page}`}
-                            key={page}
-                            onClick={() => setCurrentPage(page)}
-                            className={`px-2 py-1 rounded-lg text-xs border cursor-pointer border-gray-100 shadow-md font-semibold transition-all ${currentPage === page ? "text-white bg-linear-to-b from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80" : "hover:bg-gray-100"}`}
-                          >
-                            {page}
-                          </button>
-                        ))}
-                        {getPageNumbers()[getPageNumbers().length - 1] <
-                          totalPages && (
-                          <span className="text-slate-400 px-1">...</span>
-                        )}
-                      </div>
-
-                      <button
-                        title="Siguiente"
-                        onClick={() => setCurrentPage((prev) => Math.min(prev + 1, totalPages)) }
-                        disabled={currentPage === totalPages}
-                        className="p-1.5 rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 hover:text-sea-blue text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-                      >
-                        <ChevronRight className="h-4 w-4" />
-                      </button>
-                      <button
-                        onClick={() => setCurrentPage(totalPages)}
-                        disabled={currentPage === totalPages}
-                        className="p-1.5 rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 hover:text-sea-blue text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-                        title="Última página"
-                      >
-                        <ChevronLast className="h-4 w-4" />
-                      </button>
-                    </div>
-                  </div>
-                </div>
-              </div>
+              )}
             </div>
           </motion.div>
         </div>

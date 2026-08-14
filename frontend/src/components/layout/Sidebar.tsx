@@ -58,24 +58,24 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
     {
       type: "group",
       name: "Personal",
-      icon: "user-group",
+      icon: "address-book",
       roles: ["admin", "médico"],
       children: [
-        { name: "Plantilla",  icon: "people-group", path: "/Pacientes",  roles: ["admin", "médico"] },
-        { name: "Reingresos", icon: "user-gear",  path: "/Reingresos", roles: ["admin", "médico"] },
+        { name: "Pacientes",  icon: "user-group",   path: "/Pacientes",  roles: ["admin", "médico"] },
+        { name: "Reingresos", icon: "arrows-spin",  path: "/Reingresos", roles: ["admin", "médico"] },
       ],
     },
     { type: "item", name: "Agenda", icon: "calendar-week", path: "/Agenda", roles: ["admin", "médico", "usuario"] },
     {
       type: "group",
       name: "Expediente",
-      icon: "clipboard",
+      icon: "folder",
       roles: ["admin", "médico", "usuario"],
       children: [
-        { name: "Evaluación", icon: "clipboard-check", path: "/Evaluacion", roles: ["admin", "médico"] },
-        { name: "Consultas",  icon: "file-waveform",   path: "/Consultas",  roles: ["admin", "médico"] },
-        { name: "Recetas",    icon: "capsules",        path: "/Recetas",    roles: ["admin", "médico"] },
-        { name: "Documentos", icon: "file-lines",      path: "/Documentos", roles: ["admin", "médico", "usuario"] },
+        { name: "Evaluación", icon: "clipboard-list",       path: "/Evaluacion", roles: ["admin", "médico"] },
+        { name: "Consultas",  icon: "truck-medical",   path: "/Consultas",  roles: ["admin", "médico"] },
+        { name: "Recetas",    icon: "file-waveform",        path: "/Recetas",    roles: ["admin", "médico"] },
+        { name: "Documentos", icon: "file",             path: "/Documentos", roles: ["admin", "médico", "usuario"] },
       ],
     },
     { type: "item", name: "Indicadores", icon: "heart-pulse", path: "/Indicadores", roles: ["admin", "médico"] },
@@ -107,7 +107,13 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
 
   const navigate = useNavigate();
   const location = useLocation();
-  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>({});
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
+    Object.fromEntries(
+      menuEntries
+        .filter(entry => entry.type === "group")
+        .map(entry => [entry.name, true])
+    )
+  );
 
   const toggleGroup = (name: string): void => {
     setOpenGroups(prev => ({ ...prev, [name]: !prev[name] }));
@@ -129,7 +135,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
   return (
     <div
       id="app-sidebar"
-      className={`bg-white/70 backdrop-blur-md h-screen flex flex-col hidden md:flex fixed top-0 left-0 z-50 transition-all duration-300 ${
+      className={`bg-white backdrop-blur-md h-screen flex flex-col hidden md:flex fixed top-0 left-0 z-50 transition-all duration-300 ${
         isCollapsed ? "w-20" : "w-64"
       }`}
     >
@@ -220,7 +226,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
             }
 
             const isGroupActive = entry.children.some(child => location.pathname.startsWith(child.path));
-            const isOpen = openGroups[entry.name] ?? isGroupActive;
+            const isOpen = openGroups[entry.name] ?? true;
 
             return (
               <div key={entry.name} className="mb-1">
@@ -293,9 +299,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
         </nav>
       </div>
 
-      {/* Perfil movido al Topbar (arriba a la derecha): al hacer clic se abre
-          una card con la información del usuario y el botón de cerrar sesión. */}
-      {/* <div className="p-3 overflow-hidden">
+      <div className="p-3 overflow-hidden">
         <NavLink
           to="/Perfil"
           onClick={(e) => {
@@ -330,7 +334,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
             </div>
           )}
         </NavLink>
-      </div> */}
+      </div>
     </div>
   );
 };

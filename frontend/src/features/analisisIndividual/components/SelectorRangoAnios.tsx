@@ -18,23 +18,29 @@ const SelectorRangoAnios: React.FC<SelectorRangoAniosProps> = ({ aniosDisponible
 
   return (
     <div className="flex items-center gap-1">
-      <select
-        value={rango.desde}
-        onChange={(e) => onChange({ desde: Number(e.target.value), hasta: Math.max(Number(e.target.value), rango.hasta) })}
-        className={selectCls}
-        title="Año desde"
-      >
-        {aniosDisponibles.filter((a) => a <= rango.hasta).map((a) => <option key={a} value={a}>{a}</option>)}
-      </select>
-      <span className="text-[10px] text-gray-400 font-semibold">–</span>
-      <select
-        value={rango.hasta}
-        onChange={(e) => onChange({ desde: Math.min(rango.desde, Number(e.target.value)), hasta: Number(e.target.value) })}
-        className={selectCls}
-        title="Año hasta"
-      >
-        {aniosDisponibles.filter((a) => a >= rango.desde).map((a) => <option key={a} value={a}>{a}</option>)}
-      </select>
+      <div className="relative">
+        <i className="fa-solid fa-calendar text-[9px] text-gray-400 absolute left-1.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+        <select
+          value={rango.desde}
+          onChange={(e) => onChange({ desde: Number(e.target.value), hasta: Math.max(Number(e.target.value), rango.hasta) })}
+          className={`${selectCls} pl-5`}
+          // title="Año desde"
+        >
+          {aniosDisponibles.filter((a) => a <= rango.hasta).map((a) => <option key={a} value={a}>{a}</option>)}
+        </select>
+      </div>
+      <span className="text-[10px] text-gray-400 font-semibold px-1">–</span>
+      <div className="relative">
+        <i className="fa-solid fa-calendar text-[9px] text-gray-400 absolute left-1.5 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+        <select
+          value={rango.hasta}
+          onChange={(e) => onChange({ desde: Math.min(rango.desde, Number(e.target.value)), hasta: Number(e.target.value) })}
+          className={`${selectCls} pl-5`}
+          // title="Año hasta"
+        >
+          {aniosDisponibles.filter((a) => a >= rango.desde).map((a) => <option key={a} value={a}>{a}</option>)}
+        </select>
+      </div>
     </div>
   );
 };

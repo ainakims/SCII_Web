@@ -1171,16 +1171,12 @@ const Agenda: React.FC = () => {
 
   return (
     <div className="relative flex w-full overflow-hidden">
-      <div
-        className="flex-1 mt-14 transition-all duration-300 ease-in-out"
-        // style={{ marginRight: isPanelOpen ? 420 : 0 }}
-      >
+      <div className="flex-1 mt-14 transition-all duration-300 ease-in-out">
         <div
-          // ref={pageContainerRef}
-          className="max-w-7xl mx-auto px-4 pb-6 flex flex-col gap-6"
+          className="max-w-7xl mx-auto px-4 pb-0 flex flex-col gap-6"
           style={{ height: pageHeight }}
         >
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4 shrink-0">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-xl shadow-xs shadow-restore gap-4 shrink-0">
             <div>
               <h1 className="text-2xl font-bold text-sea-blue flex items-center">
                 Agenda de Citas
@@ -1191,9 +1187,9 @@ const Agenda: React.FC = () => {
             </div>
             {esPrivilegiado && (
               <div className="flex items-center gap-2">
-                <button
+                {/* <button
                   onClick={() => { setGruposModalOpen(true); fetchGrupos(); }}
-                  className="flex items-center justify-center bg-white hover:bg-gray-50 hover:-translate-y-1 text-gray-700 border border-gray-200 px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all cursor-pointer hidden"
+                  className="flex items-center justify-center bg-white hover:bg-gray-50 hover:-translate-y-1 text-gray-700 border border-gray-200 px-4 py-2.5 rounded-lg text-sm font-medium shadow-sm transition-all cursor-pointer "
                 >
                   <i className="mdi mdi-account-group mr-2"></i>
                   Grupos
@@ -1202,12 +1198,12 @@ const Agenda: React.FC = () => {
                       {savedGroups.length}
                     </span>
                   )}
-                </button>
+                </button> */}
                 <button
                   onClick={() => openPanel()}
                   className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
                 >
-                  <i className="mdi mdi-calendar-search mr-2"></i>
+                  <i className="fa-solid fa-plus text-xs mr-2"></i>
                   Agendar
                 </button>
               </div>
@@ -1218,15 +1214,20 @@ const Agenda: React.FC = () => {
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             // className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden"
-            className="bg-white rounded-xl shadow-xl overflow-hidden flex flex-col flex-1 min-h-0"
+            className="bg-white rounded-xl shadow-xs overflow-hidden p-6 mb-1 flex flex-col flex-1 min-h-0"
           >
             <div className="flex flex-1 min-h-0 overflow-hidden transition-all duration-300 ease-in-out">
-              <aside className="w-56 shrink-0 bg-white flex flex-col mt-0 p-3 gap-4 overflow-y-auto">
-                <div className="select-none">
+              <aside className="w-50 shrink-0 bg-white flex flex-col overflow-y-auto">
+                {/* bg-white rounded-xl shadow-xs overflow-hidden p-6 mb-1 flex flex-col flex-1 min-h-0 */}
+                <h2 className="text-sm font-bold text-gray-800 flex items-center mb-4 shrink-0">
+                  <i className="fa-solid fa-calendar-week text-sea-blue mr-3"></i>
+                  Calendario
+                </h2>
+                <div className="select-none mt-3 flex flex-col flex-1 min-h-0">
                   <div className="flex items-center justify-between mb-4 px-1">
                     <button
                       onClick={() => miniView === "days" ? setMiniMonthOffset((o) => o - 1) : setMiniMonthOffset((o) => o - 12)}
-                      className="p-1.5 rounded-full bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-500 hover:text-sea-blue cursor-pointer"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
@@ -1238,7 +1239,7 @@ const Agenda: React.FC = () => {
                     </button>
                     <button
                       onClick={() => miniView === "days" ? setMiniMonthOffset((o) => o + 1) : setMiniMonthOffset((o) => o + 12)}
-                      className="p-1.5 rounded-full bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-500 hover:text-sea-blue cursor-pointer"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 hover:text-sea-blue text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </button>
@@ -1266,7 +1267,7 @@ const Agenda: React.FC = () => {
                       })}
                     </div>
                   ) : (
-                    <div className="flex flex-col h-[540px]">
+                    <>
                       <div className="grid grid-cols-7 mb-1">
                         {["L","M","M","J","V","S","D"].map((d, i) => (
                           <div key={i} className="text-center text-[10px] font-semibold text-gray-400">{d}</div>
@@ -1296,7 +1297,7 @@ const Agenda: React.FC = () => {
                               onClick={() => handleMiniDayClick(date)}
                               className={`h-6 w-full text-[11px] font-medium transition-colors flex items-center justify-center cursor-pointer relative
                                 ${isCurrentWeek
-                                  ? `bg-linear-to-r from-sky-blue/10 to-horz-blue/5 border-y border-horz-blue/50
+                                  ? `bg-horz-blue/10 border-y border-horz-blue/50 shadow-xs
                                     ${isWeekStart ? "border-l rounded-l" : ""}
                                     ${isWeekEnd   ? "border-r rounded-r" : ""}`
                                   : isInViewWeek ? "bg-gray-100" : "hover:bg-gray-100/80"
@@ -1319,58 +1320,52 @@ const Agenda: React.FC = () => {
                           );
                         })}
                       </div>
+                    </>
+                  )}
 
-                      {diasFestivos.some(f => f.mes === miniMonth + 1 && f.anio === miniYear) && (
-                        <div className="mt-auto pt-2 px-1 space-y-1">
-                          {diasFestivos
-                            .filter(f => f.mes === miniMonth + 1 && f.anio === miniYear)
-                            .sort((a, b) => a.dia - b.dia)
-                            .map((f, i) => (
-                              <div key={i} className="flex items-center gap-1.5">
-                                <span className="shrink-0 flex items-center justify-center bg-gray-200 text-[11px] font-bold leading-none w-[18px] h-[18px] text-center">
-                                  {f.dia}
-                                </span>
-                                <span className="text-[10px] text-gray-600 leading-none flex items-center">
-                                  {f.nombre}
-                                </span>
-                              </div>
-                            ))
-                          }
-                        </div>
-                      )}
+                  {diasFestivos.some(f => f.mes === miniMonth + 1 && f.anio === miniYear) && (
+                    <div className="mt-auto pt-2 px-1 space-y-1">
+                      {diasFestivos
+                        .filter(f => f.mes === miniMonth + 1 && f.anio === miniYear)
+                        .sort((a, b) => a.dia - b.dia)
+                        .map((f, i) => (
+                          <div key={i} className="flex items-center gap-1.5">
+                            <span className="shrink-0 flex items-center justify-center bg-gray-200 text-[11px] font-bold leading-none w-[18px] h-[18px] text-center">
+                              {f.dia}
+                            </span>
+                            <span className="text-[10px] text-gray-600 leading-none flex items-center">
+                              {f.nombre}
+                            </span>
+                          </div>
+                        ))
+                      }
                     </div>
                   )}
                 </div>
               </aside>
 
               <div className="flex-1 flex flex-col min-h-0 overflow-hidden bg-white">
-                <div className="flex items-center gap-3 p-6 bg-linear-to-r from-white to-gray-100 shrink-0 rounded-t-xl">
-                  <div className="flex items-center gap-1">
-                    <h2 className="text-sm font-bold text-gray-800 flex items-center">
-                      <i className="mdi mdi-calendar-blank mr-4"></i>
-                      Calendario
-                    </h2>
-                  </div>
+                <div className="flex items-center gap-3 mb-4 shrink-0 rounded-t-xl">
                   <div className="ml-auto flex items-center gap-2">
                     <button
-                      title="Semana anterior"
+                      title="Anterior"
                       onClick={() => setWeekOffset((o) => o - 1)}
-                      className="p-1.5 rounded-full bg-linear-to-b hover:from-gray-300 hover:to-gray-50 text-gray-600 hover:text-sea-blue cursor-pointer"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </button>
                     <button
-                    title="Semana siguiente"
+                    title="Siguiente"
                       onClick={() => setWeekOffset((o) => o + 1)}
-                      className="p-1.5 rounded-full bg-linear-to-b hover:from-gray-300 hover:to-gray-50 text-gray-600 hover:text-sea-blue cursor-pointer"
+                      className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 hover:text-sea-blue text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
                     >
                       <ChevronRight className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
 
-                <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
-                  <div className="flex bg-linear-to-r from-white to-gray-100 shrink-0 relative">
+                <div className="flex flex-col flex-1 min-h-0 bg-white rounded-lg shadow-xs overflow-hidden">
+                  <div className="flex shrink-0 relative">
                     {/* border-b border-gray-100 */}
                     {/* shadow-md */}
                     <div className="w-14 shrink-0 flex items-center justify-center">
@@ -1406,8 +1401,8 @@ const Agenda: React.FC = () => {
                   </div>
 
                   {appointments.some(a => a.type === "VAC" || a.type === "IMSS" || a.type === "IND") && (
-                    <div className="flex shrink-0 border-b border-gray-100 bg-linear-to-r from-white to-gray-100" style={{ minHeight: 36 }}>
-                      <div className="w-14 shrink-0 flex items-center justify-end pr-2 border-b border-gray-100">
+                    <div className="flex shrink-0 shadow-xs" style={{ minHeight: 36 }}>
+                      <div className="w-14 shrink-0 flex items-center justify-end pr-2">
                       </div>
                       {weekDates.map((_, colIdx) => {
                         const bannerApts = appointments.filter(a => (a.type === "VAC" || a.type === "IMSS" || a.type === "IND") && a.dia === colIdx);
@@ -1415,7 +1410,7 @@ const Agenda: React.FC = () => {
                         return (
                           <div
                             key={colIdx}
-                            className={`flex-1 flex flex-col gap-0.5 py-1 px-1 bg-transparent last:border-0 ${isColToday ? "bg-sky-blue/5" : ""}`}
+                            className={`flex-1 flex flex-col gap-0.5 py-1 px-1 last:border-0 ${isColToday ? "bg-sky-blue/5" : ""}`}
                           >
                             {bannerApts.map(apt => {
                               const label = apt.type === "IND" ? "Indicadores TNG Sano" : apt.type === "IMSS" ? "Jornada PrevenIMSS" : "Campaña de vacunación";
@@ -1494,7 +1489,7 @@ const Agenda: React.FC = () => {
                     </div>
                   )}
 
-                  <div ref={gridScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0">
+                  <div ref={gridScrollRef} className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 rounded-lg">
                     <div className="flex" style={{ minHeight: `${24 * 64}px` }}>
                       <div className="w-14 shrink-0 bg-white sticky left-0">
                         {times.map((t, i) => (
@@ -1518,7 +1513,7 @@ const Agenda: React.FC = () => {
                           return (
                             <div
                               key={colIdx}
-                              className={`flex-1 relative border border-gray-100 ${isColToday ? "bg-linear-to-r from-sky-blue/10 to-horz-blue/5 border-horz-blue/50" : isPastDay ? "bg-gray-100/30" : isWeekend ? "" : ""}`}
+                              className={`flex-1 relative border border-gray-50 ${isColToday ? "bg-horz-blue/10 border-horz-blue/50 shadow-xs" : isPastDay ? "bg-gray-100/30" : isWeekend ? "" : ""}`}
                               style={{ zIndex: 0 }}
                             >
                               {times.map((_, rowIdx) => {
@@ -1527,7 +1522,7 @@ const Agenda: React.FC = () => {
                                 return (
                                   <div
                                     key={rowIdx}
-                                    className={`border-b border-gray-100 transition-colors ${isPastDay ? "cursor-not-allowed" : !esPrivilegiado ? "cursor-default" : "hover:bg-horz-blue/15 cursor-pointer"}`}
+                                    className={`border border-gray-50 transition-colors ${isPastDay ? "cursor-not-allowed" : !esPrivilegiado ? "cursor-default" : "hover:bg-horz-blue/15 cursor-pointer"}`}
                                     style={{ height: `${64}px` }}
                                     onClick={() => {
                                       if (isPastDay || !esPrivilegiado) return;

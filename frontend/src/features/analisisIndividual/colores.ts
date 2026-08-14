@@ -30,10 +30,14 @@ export const ESTILOS_PRIORIDAD: Record<Prioridad, string> = {
 // Riesgo (1/2/3) de la toma de indicadores más reciente en SCII_Indicadores.
 export const NOMBRE_RIESGO_NIVEL: Record<1 | 2 | 3, string> = { 1: "Bajo", 2: "Medio", 3: "Alto" };
 
+// Mismo criterio de "fondo plano con tinte + texto de color, sin degradado a
+// blanco" que la card de Evaluación de Aptitud Laboral en HeaderAnalisis.tsx
+// (bg-aqua-green/10 text-[#3A8277] / bg-red-100/50 text-red-800), aplicado a
+// los 3 niveles de riesgo.
 export const ESTILOS_RIESGO_NIVEL: Record<1 | 2 | 3, string> = {
-  1: "bg-linear-to-b from-aqua-green/30 to-gray-100 text-green-900",
-  2: "bg-linear-to-b from-sunray-yellow/40 to-gray-100 text-yellow-800",
-  3: "bg-linear-to-b from-red-300/50 to-gray-100 text-red-800",
+  1: "from-aqua-green/10 text-[#3A8277]",
+  2: "from-sunray-yellow/20 text-yellow-800",
+  3: "from-red-100/50 text-red-800",
 };
 
 export const PALETA_SERIE = ["#002E6D", "#009BDE", "#f59e0b", "#8b5cf6", "#0d9488", "#ef4444", "#6366f1", "#84cc16"];
