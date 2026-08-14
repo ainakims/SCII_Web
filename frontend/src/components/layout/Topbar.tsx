@@ -24,11 +24,13 @@ interface User {
   puesto?: string;
   matricula?: string;
   correo?: string;
+  rol?: string;
 }
 
 const PAGE_TITLES: PageTitles = {
   '/Dashboard':     { label: 'Dashboard',    icon: 'mdi-view-dashboard-outline' },
   '/Pacientes':     { label: 'Pacientes',     icon: 'mdi-account-multiple-outline' },
+  '/Reingresos':    { label: 'Reingresos',    icon: 'mdi-account-switch-outline' },
   '/Agenda':        { label: 'Agenda',        icon: 'mdi-calendar-blank' },
   '/Consultas':     { label: 'Consultas',     icon: 'mdi-clipboard-pulse-outline' },
   '/Recetas':       { label: 'Recetas',       icon: 'mdi-pill' },
@@ -38,25 +40,33 @@ const PAGE_TITLES: PageTitles = {
   '/Expediente': { label: 'Expediente', icon: 'mdi-folder-account-outline' },
 };
 
-// Rutas dinámicas bajo /Expediente: no tienen una entrada propia en
-// PAGE_TITLES (el valor es variable), así que se detectan aparte para mostrar
-// el breadcrumb "Expediente > ..." con "Expediente" como link de regreso.
-// - /Expediente/Departamento/:nombre -> nombre de departamento en la URL.
-// - /Expediente/:matricula (un solo segmento, no "Departamento") -> matrícula
-//   del paciente en la URL; el nombre viaja por location.state (lo pone
-//   PacientesTabla.tsx al navegar) y es opcional: en un refresh directo de la
-//   URL no está disponible y solo se muestra la matrícula.
+// Ruta dinámica /Expediente/Departamento/:nombre: no tiene una entrada propia
+// en PAGE_TITLES (el valor es variable), así que se detecta aparte para
+// mostrar el breadcrumb "Expediente > ..." con "Expediente" como link de
+// regreso.
 const RUTA_EXPEDIENTE_DEPTO = /^\/Expediente\/Departamento\/(.+)$/;
-const RUTA_EXPEDIENTE_PACIENTE = /^\/Expediente\/([^/]+)$/;
+// El análisis individual entrado desde Pacientes.tsx vive bajo su propia
+// sección (/Pacientes/:matricula, ver basePath en PacientesTabla.tsx), con
+// el mismo criterio de breadcrumb que Expediente pero regresando a
+// /Pacientes en vez de /Expediente.
+const RUTA_PACIENTES_PACIENTE = /^\/Pacientes\/([^/]+)$/;
+// El análisis individual entrado desde Reingresos.tsx vive bajo su propia
+// sección (/Reingresos/:matricula, ver basePath en PacientesTabla.tsx), con
+// el mismo criterio de breadcrumb que Expediente pero regresando a
+// /Reingresos en vez de /Expediente.
+const RUTA_REINGRESOS_PACIENTE = /^\/Reingresos\/([^/]+)$/;
 
 const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
   const location = useLocation();
   const matchDepto = location.pathname.match(RUTA_EXPEDIENTE_DEPTO);
   const nombreDepto = matchDepto ? decodeURIComponent(matchDepto[1]) : null;
-  const matchPaciente = !matchDepto ? location.pathname.match(RUTA_EXPEDIENTE_PACIENTE) : null;
+  const matchPaciente = !matchDepto ? location.pathname.match(RUTA_PACIENTES_PACIENTE) : null;
   const matriculaPaciente = matchPaciente ? decodeURIComponent(matchPaciente[1]) : null;
+  const matchReingreso = (!matchDepto && !matchPaciente) ? location.pathname.match(RUTA_REINGRESOS_PACIENTE) : null;
+  const matriculaReingreso = matchReingreso ? decodeURIComponent(matchReingreso[1]) : null;
   const nombrePaciente = (location.state as any)?.nombre as string | undefined;
-  const page = (nombreDepto || matriculaPaciente) ? PAGE_TITLES["/Expediente"] : PAGE_TITLES[location.pathname];
+  const seccionBase = matriculaReingreso ? "/Reingresos" : matriculaPaciente ? "/Pacientes" : "/Expediente";
+  const page = (nombreDepto || matriculaPaciente || matriculaReingreso) ? PAGE_TITLES[seccionBase] : PAGE_TITLES[location.pathname];
 
   const { user, logout } = useAuth() as { user: User; logout: () => void };
 
@@ -69,16 +79,17 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
 
   return (
     <header
-      className={`h-16 bg-white/70 backdrop-blur-md border-b border-white/20 flex items-center justify-between px-4 sm:px-5 lg:px-5 fixed top-0 right-0 z-10 transition-all duration-300 ${
+      className={`h-16 bg-white backdrop-blur-md flex items-center justify-between px-4 sm:px-5 lg:px-5 fixed top-0 right-0 z-50 transition-all duration-300 ${
         isCollapsed ? "left-0 md:left-20" : "left-0 md:left-64"
       }`}
     >
       <div className="flex items-center flex-1">
         <button
           onClick={toggleSidebar}
-          className="px-2 -ml-2 text-gray-400 hover:text-sea-blue bg-linear-to-b hover:from-sea-blue/10 hover:to-gray-50 rounded-md cursor-pointer transition-colors"
+          className="w-10 h-10 -ml-2 text-gray-400 hover:text-sea-blue flex items-center justify-center transition-all group cursor-pointer"
         >
-          <i className="mdi mdi-menu text-[25px]"></i>
+          <i className="fa-solid fa-bars"></i>
+          {/* rotate-90 */}
         </button>
 
         {page && (
@@ -87,7 +98,7 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
               {nombreDepto ? (
                 <>
                   <button
-                    onClick={() => navigate("/Expediente")}
+                    onClick={() => navigate(seccionBase)}
                     className="text-gray-400 hover:text-gray-600 hover:underline cursor-pointer transition-colors"
                   >
                     {page.label}
@@ -95,16 +106,21 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
                   <i className="mdi mdi-chevron-right text-gray-300"></i>
                   <span className="truncate text-sea-blue">{nombreDepto}</span>
                 </>
-              ) : matriculaPaciente ? (
+              ) : (matriculaPaciente || matriculaReingreso) ? (
                 <>
                   <button
-                    onClick={() => navigate("/Expediente")}
+                    onClick={() => navigate(seccionBase)}
                     className="text-gray-400 hover:text-gray-600 hover:underline cursor-pointer transition-colors"
                   >
                     {page.label}
                   </button>
                   <i className="mdi mdi-chevron-right text-gray-300"></i>
-                  <span className="truncate text-sea-blue">{nombrePaciente ? `${matriculaPaciente} - ${nombrePaciente}` : matriculaPaciente}</span>
+                  <span className="truncate text-sea-blue">
+                    {(() => {
+                      const matricula = matriculaPaciente || matriculaReingreso;
+                      return nombrePaciente ? `${matricula} - ${nombrePaciente}` : matricula;
+                    })()}
+                  </span>
                 </>
               ) : (
                 <span className="text-sea-blue">{page.label}</span>
@@ -140,10 +156,10 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
         </button> */}
         <button
           onClick={handleLogout}
-          className="w-10 h-10 ml-1 text-gray-400 hover:text-red-500 bg-linear-to-b hover:from-red-100 hover:to-gray-50 rounded-xl flex items-center justify-center transition-all group cursor-pointer"
+          className="w-10 h-10 ml-1 text-gray-400 hover:text-red-400 flex items-center justify-center transition-all group cursor-pointer"
           title="Cerrar Sesión"
         >
-          <i className="mdi mdi-run-fast"></i>
+          <i className="fa-solid fa-right-from-bracket"></i>
         </button>
       </div>
     </header>

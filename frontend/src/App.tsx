@@ -15,6 +15,7 @@ import Recetas from './pages/Recetas';
 import Inventario from './pages/Inventario';
 import Documentos from './pages/Documentos';
 import Pacientes from './pages/Pacientes';
+import Reingresos from './pages/Reingresos';
 import Configuracion from './pages/Configuracion';
 import SaludPoblacional from './pages/SaludPoblacional';
 import Expediente from './pages/Expediente';
@@ -52,11 +53,13 @@ function App() {
             <Route path="Inventario" element={<Inventario />} />
             <Route path="Documentos" element={<Documentos />} />
             <Route path="Pacientes" element={<Pacientes />} />
+            <Route path="Pacientes/:matricula" element={<AnalisisIndividual />} />
+            <Route path="Reingresos" element={<Reingresos />} />
+            <Route path="Reingresos/:matricula" element={<AnalisisIndividual />} />
             <Route path="Configuracion" element={<Configuracion />} />
             <Route path="SaludPoblacional" element={<SaludPoblacional />} />
             <Route path="Expediente" element={<Expediente />} />
             <Route path="Expediente/Departamento/:nombre" element={<ExpedienteDepartamento />} />
-            <Route path="Expediente/:matricula" element={<AnalisisIndividual />} />
             <Route path="*" element={<div className="p-8 text-center text-gray-500">Módulo en construcción</div>} />
           </Route>
         </Routes>

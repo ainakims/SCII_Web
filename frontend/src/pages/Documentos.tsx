@@ -72,6 +72,17 @@ const formatDate = (d: string | number | Date) => {
   return new Date(d).toLocaleDateString("es-ES", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit" });
 };
 
+// Respaldo para documentos que solo existen como bytes en la BD (subidos
+// antes de que DocumentosController.ts empezara a guardar el archivo físico
+// en /uploads): arma un Blob a partir de FileBytes tal como lo regresa mssql
+// (Buffer serializado como { data: number[] } o, a veces, ya como number[]).
+const fileBytesToBlob = (fileBytes: Document["FileBytes"]): Blob | null => {
+  if (!fileBytes) return null;
+  const bytes = Array.isArray(fileBytes) ? fileBytes : fileBytes.data;
+  if (!bytes || bytes.length === 0) return null;
+  return new Blob([new Uint8Array(bytes)], { type: "application/pdf" });
+};
+
 const VisorPDFInline = ({ pdfId, pdfName, pdfDate, pdfUrl, isFullscreen, onClose, onDelete, onToggleFullscreen }: { pdfId: number; pdfName: string; pdfDate: string; pdfUrl: string; isFullscreen: boolean; onClose: () => void, onDelete: (id: number) => void; onToggleFullscreen: () => void; }) => {
   const { user } = useAuth() as { user: { rol?: string; matricula?: string } };
 
@@ -189,7 +200,11 @@ const Documentos: React.FC = () => {
           Tamano: 0,
           FechaCarga: d.FechaCarga,
           Direccion: d.Direccion,
-          FileBytes: null,
+          // Documentos anteriores a la migración a disco (ver @FileBytes
+          // comentado en DocumentosController.ts) solo existen como bytes en
+          // la BD, sin archivo físico en /uploads — se conserva este campo
+          // como respaldo para poder mostrarlos igual.
+          FileBytes: d.FileBytes ?? null,
         }));
         setDocuments(mapped);
 
@@ -197,11 +212,19 @@ const Documentos: React.FC = () => {
         mapped.forEach(async (doc: any) => {
           try {
             const headRes = await fetch(`${API_BASE_URL}/uploads/${mat}/${doc.Nombre}`, { method: "HEAD" });
-            const size = parseInt(headRes.headers.get("content-length") ?? "0", 10);
-            if (size > 0) {
-              setDocuments(prev => prev.map(d => d.IdDoc === doc.IdDoc ? { ...d, Tamano: size } : d));
+            if (headRes.ok) {
+              const size = parseInt(headRes.headers.get("content-length") ?? "0", 10);
+              if (size > 0) {
+                setDocuments(prev => prev.map(d => d.IdDoc === doc.IdDoc ? { ...d, Tamano: size } : d));
+              }
+              return;
             }
-          } catch { /* ignorar si falla */ }
+          } catch { /* ignorar, se intenta con FileBytes abajo */ }
+
+          const blob = fileBytesToBlob(doc.FileBytes);
+          if (blob) {
+            setDocuments(prev => prev.map(d => d.IdDoc === doc.IdDoc ? { ...d, Tamano: blob.size } : d));
+          }
         });
       } else {
         setDocuments([]);
@@ -476,12 +499,23 @@ const Documentos: React.FC = () => {
 
   const handleOpenPdf = async (doc: Document) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/uploads/${patient!.Matricula}/${doc.Nombre}`);
-      if (!response.ok) throw new Error("Archivo no encontrado");
-      const blob = await response.blob();
+      let blob: Blob | null = null;
+
+      try {
+        const response = await fetch(`${API_BASE_URL}/uploads/${patient!.Matricula}/${doc.Nombre}`);
+        if (response.ok) blob = await response.blob();
+      } catch { /* sin archivo en disco, se intenta con FileBytes abajo */ }
+
+      if (!blob) blob = fileBytesToBlob(doc.FileBytes);
+
+      if (!blob) {
+        errorModal("Archivo no disponible", "No se encontró el archivo en el servidor ni en la base de datos.");
+        return;
+      }
+
       const url = URL.createObjectURL(blob);
       // actualizar tamaño real del archivo
-      setDocuments(prev => prev.map(d => d.IdDoc === doc.IdDoc ? { ...d, Tamano: blob.size } : d));
+      setDocuments(prev => prev.map(d => d.IdDoc === doc.IdDoc ? { ...d, Tamano: blob!.size } : d));
       setSelectedPdf({ id: doc.IdDoc, nombre: doc.Nombre, date: doc.FechaCarga, url });
       setIsPdfOpen(true);
     } catch (err) {

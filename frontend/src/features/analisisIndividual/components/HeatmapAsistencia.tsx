@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { HeatmapAsistenciaAnio, HeatmapAsistenciaMes } from "../types";
 import { colorNivelRiesgo } from "../colores";
+import { formatoMesAnioLargo } from "../rangoAnios";
 
 interface HeatmapAsistenciaProps {
   anios: HeatmapAsistenciaAnio[];
@@ -56,6 +57,17 @@ const HeatmapAsistencia: React.FC<HeatmapAsistenciaProps> = ({ anios }) => {
   const irAnioAnterior = () => indice > 0 && setAnioSeleccionado(sortedAnios[indice - 1].Anio);
   const irAnioSiguiente = () => indice < sortedAnios.length - 1 && setAnioSeleccionado(sortedAnios[indice + 1].Anio);
 
+  // Rango de meses efectivamente mostrado (excluye los meses "future" al
+  // final del año en curso) — mismo patrón de leyenda que las gráficas de
+  // Seguimiento Histórico (ver rangoAnios.ts).
+  const indicesConDatos = anioData.Meses.reduce<number[]>((acc, m, i) => {
+    if (m.Estatus !== "future") acc.push(i);
+    return acc;
+  }, []);
+  const rangoMostrado = indicesConDatos.length > 0
+    ? { min: new Date(anioData.Anio, indicesConDatos[0], 1), max: new Date(anioData.Anio, indicesConDatos[indicesConDatos.length - 1], 1) }
+    : null;
+
   return (
     <div className="rounded-lg p-4">
       <div className="flex items-center justify-between mb-2 flex-wrap gap-2">
@@ -103,6 +115,14 @@ const HeatmapAsistencia: React.FC<HeatmapAsistenciaProps> = ({ anios }) => {
         <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="size-2.5 rounded-sm inline-block" style={{ backgroundColor: colorNivelRiesgo(3) }}></span>Riesgo Alto</span>
         <span className="flex items-center gap-1.5 text-[10px] text-gray-500"><span className="size-2.5 rounded-sm inline-block bg-gray-200"></span>Sin registro</span>
       </div>
+      {rangoMostrado && (
+        <div className="mt-3 rounded-lg px-3 py-2 bg-gray-100 text-gray-600 flex items-center gap-2">
+          <i className="fa-solid fa-circle-info text-xs shrink-0"></i>
+          <p className="text-[11px] italic leading-relaxed text-left">
+            El contenido mostrado comprende un rango del <b>{formatoMesAnioLargo(rangoMostrado.min)} al {formatoMesAnioLargo(rangoMostrado.max)}</b>.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

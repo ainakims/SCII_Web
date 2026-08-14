@@ -15,7 +15,7 @@ const MainLayout: FC = () => {
       <Sidebar isCollapsed={isCollapsed} />
       <div className={`flex flex-col flex-1 transition-all duration-150 ${isCollapsed ? 'md:pl-20' : 'md:pl-64'}`}>
         <Topbar toggleSidebar={toggleSidebar} isCollapsed={isCollapsed} />
-        <main className="flex-1 pt-16 p-4 sm:p-6 lg:p-8 bg-linear-to-b from-gray-50 to-horz-blue/30">
+        <main className="flex-1 pt-16 p-4 sm:p-6 lg:p-8 bg-gray-100/60">
           <AnimatePresence>
             <motion.div
               key={location.pathname}

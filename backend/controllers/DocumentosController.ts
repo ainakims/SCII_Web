@@ -101,7 +101,13 @@ export function DocumentosController(db: DB) {
     },
 
     filename: (req: any, file: any, cb: any) => {
-      cb(null, file.originalname);
+      // busboy (usado por multer) interpreta el nombre del archivo que manda
+      // el navegador como Latin-1, así que cualquier acento/ñ llega ya
+      // corrupto en file.originalname (ej. "situación" -> "situaciÃ³n").
+      // Se reinterpretan esos mismos bytes como UTF-8 para recuperar el
+      // nombre real antes de usarlo en disco/BD.
+      const nombreCorregido = Buffer.from(file.originalname, 'latin1').toString('utf8');
+      cb(null, nombreCorregido);
     }
   });
 

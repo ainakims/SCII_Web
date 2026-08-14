@@ -1,8 +1,12 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { ChevronFirst, ChevronLeft, ChevronRight, ChevronLast } from "lucide-react";
+import OverlayTransicionAnalisis from "./shared/OverlayTransicionAnalisis";
+import API_BASE_URL from "../../../config";
+import { fetchWithAuth } from "../../../services/api";
 
 export interface PacienteResumen {
+  IdPaciente?: number | null;
   Empl_matricula: string;
   Empl_Nombres: string;
   Categoria_desc?: string;
@@ -11,16 +15,21 @@ export interface PacienteResumen {
   FechaConsulta?: string;
   Empl_fecha_baja?: string;
   Riesgo?: string;
-  // Solo se usan/muestran en "Personal activo" (ver filtros más abajo); el
-  // mismo endpoint de Pacientes.tsx ya los regresa.
   Empl_tipo_empleado?: string;
   Empl_tipo_contrato?: string;
-  Sexo?: string;
+  Sexo?: "M" | "F" | string;
+  FechaNacimiento?: string;
 }
 
 interface PacientesTablaProps {
   activo: boolean;
   pacientes: PacienteResumen[];
+  fillHeight?: boolean;
+  basePath?: string;
+  showFecha?: boolean;
+  onEdit?: (paciente: PacienteResumen) => void;
+  onDelete?: (paciente: PacienteResumen) => void;
+  onVerDocumentos?: (paciente: PacienteResumen) => void;
 }
 
 type SortCol = "matricula" | "nombre" | "especialidad" | "fecha" | "riesgo" | null;
@@ -28,20 +37,51 @@ type SortDir = "asc" | "desc" | "none";
 
 const ITEMS_POR_PAGINA = 100;
 
-// Tabla de pacientes activos / con reingreso, mismo formato de columnas que el
-// directorio de Pacientes (frontend/src/pages/Pacientes.tsx), con el mismo
-// "look & feel" que DepartamentoTabla.tsx (altura fija con scroll interno,
-// encabezado sticky, columnas ordenables). Es puramente presentacional: el
-// fetch y el loading viven en Expediente.tsx (uno por tab, cargado la primera
-// vez que se visita), para que cambiar de página dentro del mismo tab sea
-// instantáneo (paginado 100% client-side, sin ir de nuevo al backend).
-//
-// SOLO en "Personal activo" (activo=true) el panel de filtros y el pie de
-// paginación copian exactamente los de Pacientes.tsx (Tipo de
-// empleado/contrato/Sexo + paginado numerado con elipsis); Reingresos se
-// queda con la versión simple (búsqueda + primera/anterior/siguiente/última).
-const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes }) => {
+const ICONO_ESPECIALIDAD: Record<string, string> = {
+  // "MECANICO": "wrench",
+  // "BUZO": "water",
+  // "CONFIANZA ADMINISTRATIVO": "building",
+  // "CONFIANZA PRODUCCION": "industry",
+  // "ELECTRICISTA": "bolt-lightning", /*bolt*/
+  // "EXTERNO": "ship",
+  // "LIMPIEZA (INTENDENCIA)": "broom",
+};
+const ICONO_ESPECIALIDAD_DEFAULT = "";
+
+const ICONO_RIESGO: Record<string, { icon: string; color: string }> = {
+  BAJO: { icon: "circle-check", color: "text-aqua-green" },
+  MEDIO: { icon: "circle-exclamation", color: "text-sunray-yellow" },
+  ALTO: { icon: "triangle-exclamation", color: "text-red-500" },
+};
+
+const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes, fillHeight = false, basePath = "/Pacientes", showFecha = true, onEdit, onDelete, onVerDocumentos }) => {
   const navigate = useNavigate();
+  // El análisis se genera aquí (mismo endpoint que dispara AnalisisIndividual.tsx
+  // al montarse) mientras se muestra el overlay de transición de pantalla
+  // completa sobre Pacientes/Reingresos. Solo se navega una vez que la
+  // respuesta ya está lista, pasándola por location.state — así
+  // AnalisisIndividual.tsx llega con todo cargado y no muestra su propio
+  // overlay de "Generando análisis con IA" (evita el doble overlay).
+  const [navegandoAMatricula, setNavegandoAMatricula] = useState<string | null>(null);
+  const irAAnalisis = async (p: PacienteResumen) => {
+    const matricula = String(p.Empl_matricula ?? "").trim();
+    setNavegandoAMatricula(matricula);
+
+    let resultadoPrecargado: unknown = null;
+    try {
+      const endpoint = activo ? "Evaluar" : "EvaluarInactivos";
+      const res = await fetchWithAuth(`${API_BASE_URL}/AnalisisIndividual/${endpoint}`, {
+        method: "POST",
+        body: JSON.stringify({ matricula }),
+      });
+      const json = await res.json();
+      if (json?.ok) resultadoPrecargado = json.data;
+    } catch (err) {
+      console.error("Error al pre-cargar análisis individual:", err);
+    }
+
+    navigate(`${basePath}/${encodeURIComponent(matricula)}`, { state: { nombre: p.Empl_Nombres, activo, resultadoPrecargado } });
+  };
   const [busqueda, setBusqueda] = useState("");
   const [showFiltros, setShowFiltros] = useState(true);
   const [pagina, setPagina] = useState(1);
@@ -60,25 +100,13 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes }) =>
   };
 
   const sortIcon = (col: SortCol) => {
-    if (sortCol !== col || sortDir === "none") return "mdi-sort";
-    return sortDir === "asc" ? "mdi-sort-ascending" : "mdi-sort-descending";
+    if (sortCol !== col || sortDir === "none") return "fa-sort";
+    return sortDir === "asc" ? "fa-sort-up" : "fa-sort-down";
   };
 
-  // filtroTipoEmpleado/Contrato/Sexo solo se pueden fijar desde los selects
-  // que se muestran cuando activo=true; en Reingresos siempre quedan en "",
-  // así que esta misma lógica de filtrado no le cambia nada a esa pestaña.
+  const hayAcciones = Boolean(onEdit || onDelete || onVerDocumentos);
   const hayFiltrosActivos = Boolean(busqueda || filtroTipoEmpleado || filtroTipoContrato || filtroSexo);
 
-  const limpiarFiltros = () => {
-    setBusqueda("");
-    setFiltroTipoEmpleado("");
-    setFiltroTipoContrato("");
-    setFiltroSexo("");
-  };
-
-  // La búsqueda y los filtros operan sobre TODOS los pacientes recibidos (no
-  // solo la página visible), así que siempre encuentran coincidencias en toda
-  // la base, no nada más en el lote que se está mostrando.
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
     return pacientes.filter((p) => {
@@ -103,8 +131,6 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes }) =>
     return [...filtrados].sort((a, b) => factor * valor(a).localeCompare(valor(b), "es", { numeric: true }));
   }, [filtrados, sortCol, sortDir, activo]);
 
-  // Reinicia a la página 1 cuando cambia la búsqueda, algún filtro, el orden
-  // o el tab (activos/reingresos) — evita quedar "varado" en una página vacía.
   useEffect(() => {
     setPagina(1);
   }, [busqueda, filtroTipoEmpleado, filtroTipoContrato, filtroSexo, sortCol, sortDir, activo]);
@@ -129,62 +155,167 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes }) =>
     return pages;
   };
 
-  const encabezado = (col: SortCol, label: string, extraCls: string) => (
+  // icon: nombre del ícono de Font Awesome (sin el prefijo "fa-solid fa-"),
+  // ej. "id-card". Se deja vacío a propósito — cada encabezado se rellena a
+  // mano según se decida qué ícono le toca a cada columna.
+  const encabezado = (col: SortCol, label: string, extraCls: string, icon: string = "") => (
     <th onClick={() => cycleSort(col)} className={`px-5 py-3 font-semibold cursor-pointer select-none group ${extraCls}`}>
       <span className={`flex items-center gap-1 ${extraCls.includes("text-right") ? "justify-end" : extraCls.includes("text-center") ? "justify-center" : ""}`}>
+        {icon && <i className={`${icon} text-[10px] text-gray-400 group-hover:text-gray-500 mr-1`}></i>}
         {label}
-        <i className={`mdi ${sortIcon(col)} text-sm transition-colors ${sortCol === col && sortDir !== "none" ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`}></i>
+        <i className={`fa-solid ${sortIcon(col)} text-[10px] transition-colors ${sortCol === col && sortDir !== "none" ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`}></i>
       </span>
     </th>
   );
 
   return (
-    <div>
-      {/* Alto FIJO (no max-h): la caja siempre mide lo mismo sin importar
-          cuántas filas traiga la página actual — solo cuando hay más de ~10
-          aparece scroll interno, en vez de que la tabla crezca/encoja. */}
-      <div className="h-[420px] overflow-auto rounded-lg ">
+    <div className={fillHeight ? "flex flex-col h-full min-h-0 bg-white rounded-lg shadow-xs pb-0" : ""}>
+      <div className={fillHeight ? "flex-1 min-h-0 overflow-auto rounded-lg" : "h-[420px] overflow-auto rounded-lg"}>
         {/* shadow-xl */}
         <table className="w-full text-xs table-fixed">
-          <thead className="sticky top-0 z-10 bg-linear-to-r from-white to-gray-100">
+          <thead className="sticky top-0 z-10 bg-gray-50">
             <tr className="text-gray-700 text-left">
-              {encabezado("matricula", "Matrícula", "w-[90px]")}
-              {encabezado("nombre", "Nombre", "")}
-              {encabezado("especialidad", "Especialidad", "w-[210px]")}
-              {encabezado("fecha", activo ? "Última consulta" : "Fecha de baja", "text-left w-[170px]")}
-              {encabezado("riesgo", "Riesgo", "text-left w-[210px]")}
+              {encabezado("matricula", "Matrícula", "w-[110px]", "fa-brands fa-slack")}
+              {encabezado("nombre", "Nombre", "", "fa-solid fa-user")}
+              {encabezado("especialidad", "Especialidad", "w-[170px]", "fa-solid fa-screwdriver-wrench")}
+              {showFecha && encabezado("fecha", activo ? "Última Consulta" : "Fecha Baja", "text-left w-[170px]", "fa-solid fa-calendar-week")}
+              {encabezado("riesgo", "Riesgo", "text-left w-[170px]", "fa-solid fa-radiation")}
+              {hayAcciones && (
+                <th className="px-5 py-3 text-center font-semibold text-gray-700 w-[170px]"><i className="fa-solid fa-arrow-pointer text-xs text-gray-400 group-hover:text-gray-500 mr-1"></i>Acciones</th>
+              )}
               <th className="w-8 pl-1 pr-3 py-3 text-center">
                 <i
                   onClick={(e) => { e.stopPropagation(); setShowFiltros((v) => !v); }}
                   title={showFiltros ? "Ocultar filtros" : "Mostrar filtros"}
-                  className={`mdi ${showFiltros ? "mdi-filter-off" : "mdi-filter"} cursor-pointer text-xs transition-colors ${showFiltros || hayFiltrosActivos ? "text-sea-blue" : "text-gray-300 hover:text-gray-400"}`}
+                  className={`fa-solid ${showFiltros ? "fa-filter-circle-xmark" : "fa-filter"} cursor-pointer text-xs transition-colors ${showFiltros || hayFiltrosActivos ? "text-sea-blue" : "text-gray-300 hover:text-gray-400"}`}
                 ></i>
               </th>
             </tr>
             {showFiltros && (
-              <tr className="bg-linear-to-r from-white to-gray-100 text-left">
+              <tr className="bg-gray-50 text-left h-11">
                 <td colSpan={2} className="px-5 py-2">
-                  <div className="relative max-w-[260px]">
-                    <i className="mdi mdi-magnify absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                  <div className="relative w-94">
+                    <i className="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
                     <input
                       type="text"
                       value={busqueda}
                       onChange={(e) => setBusqueda(e.target.value)}
                       placeholder="Buscar nombre o matrícula"
-                      className="w-94 pl-8 pr-2 py-1 rounded-md text-xs border border-gray-200 bg-white outline-none focus:ring-1 focus:ring-sea-blue"
+                      className="w-full h-7 pl-8 pr-7 py-1 rounded-md text-xs shadow-xs bg-white outline-none focus:ring-1 focus:ring-sea-blue"
                     />
+                    {busqueda && (
+                      <button
+                        type="button"
+                        onClick={() => setBusqueda("")}
+                        title="Limpiar"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-400 transition-colors cursor-pointer"
+                      >
+                        <i className="fa-solid fa-circle-xmark text-xs"></i>
+                      </button>
+                    )}
                   </div>
                 </td>
 
                 {activo ? (
                   <>
-                  <td className="pl-5 pr-1 py-2 text-left">
+                    {showFecha ? (
+                      <>
+                        <td className="pl-5 pr-1 py-2 text-left">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-medium text-gray-500">Género 2</span>
+                            <select
+                              value={filtroSexo}
+                              onChange={(e) => setFiltroSexo(e.target.value)}
+                              className="text-xs h-7 rounded-md shadow-xs px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
+                            >
+                              <option value="">Todos</option>
+                              <option value="M">Masculino</option>
+                              <option value="F">Femenino</option>
+                            </select>
+                          </div>
+                        </td>
+                        <td className="px-5 py-2 text-left">
+                          <div className="flex items-center justify-start gap-1.5">
+                            <span className="text-[11px] font-medium text-gray-500">Tipo</span>
+                            <select
+                              value={filtroTipoEmpleado}
+                              onChange={(e) => setFiltroTipoEmpleado(e.target.value)}
+                              className="text-xs h-7 border border-gray-200 rounded-md px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
+                            >
+                              <option value="">Todos</option>
+                              <option value="C">Confianza</option>
+                              <option value="O">Sindicalizado</option>
+                              <option value="EX">Externo</option>
+                            </select>
+                          </div>
+                        </td>
+                        <td className="px-5 py-2 text-right">
+                          {/* colSpan={2} */}
+                          <div className="flex items-center justify-end gap-1.5">
+                            <span className="text-[11px] font-medium text-gray-500">Contrato</span>
+                            <select
+                              value={filtroTipoContrato}
+                              onChange={(e) => setFiltroTipoContrato(e.target.value)}
+                              className="text-xs h-7 border border-gray-200 rounded-md px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
+                            >
+                              <option value="">Todos</option>
+                              <option value="E">Eventual</option>
+                              <option value="P">Planta</option>
+                              <option value="C">Por contrato</option>
+                              <option value="EX">Subcontrato</option>
+                            </select>
+                          </div>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td className="px-5 py-2 text-left">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-medium text-gray-500">Tipo</span>
+                            <select
+                              value={filtroTipoEmpleado}
+                              onChange={(e) => setFiltroTipoEmpleado(e.target.value)}
+                              className="text-xs h-7 rounded-md shadow-xs px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
+                            >
+                              <option value="">Todos</option>
+                              <option value="C">Confianza</option>
+                              <option value="O">Sindicalizado</option>
+                              <option value="EX">Externo</option>
+                            </select>
+                          </div>
+                        </td>
+                        <td className="px-5 py-2 text-left">
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[11px] font-medium text-gray-500">Contrato</span>
+                            <select
+                              value={filtroTipoContrato}
+                              onChange={(e) => setFiltroTipoContrato(e.target.value)}
+                              className="text-xs h-7 rounded-md shadow-xs px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
+                            >
+                              <option value="">Todos</option>
+                              <option value="E">Eventual</option>
+                              <option value="P">Planta</option>
+                              <option value="C">Por contrato</option>
+                              <option value="EX">Subcontrato</option>
+                            </select>
+                          </div>
+                        </td>
+                      </>
+                    )}
+                  </>
+                ) : (
+                  <td colSpan={showFecha ? 3 : 2} className="px-5 py-2"></td>
+                )}
+
+                {!showFecha && activo && hayAcciones ? (
+                  <>
+                    <td className="px-5 py-2">
                       <div className="flex items-center gap-1.5">
                         <span className="text-[11px] font-medium text-gray-500">Género</span>
                         <select
                           value={filtroSexo}
                           onChange={(e) => setFiltroSexo(e.target.value)}
-                          className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
+                          className="text-xs h-7 rounded-md shadow-xs px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
                         >
                           <option value="">Todos</option>
                           <option value="M">Masculino</option>
@@ -192,58 +323,14 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes }) =>
                         </select>
                       </div>
                     </td>
-                    <td className="px-5 py-2 text-left">
-                      <div className="flex items-center justify-start gap-1.5">
-                        <span className="text-[11px] font-medium text-gray-500">Tipo</span>
-                        <select
-                          value={filtroTipoEmpleado}
-                          onChange={(e) => setFiltroTipoEmpleado(e.target.value)}
-                          className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
-                        >
-                          <option value="">Todos</option>
-                          <option value="C">Confianza</option>
-                          <option value="O">Sindicalizado</option>
-                          <option value="EX">Externo</option>
-                        </select>
-                      </div>
-                    </td>
-                    <td className="px-5 py-2 text-right">
-                      <div className="flex items-center justify-end gap-1.5">
-                        <span className="text-[11px] font-medium text-gray-500">Contrato</span>
-                        <select
-                          value={filtroTipoContrato}
-                          onChange={(e) => setFiltroTipoContrato(e.target.value)}
-                          className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
-                        >
-                          <option value="">Todos</option>
-                          <option value="E">Eventual</option>
-                          <option value="P">Planta</option>
-                          <option value="C">Por contrato</option>
-                          <option value="EX">Subcontrato</option>
-                        </select>
-                      </div>
-                    </td>
-
+                    <td className="w-8 pl-1 pr-3 py-2"></td>
                   </>
                 ) : (
                   <>
-                    <td className="px-5 py-2"></td>
-                    <td className="px-5 py-2"></td>
-                    <td className="px-5 py-2"></td>
+                    <td className="w-8 pl-1 pr-3 py-2"></td>
+                    {hayAcciones && <td className="px-5 py-2"></td>}
                   </>
                 )}
-
-                <td className="w-8 pl-1 pr-3 py-2 text-center">
-                  {/* Mismo ancho fijo que el ícono de embudo del encabezado:
-                      queda justo debajo, y solo cambia visible/invisible. */}
-                  <button
-                    onClick={limpiarFiltros}
-                    disabled={!hayFiltrosActivos}
-                    className={`text-xs font-medium text-gray-400 hover:text-red-500 transition-colors cursor-pointer ${hayFiltrosActivos ? "" : "invisible pointer-events-none"}`}
-                  >
-                    <i className="mdi mdi-close-circle"></i>
-                  </button>
-                </td>
               </tr>
             )}
           </thead>
@@ -253,38 +340,127 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes }) =>
               return (
                 <tr
                   key={`${p.Empl_matricula}-${idx}`}
-                  onClick={() => navigate(`/Expediente/${encodeURIComponent(String(p.Empl_matricula ?? ""))}`, { state: { nombre: p.Empl_Nombres, activo } })}
+                  onClick={() => irAAnalisis(p)}
                   className="group border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors cursor-pointer"
                 >
-                  <td className="px-5 py-0 font-semibold text-gray-700">{p.Empl_matricula && p.Empl_matricula !== "0" ? p.Empl_matricula : "EXT"}</td>
+                  <td className="px-5 py-0 font-bold tracking-wide text-gray-700 group-hover:text-sea-blue transition-colors">{p.Empl_matricula && p.Empl_matricula !== "0" ? p.Empl_matricula : "EXT"}</td>
                   <td className="px-5 py-0">
                     <p className="font-bold uppercase text-gray-600 truncate group-hover:text-sea-blue transition-colors">{p.Empl_Nombres}</p>
-                    <p className="text-[10px] text-gray-400 uppercase truncate">{p.Categoria_desc || p.Compania}</p>
+                    <p className="text-[10px] text-gray-400 uppercase truncate group-hover:font-semibold transition-all">{p.Categoria_desc || p.Compania}</p>
                   </td>
-                  <td className="px-5 py-2 text-gray-500 truncate">{p.Especialidad}</td>
-                  {/* <td className="px-5 py-2 text-left text-gray-500">{fecha ? new Date(fecha).toLocaleDateString("es-MX") : ""}</td> */}
-                  <td className="px-5 py-2 text-left text-gray-500">
-                    {fecha ? new Date(fecha).toLocaleString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false, }): ""}
+                  <td className="px-5 py-2 text-gray-500 truncate group-hover:font-semibold transition-all">
+                    {(() => {
+                      const icono = ICONO_ESPECIALIDAD[p.Especialidad ?? ""] ?? ICONO_ESPECIALIDAD_DEFAULT;
+                      return (
+                        <span className="inline-flex items-center gap-1.5">
+                          {icono && <i className={`mdi mdi-${icono} text-gray-400 text-[11px]`}></i>}
+                          {p.Especialidad}
+                        </span>
+                      );
+                    })()}
                   </td>
-                  <td className="px-5 py-2 text-right text-gray-500">{p.Riesgo || ""}</td>
+                  {showFecha && (
+                    <td className="px-5 py-2 text-left text-gray-500 group-hover:font-semibold transition-all">
+                      {fecha ? (
+                        activo ? (
+                          new Date(fecha).toLocaleString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric", hour: "2-digit", minute: "2-digit", hour12: false })
+                        ) : (
+                          // Día/mes/año en columnas de ancho fijo para que las
+                          // "/" queden alineadas entre filas, sin depender de
+                          // ninguna variante de fuente (tabular-nums, etc.).
+                          (() => {
+                            const d = new Date(fecha);
+                            const dd = String(d.getDate()).padStart(2, "0");
+                            const mm = String(d.getMonth() + 1).padStart(2, "0");
+                            const yyyy = String(d.getFullYear());
+                            return (
+                              <span className="inline-flex">
+                                <span className="w-4.5 text-center">{dd}</span>
+                                <span className="w-1.5 text-center">·</span>
+                                <span className="w-4.5 text-center">{mm}</span>
+                                <span className="w-1.5 text-center">·</span>
+                                <span className="w-9 text-center">{yyyy}</span>
+                              </span>
+                            );
+                          })()
+                        )
+                      ) : ""}
+                    </td>
+                  )}
+                  <td className="px-5 py-2 text-left font-bold text-gray-700">
+                    {p.Riesgo && (() => {
+                      const { icon, color } = ICONO_RIESGO[p.Riesgo.trim().toUpperCase()] ?? { icon: "circle", color: "text-gray-300" };
+                      return (
+                        <span className="inline-flex items-center gap-1.5">
+                          <i className={`fa-solid fa-${icon} ${color} text-xs shrink-0`}></i>
+                          {p.Riesgo}
+                        </span>
+                      );
+                    })()}
+                  </td>
+                  {hayAcciones && (
+                    <td className="px-2 pr-0 whitespace-nowrap">
+                      <div className="flex items-center gap-1 justify-center">
+                        {p.Empl_matricula && Number(p.Empl_matricula) > 0 && p.IdPaciente == null ? (
+                          <button
+                            onClick={(e) => { e.stopPropagation(); onEdit?.(p); }}
+                            className="w-6 text-gray-400 hover:text-sky-blue transition-all cursor-pointer"
+                            title="Registrar"
+                          >
+                            <i className="fa-solid fa-user-plus text-xs"></i>
+                          </button>
+                        ) : (
+                          onEdit && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onEdit(p); }}
+                              className="w-6 text-gray-400 hover:text-sky-blue transition-all cursor-pointer"
+                              title="Editar"
+                            >
+                              <i className="fa-solid fa-pencil text-xs"></i>
+                            </button>
+                          )
+                        )}
+                        {p.Empl_matricula && Number(p.Empl_matricula) === 0 ? (
+                          onDelete && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onDelete(p); }}
+                              className="w-6 text-gray-400 hover:text-red-400 transition-all cursor-pointer"
+                              title="Eliminar"
+                            >
+                              <i className="fa-solid fa-trash-arrow-up text-xs"></i>
+                            </button>
+                          )
+                        ) : (
+                          onVerDocumentos && (
+                            <button
+                              onClick={(e) => { e.stopPropagation(); onVerDocumentos(p); }}
+                              className="w-6 text-gray-400 hover:text-sky-blue transition-all cursor-pointer"
+                              title="Documentación"
+                            >
+                              <i className="fa-regular fa-file text-xs"></i>
+                            </button>
+                          )
+                        )}
+                      </div>
+                    </td>
+                  )}
                   <td className="w-8 pl-1 pr-3 py-2 text-right text-gray-400 group-hover:text-sea-blue transition-colors">
-                    <i className="mdi mdi-chevron-right"></i>
+                    <i className="fa-solid fa-chevron-right text-[10px]"></i>
                   </td>
                 </tr>
               );
             })}
             {mostrados.length === 0 && (
               <tr>
-                <td colSpan={6} className="text-center text-gray-400 text-xs py-8">Sin coincidencias.</td>
+                <td colSpan={(hayAcciones ? 7 : 5) + (showFecha ? 1 : 0)} className="text-center text-gray-400 text-xs py-8">Sin coincidencias.</td>
               </tr>
             )}
           </tbody>
         </table>
       </div>
+      
 
-      {/* Mismo diseño de paginado para Personal y Reingresos (antes Reingresos
-          tenía una versión más simple, con botones distintos). */}
-      <div className="grid grid-cols-2 gap-4 items-center mt-2 h-5 overflow-visible">
+      <div className="grid grid-cols-2 gap-4 items-center px-5 py-3 shrink-0">
         <div className="col-span-1 flex items-center">
           <span className="text-xs font-bold text-gray-400">
             {paginaSegura} de {totalPaginas} páginas · {ordenados.length.toLocaleString("es-MX")} resultados
@@ -316,7 +492,7 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes }) =>
                   title={`Pág. ${page}`}
                   key={page}
                   onClick={() => setPagina(page)}
-                  className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs border cursor-pointer border-gray-100 shadow-md font-semibold transition-all ${paginaSegura === page ? "text-white bg-linear-to-b from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80" : "hover:bg-gray-100"}`}
+                  className={`w-7 h-7 flex items-center justify-center rounded-lg text-xs cursor-pointer shadow-xs font-semibold transition-all ${paginaSegura === page ? "text-white bg-linear-to-b from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80" : "hover:bg-gray-100"}`}
                 >
                   {page}
                 </button>
@@ -345,6 +521,7 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes }) =>
           </div>
         </div>
       </div>
+      {navegandoAMatricula && <OverlayTransicionAnalisis />}
     </div>
   );
 };

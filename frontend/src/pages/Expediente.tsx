@@ -11,7 +11,6 @@ import { construirPayloadResumenIA } from "../features/saludPoblacional/resumenM
 import SectionCard from "../features/saludPoblacional/components/shared/SectionCard";
 import KpiCards from "../features/saludPoblacional/components/KpiCards";
 import DepartamentoTabla from "../features/saludPoblacional/components/DepartamentoTabla";
-import PacientesTabla, { PacienteResumen } from "../features/saludPoblacional/components/PacientesTabla";
 import ExpedienteContenido from "../features/saludPoblacional/components/ExpedienteContenido";
 import MatricesPoblacionalSection from "../features/saludPoblacional/components/MatricesPoblacionalSection";
 
@@ -58,72 +57,29 @@ const ExpedienteSkeleton: React.FC = () => (
   </div>
 );
 
-const PacientesTablaSkeleton: React.FC = () => (
-  <div className="h-[420px] rounded-lg bg-gray-50 overflow-hidden animate-pulse">
-    <div className="h-10 bg-linear-to-r from-white to-gray-100"></div>
-    {Array.from({ length: 9 }).map((_, i) => (
-      <div key={i} className="flex items-center gap-5 px-5 py-3 border-b border-gray-100 last:border-0">
-        <div className="h-3 w-14 rounded bg-gray-200"></div>
-        <div className="flex-1 space-y-1.5">
-          <div className="h-3 w-40 rounded bg-gray-200"></div>
-          <div className="h-2.5 w-24 rounded bg-gray-100"></div>
-        </div>
-        <div className="h-3 w-28 rounded bg-gray-200"></div>
-        <div className="h-3 w-24 rounded bg-gray-200"></div>
-      </div>
-    ))}
-  </div>
-);
-
-const TABS_DEPTO = [
-  { id: "departamentos", label: "Departamento", icon: "fa-building" },
-  { id: "activos",       label: "Personal",     icon: "fa-user-group" },
-  { id: "reingresos",    label: "Reingresos",   icon: "fa-arrows-spin" },
-] as const;
-type VistaDeptoTab = typeof TABS_DEPTO[number]["id"];
-
-const TITULOS: Record<VistaDeptoTab, { titulo: string; subtitulo: string }> = {
-  departamentos: {
-    titulo: "Departamentos",
-    subtitulo: "Resumen general por cada departamento",
-  },
-  activos: {
-    titulo: "Personal activo",
-    subtitulo: "Desgloce de personal sindicalizado y de confianza",
-  },
-  reingresos: {
-    titulo: "Reingresos",
-    subtitulo: "Prospectos que formaron parte de la plantilla",
-  },
+// El tab "Reingresos" que vivía aquí se movió a su propia página
+// (Reingresos.tsx, accesible desde el sidebar), y el tab "Personal" se movió
+// a la página Pacientes.tsx (el análisis individual ahora se abre desde ahí,
+// bajo la ruta /Pacientes/:matricula) — el análisis individual que se abre
+// desde cualquiera de esas vistas ya no depende de esta página.
+const TITULO_DEPARTAMENTOS = {
+  titulo: "Departamentos",
+  subtitulo: "Resumen general por cada departamento",
 };
 
 // Expediente: misma información que Salud Poblacional pero sin tabs ni filtros,
 // todas las secciones se muestran apiladas en una sola página. Además: tabla de
-// departamentos (clic -> ventana específica del departamento) con pestañas para
-// alternar hacia los directorios de pacientes activos / con reingreso.
+// departamentos (clic -> ventana específica del departamento). Personal y
+// Reingresos viven aparte, en sus propias páginas (Pacientes.tsx y
+// Reingresos.tsx, accesibles desde el sidebar).
 const Expediente: React.FC = () => {
   const navigate = useNavigate();
   const [registros, setRegistros] = useState<RegistroValidado[]>([]);
   const [loading, setLoading] = useState(true);
-  const [vistaTab, setVistaTab] = useState<VistaDeptoTab>("departamentos");
 
   // Consultas puntuales (Caso 3) de toda la plantilla activa, para la matriz
-  // de "Consultas por Departamento" — se piden en paralelo a `registros`, no
-  // de forma lazy como Personal/Reingresos, porque esa sección se ve de
-  // inmediato al entrar a Expediente.
+  // de "Consultas por Departamento" — se piden en paralelo a `registros`.
   const [consultas, setConsultas] = useState<RegistroConsultaValidado[]>([]);
-
-  // Activos y reingresos ya NO se piden juntos por adelantado: cada uno se
-  // carga completo (para que paginar dentro del tab sea instantáneo,
-  // client-side) pero solo la PRIMERA vez que se abre su propio tab — así
-  // "Personal" no obliga a cargar también "Reingresos" (y viceversa) si el
-  // usuario nunca lo visita.
-  const [pacientesActivos, setPacientesActivos] = useState<PacienteResumen[]>([]);
-  const [pacientesReingresos, setPacientesReingresos] = useState<PacienteResumen[]>([]);
-  const [loadingActivos, setLoadingActivos] = useState(false);
-  const [loadingReingresos, setLoadingReingresos] = useState(false);
-  const [cargadoActivos, setCargadoActivos] = useState(false);
-  const [cargadoReingresos, setCargadoReingresos] = useState(false);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -156,26 +112,6 @@ const Expediente: React.FC = () => {
       .catch((err) => console.error("Error al obtener consultas poblacionales:", err));
   }, []);
 
-  useEffect(() => {
-    if (vistaTab !== "activos" || cargadoActivos) return;
-    setLoadingActivos(true);
-    fetchWithAuth(`${API_BASE_URL}/Pacientes/ObtenerPacientes`, { method: "POST", body: JSON.stringify({ esActivo: "1" }) })
-      .then((res) => res.json())
-      .then((json) => setPacientesActivos(Array.isArray(json?.data) ? json.data : []))
-      .catch((err) => console.error("Error al obtener personal activo:", err))
-      .finally(() => { setLoadingActivos(false); setCargadoActivos(true); });
-  }, [vistaTab, cargadoActivos]);
-
-  useEffect(() => {
-    if (vistaTab !== "reingresos" || cargadoReingresos) return;
-    setLoadingReingresos(true);
-    fetchWithAuth(`${API_BASE_URL}/Pacientes/ObtenerPacientes`, { method: "POST", body: JSON.stringify({ esActivo: "0" }) })
-      .then((res) => res.json())
-      .then((json) => setPacientesReingresos(Array.isArray(json?.data) ? json.data : []))
-      .catch((err) => console.error("Error al obtener reingresos:", err))
-      .finally(() => { setLoadingReingresos(false); setCargadoReingresos(true); });
-  }, [vistaTab, cargadoReingresos]);
-
   const estadoActual = useMemo(() => construirEstadoActual(registros), [registros]);
   // minPoblacion=1: a diferencia del resumen de IA, la tabla debe listar TODOS
   // los departamentos reales, no solo los que superan el umbral de "reportable".
@@ -201,43 +137,11 @@ const Expediente: React.FC = () => {
               <KpiCards estadoActual={estadoActual} />
 
               <SectionCard
-                icon={`fa-solid ${TABS_DEPTO.find((t) => t.id === vistaTab)!.icon}`}
-                title={TITULOS[vistaTab].titulo}
-                subtitle={TITULOS[vistaTab].subtitulo}
-                actions={
-                  <div className="flex items-center gap-1 bg-white border border-gray-100 shadow-md rounded-lg p-1">
-                    {TABS_DEPTO.map((t) => (
-                      <button
-                        key={t.id}
-                        onClick={() => setVistaTab(t.id)}
-                        className={`w-32 flex justify-center items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${vistaTab === t.id ? "bg-linear-to-r from-sea-blue to-sky-blue text-white shadow-md" : "text-gray-500 hover:text-sea-blue"}`}
-                      >
-                        <i className={`fa-solid ${t.icon} text-xs`}></i>
-                        {t.label}
-                      </button>
-                    ))}
-                  </div>
-                }
+                icon="fa-solid fa-building"
+                title={TITULO_DEPARTAMENTOS.titulo}
+                subtitle={TITULO_DEPARTAMENTOS.subtitulo}
               >
-                {/* Los tres se montan una sola vez y se alternan con `hidden`
-                    (no con && condicional): así cambiar de tab no vuelve a
-                    renderizar la tabla completa cada vez, solo la muestra/oculta.
-                    Departamentos no depende de ningún fetch propio (usa
-                    `resumenDepartamentos`, ya listo apenas carga `registros`),
-                    así que se muestra de inmediato sin esperar a Personal/
-                    Reingresos. Personal y Reingresos sí muestran un skeleton
-                    mientras se carga su propio directorio completo por
-                    primera vez (después de eso, cambiar de página es
-                    instantáneo: ya quedó todo en memoria). */}
-                <div className={vistaTab === "departamentos" ? "" : "hidden"}>
-                  <DepartamentoTabla departamentos={resumenDepartamentos.departamentos} onSeleccionar={irADepartamento} />
-                </div>
-                <div className={vistaTab === "activos" ? "" : "hidden"}>
-                  {loadingActivos ? <PacientesTablaSkeleton /> : <PacientesTabla activo={true} pacientes={pacientesActivos} />}
-                </div>
-                <div className={vistaTab === "reingresos" ? "" : "hidden"}>
-                  {loadingReingresos ? <PacientesTablaSkeleton /> : <PacientesTabla activo={false} pacientes={pacientesReingresos} />}
-                </div>
+                <DepartamentoTabla departamentos={resumenDepartamentos.departamentos} onSeleccionar={irADepartamento} />
               </SectionCard>
 
               <ExpedienteContenido historico={registros} mensajeVacio="No hay información disponible." />

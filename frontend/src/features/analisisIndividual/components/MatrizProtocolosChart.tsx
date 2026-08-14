@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { MatrizProtocoloItem } from "../types";
+import { formatoMesAnioLargo } from "../rangoAnios";
 
 interface MatrizProtocolosChartProps {
   protocolos: MatrizProtocoloItem[];
@@ -132,6 +133,14 @@ const MatrizProtocolosChart: React.FC<MatrizProtocolosChartProps> = ({ protocolo
           </tfoot>
         </table>
       </div>
+      {anioSeleccionado != null && (
+        <div className="mt-3 rounded-lg px-3 py-2 bg-gray-100 text-gray-600 flex items-center gap-2">
+          <i className="fa-solid fa-circle-info text-xs shrink-0"></i>
+          <p className="text-[11px] italic leading-relaxed text-left">
+            El contenido mostrado comprende un rango del <b>{formatoMesAnioLargo(new Date(anioSeleccionado, 0, 1))} al {formatoMesAnioLargo(new Date(anioSeleccionado, 11, 1))}</b>.
+          </p>
+        </div>
+      )}
     </div>
   );
 };

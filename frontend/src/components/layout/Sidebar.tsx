@@ -1,5 +1,5 @@
-import React, { FC } from "react";
-import { NavLink, useNavigate } from "react-router-dom";
+import React, { FC, useState } from "react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
   Users,
@@ -25,6 +25,17 @@ interface MenuItem {
   roles: Rol[];
 }
 
+interface MenuGroup {
+  name: string;
+  icon: string;
+  roles: Rol[];
+  children: MenuItem[];
+}
+
+type MenuEntry =
+  | ({ type: "item" } & MenuItem)
+  | ({ type: "group" } & MenuGroup);
+
 interface User {
   nombre?: string;
   cuenta?: string;
@@ -41,21 +52,36 @@ interface SidebarProps {
 const ROLES_PRIVILEGIADOS = ["admin", "médico", "medico"];
 
 const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
-  const menuItems: MenuItem[] = [
+  const menuEntries: MenuEntry[] = [
     // { name: "Dashboard",     icon: "view-dashboard",          path: "/Dashboard",     roles: ["admin", "médico"] }, //compass
-    { name: "Dashboard",     icon: "compass",                 path: "/Expediente",    roles: ["admin", "médico"] },
-    // { name: "Reingresos",    icon: "user-gear",               path: "/Reingresos",    roles: ["admin", "médico"] },
-    { name: "Pacientes",     icon: "user-group",              path: "/Pacientes",     roles: ["admin", "médico"] },
-    { name: "Agenda",        icon: "calendar-week",           path: "/Agenda",        roles: ["admin", "médico", "usuario"] },
-    { name: "Consultas",     icon: "file-waveform",           path: "/Consultas",     roles: ["admin", "médico"] },
-    { name: "Indicadores",   icon: "heart-pulse",             path: "/Indicadores",   roles: ["admin", "médico"] },
-    // { name: "Salud Poblacional", icon: "chart-box-outline",   path: "/SaludPoblacional", roles: ["admin", "médico"] },
-    
-    { name: "Evaluación",    icon: "clipboard-check",         path: "/Evaluacion",    roles: ["admin", "médico"] },
-    { name: "Recetas",       icon: "capsules",                path: "/Recetas",       roles: ["admin", "médico"] },
-    // { name: "Inventario",    icon: "package-variant-closed",  path: "/Inventario",    roles: ["admin", "médico"] },
-    { name: "Documentos",    icon: "file-lines",              path: "/Documentos",    roles: ["admin", "médico", "usuario"] },
-    { name: "Configuración", icon: "cog",                     path: "/Configuracion", roles: ["admin"] },
+    { type: "item", name: "Dashboard", icon: "compass", path: "/Expediente", roles: ["admin", "médico"] },
+    {
+      type: "group",
+      name: "Personal",
+      icon: "address-book",
+      roles: ["admin", "médico"],
+      children: [
+        { name: "Pacientes",  icon: "user-group",   path: "/Pacientes",  roles: ["admin", "médico"] },
+        { name: "Reingresos", icon: "arrows-spin",  path: "/Reingresos", roles: ["admin", "médico"] },
+      ],
+    },
+    { type: "item", name: "Agenda", icon: "calendar-week", path: "/Agenda", roles: ["admin", "médico", "usuario"] },
+    {
+      type: "group",
+      name: "Expediente",
+      icon: "folder",
+      roles: ["admin", "médico", "usuario"],
+      children: [
+        { name: "Evaluación", icon: "clipboard-list",       path: "/Evaluacion", roles: ["admin", "médico"] },
+        { name: "Consultas",  icon: "truck-medical",   path: "/Consultas",  roles: ["admin", "médico"] },
+        { name: "Recetas",    icon: "file-waveform",        path: "/Recetas",    roles: ["admin", "médico"] },
+        { name: "Documentos", icon: "file",             path: "/Documentos", roles: ["admin", "médico", "usuario"] },
+      ],
+    },
+    { type: "item", name: "Indicadores", icon: "heart-pulse", path: "/Indicadores", roles: ["admin", "médico"] },
+    // { name: "Salud Poblacional", icon: "chart-box-outline", path: "/SaludPoblacional", roles: ["admin", "médico"] },
+    // { name: "Inventario", icon: "package-variant-closed", path: "/Inventario", roles: ["admin", "médico"] },
+    { type: "item", name: "Configuración", icon: "cog", path: "/Configuracion", roles: ["admin"] },
   ];
 
   const { user, logout } = useAuth() as { user: User; logout: () => void };
@@ -70,11 +96,28 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
     (user?.rol ?? "").toLowerCase().trim()
   );
 
-  const itemsVisibles = menuItems.filter(item =>
-    item.roles.includes(userRol)
-  );
-  
+  const entriesVisibles = menuEntries
+    .filter(entry => entry.roles.includes(userRol))
+    .map(entry =>
+      entry.type === "group"
+        ? { ...entry, children: entry.children.filter(child => child.roles.includes(userRol)) }
+        : entry
+    )
+    .filter(entry => entry.type !== "group" || entry.children.length > 0);
+
   const navigate = useNavigate();
+  const location = useLocation();
+  const [openGroups, setOpenGroups] = useState<Record<string, boolean>>(
+    Object.fromEntries(
+      menuEntries
+        .filter(entry => entry.type === "group")
+        .map(entry => [entry.name, true])
+    )
+  );
+
+  const toggleGroup = (name: string): void => {
+    setOpenGroups(prev => ({ ...prev, [name]: !prev[name] }));
+  };
 
   const handleLogout = (): void => {
     logout();
@@ -92,7 +135,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
   return (
     <div
       id="app-sidebar"
-      className={`bg-white/70 backdrop-blur-md border-r border-white/20 h-screen flex flex-col hidden md:flex fixed top-0 left-0 z-50 shadow-lg transition-all duration-300 ${
+      className={`bg-white backdrop-blur-md h-screen flex flex-col hidden md:flex fixed top-0 left-0 z-50 transition-all duration-300 ${
         isCollapsed ? "w-20" : "w-64"
       }`}
     >
@@ -123,34 +166,136 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
 
       <div className="flex-1 overflow-y-auto py-4">
         <nav className="space-y-1 px-3">
-          {itemsVisibles.map((item: MenuItem) => (
-            <NavLink
-              key={item.name}
-              to={item.path}
-              className={({ isActive }) =>
-                `group flex items-center px-3 py-1.5 mb-1 text-sm font-medium rounded-lg transition-all duration-200 ${
-                  isActive
-                    ? "bg-linear-to-r from-sea-blue to-sky-blue text-white shadow-md shadow-blue-500/20"
-                    : "text-gray-500 hover:text-sea-blue hover:bg-gray-100"
-                }`
-              }
-            >
-              {({ isActive }) => (
-                <>
-                  <i
-                    className={`fa-solid fa-${item.icon} text-sm transition-all ${
-                      isCollapsed ? "ml-1.5" : "ml-1.5"
+          {entriesVisibles.map((entry) => {
+            if (isCollapsed && entry.type === "group") {
+              return entry.children.map((child) => (
+                <NavLink
+                  key={child.name}
+                  to={child.path}
+                  title={child.name}
+                  className={({ isActive }) =>
+                    `group flex items-center justify-center px-0 py-1.5 mb-1 text-sm font-medium rounded-lg transition-all duration-200 ${
+                      isActive
+                        ? "bg-linear-to-r from-sea-blue to-sky-blue text-white shadow-md shadow-blue-500/20"
+                        : "text-gray-500 hover:text-sea-blue hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <i
+                      className={`fa-solid fa-${child.icon} text-sm transition-all ${
+                        isActive ? "text-white" : "text-slate-400 group-hover:text-sea-blue"
+                      }`}
+                    ></i>
+                  )}
+                </NavLink>
+              ));
+            }
+
+            if (entry.type === "item") {
+              return (
+                <NavLink
+                  key={entry.name}
+                  to={entry.path}
+                  className={({ isActive }) =>
+                    `group flex items-center py-1.5 mb-1 text-sm font-medium rounded-lg transition-all duration-200 ${
+                      isCollapsed ? "justify-center px-0" : "px-3"
                     } ${
                       isActive
-                        ? "text-white"
-                        : "text-slate-400 group-hover:text-sea-blue"
-                    } mr-3`}
+                        ? "bg-linear-to-r from-sea-blue to-sky-blue text-white shadow-md shadow-blue-500/20"
+                        : "text-gray-500 hover:text-sea-blue hover:bg-gray-100"
+                    }`
+                  }
+                >
+                  {({ isActive }) => (
+                    <>
+                      <i
+                        className={`fa-solid fa-${entry.icon} text-sm transition-all ${
+                          isCollapsed ? "" : "ml-1.5 mr-3"
+                        } ${
+                          isActive
+                            ? "text-white"
+                            : "text-slate-400 group-hover:text-sea-blue"
+                        }`}
+                      ></i>
+                      {!isCollapsed && <span>{entry.name}</span>}
+                    </>
+                  )}
+                </NavLink>
+              );
+            }
+
+            const isGroupActive = entry.children.some(child => location.pathname.startsWith(child.path));
+            const isOpen = openGroups[entry.name] ?? true;
+
+            return (
+              <div key={entry.name} className="mb-1">
+                <button
+                  type="button"
+                  onClick={() => toggleGroup(entry.name)}
+                  className={`group w-full flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                    isGroupActive
+                      ? "text-sea-blue bg-gray-100"
+                      : "text-gray-500 hover:text-sea-blue hover:bg-gray-100"
+                  }`}
+                >
+                  <i
+                    className={`fa-solid fa-${entry.icon} text-sm transition-all ml-1.5 mr-3 ${
+                      isGroupActive ? "text-sea-blue" : "text-slate-400 group-hover:text-sea-blue"
+                    }`}
                   ></i>
-                  {!isCollapsed && <span>{item.name}</span>}
-                </>
-              )}
-            </NavLink>
-          ))}
+                  <span className="flex-1 text-left">{entry.name}</span>
+                  <i
+                    className={`fa-solid fa-chevron-down text-xs transition-transform duration-200 ${
+                      isOpen ? "rotate-180" : ""
+                    }`}
+                  ></i>
+                </button>
+
+                <AnimatePresence initial={false}>
+                  {isOpen && (
+                    <motion.div
+                      key="content"
+                      initial={{ height: 0, opacity: 0 }}
+                      animate={{ height: "auto", opacity: 1 }}
+                      exit={{ height: 0, opacity: 0 }}
+                      transition={{ duration: 0.2, ease: "easeInOut" }}
+                      className="overflow-hidden"
+                    >
+                      <div className="my-1 py-1.5 ml-6 pl-4 space-y-1 border-l-2 border-gray-200">
+                        {entry.children.map((child) => (
+                          <NavLink
+                            key={child.name}
+                            to={child.path}
+                            className={({ isActive }) =>
+                              `group flex items-center px-3 py-1.5 text-sm font-medium rounded-lg transition-all duration-200 ${
+                                isActive
+                                  ? "bg-linear-to-r from-sea-blue to-sky-blue text-white shadow-md shadow-blue-500/20"
+                                  : "text-gray-500 hover:text-sea-blue hover:bg-gray-100"
+                              }`
+                            }
+                          >
+                            {({ isActive }) => (
+                              <>
+                                <i
+                                  className={`fa-solid fa-${child.icon} text-sm transition-all ${
+                                    isActive
+                                      ? "text-white"
+                                      : "text-slate-400 group-hover:text-sea-blue"
+                                  } mr-3`}
+                                ></i>
+                                <span>{child.name}</span>
+                              </>
+                            )}
+                          </NavLink>
+                        ))}
+                      </div>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
+              </div>
+            );
+          })}
         </nav>
       </div>
 

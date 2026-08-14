@@ -9,7 +9,7 @@ import { RegistroValidado } from "../features/saludPoblacional/types";
 import { AnalisisIndividualResult } from "../features/analisisIndividual/types";
 import HeaderAnalisis from "../features/analisisIndividual/components/HeaderAnalisis";
 import AnalisisIndividualSkeleton from "../features/analisisIndividual/components/AnalisisIndividualSkeleton";
-import OverlayCargandoIA from "../features/analisisIndividual/components/OverlayCargandoIA";
+import OverlayTransicionAnalisis from "../features/saludPoblacional/components/shared/OverlayTransicionAnalisis";
 import UltimaTomaSection from "../features/analisisIndividual/components/UltimaTomaSection";
 import MatricesSection from "../features/analisisIndividual/components/MatricesSection";
 import HallazgosSection from "../features/analisisIndividual/components/HallazgosSection";
@@ -51,12 +51,12 @@ function parsearFechaDDMonYYYY(fecha: string): Date | null {
 // clínico sensible (diagnóstico diferencial, aptitud laboral detallada).
 //
 // Vista de página completa (mismo patrón que ExpedienteDepartamento.tsx), no
-// drawer/modal: se accede desde Expediente > Personal/Reingresos al hacer
-// clic sobre un paciente. Ruta /Expediente/:matricula (ver Topbar.tsx para el
-// breadcrumb "Expediente > Matrícula - Nombre"); el nombre viaja por
-// location.state (solo disponible al navegar desde la tabla, no en un
-// refresh directo de la URL) y es puramente decorativo, nunca se usa para
-// las llamadas al backend.
+// drawer/modal: se accede desde Pacientes/Reingresos al hacer clic sobre un
+// paciente. Ruta /Pacientes/:matricula o /Reingresos/:matricula (ver
+// Topbar.tsx para el breadcrumb "Pacientes/Reingresos > Matrícula - Nombre");
+// el nombre viaja por location.state (solo disponible al navegar desde la
+// tabla, no en un refresh directo de la URL) y es puramente decorativo,
+// nunca se usa para las llamadas al backend.
 const AnalisisIndividual: React.FC = () => {
   const { matricula: matriculaParam } = useParams<{ matricula: string }>();
   const navigate = useNavigate();
@@ -69,9 +69,26 @@ const AnalisisIndividual: React.FC = () => {
   // tabla), se asume activo por default.
   const esActivo = (location.state as any)?.activo !== false;
 
-  const [resultado, setResultado] = useState<AnalisisIndividualResult | null>(null);
+  // PacientesTabla.tsx ya genera el análisis ANTES de navegar aquí (muestra
+  // su propio overlay de transición sobre Pacientes/Reingresos mientras
+  // espera la respuesta) y lo manda por location.state — así se evita
+  // mostrar el overlay de "Generando análisis con IA" por segunda vez en
+  // esta página. Si no viene (falló la pre-carga, o se llegó por un refresh
+  // directo de la URL sin pasar por la tabla), se genera aquí como siempre.
+  const resultadoPrecargado = (location.state as any)?.resultadoPrecargado as AnalisisIndividualResult | null | undefined;
+
+  const [resultado, setResultado] = useState<AnalisisIndividualResult | null>(resultadoPrecargado ?? null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // Aviso de IA: se muestra con SweetAlert2 por encima del contenido cada vez
+  // que termina de generarse un análisis (incluye regeneraciones). SweetAlert
+  // no desmonta el árbol de React detrás, así que las cards se siguen
+  // generando/viendo normalmente, el aviso solo se interpone hasta que el
+  // usuario lo cierra.
+  const [avisoVisible, setAvisoVisible] = useState(!!resultadoPrecargado);
+
+  const AVISO_IA_HTML = `Todos los hallazgos, diagnósticos y recomendaciones son evaluados e interpretados por inteligencia artificial. <b>No debe tomarse como una verdad absoluta</b>.`;
 
   // Historial de indicadores del empleado seleccionado (SCII_Valores_Indicadores_Por_Empleado),
   // mismo shape que /SaludPoblacional/ObtenerDatos pero acotado a esta matrícula.
@@ -155,6 +172,7 @@ const AnalisisIndividual: React.FC = () => {
       if (controller.signal.aborted) return;
       if (json?.ok) {
         setResultado(json.data);
+        setAvisoVisible(true);
       } else {
         setError(json?.message || "No se pudo generar el análisis.");
       }
@@ -168,8 +186,9 @@ const AnalisisIndividual: React.FC = () => {
   }, [matricula, esActivo]);
 
   useEffect(() => {
-    if (matricula) generar();
+    if (matricula && !resultadoPrecargado) generar();
     return () => { abortRef.current?.abort(); };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [matricula, generar]);
 
   useEffect(() => {
@@ -186,13 +205,144 @@ const AnalisisIndividual: React.FC = () => {
     return () => controller.abort();
   }, [matricula]);
 
-  const programarSeguimiento = () => {
-    Swal.fire({
-      icon: "info",
-      title: "Próximamente",
-      text: "La programación de seguimiento estará disponible en una próxima versión.",
-      confirmButtonColor: "#002E6D",
-    });
+  useEffect(() => {
+  if (!avisoVisible) return;
+
+  Swal.fire({
+    title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Antes de continuar</p>`,
+    html: `<p style="font-size: 16px">${AVISO_IA_HTML}</p>`,
+
+    iconHtml: `
+      <i class="fa-solid fa-exclamation aviso-exclamation"></i>
+
+      <style>
+        .aviso-exclamation {
+          font-size: 70px;
+          animation: shakeInitial 0.6s ease-in-out,
+                     shakePeriodic 4s ease-in-out 1.5s infinite;
+        }
+
+        /* Sacudida fuerte al aparecer */
+        @keyframes shakeInitial {
+          0%   { transform: scale(0.5) rotate(0deg); opacity: 0; }
+          20%  { transform: scale(1.15) rotate(-12deg); opacity: 1; }
+          40%  { transform: scale(1.05) rotate(10deg); }
+          60%  { transform: scale(1.05) rotate(-7deg); }
+          80%  { transform: scale(1) rotate(5deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+
+        /* Sacudidas periódicas */
+        @keyframes shakePeriodic {
+          0%, 85%, 100% {
+            transform: rotate(0deg);
+          }
+          87% {
+            transform: rotate(-10deg);
+          }
+          89% {
+            transform: rotate(10deg);
+          }
+          91% {
+            transform: rotate(-8deg);
+          }
+          93% {
+            transform: rotate(8deg);
+          }
+          95% {
+            transform: rotate(-4deg);
+          }
+          97% {
+            transform: rotate(4deg);
+          }
+        }
+      </style>
+    `,
+
+    didOpen: (p) => {
+      const el = p.querySelector(".swal2-icon") as HTMLElement;
+
+      if (el) {
+        Object.assign(el.style, {
+          border: "none",
+          background: "transparent",
+          boxShadow: "none",
+          width: "auto",
+          height: "auto",
+        });
+      }
+    },
+
+    buttonsStyling: false,
+
+    confirmButtonText: `
+      <i class="fa-solid fa-thumbs-up mr-1"></i> Entendido
+    `,
+allowOutsideClick: false,
+    customClass: {
+      confirmButton:
+        "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
+    },
+  }).then(() => setAvisoVisible(false));
+}, [avisoVisible]);
+
+  // Solo UI por ahora: no hay endpoint de backend todavía para persistir el
+  // seguimiento programado ni la autorización de reingreso. Se deja como
+  // confirmación visual hasta que exista esa integración.
+  const abrirModalAccion = () => {
+    if (esActivo) {
+      Swal.fire({
+        title: "Programar seguimiento",
+        html: `
+          ${AVISO_IA_HTML}
+          <div style="display:flex;gap:8px;margin:14px 0 8px">
+            <input id="swal-fecha-seguimiento" type="date" min="${new Date().toISOString().split("T")[0]}" style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:8px;font-size:12px" />
+            <input id="swal-hora-seguimiento" type="time" style="flex:1;border:1px solid #e5e7eb;border-radius:8px;padding:8px;font-size:12px" />
+          </div>
+          <textarea id="swal-notas-seguimiento" placeholder="Notas (opcional)" rows="2" style="width:100%;border:1px solid #e5e7eb;border-radius:8px;padding:8px;font-size:12px;resize:none"></textarea>
+        `,
+        confirmButtonText: "Programar seguimiento",
+        confirmButtonColor: "#002E6D",
+        showCancelButton: true,
+        cancelButtonText: "Cancelar",
+        preConfirm: () => {
+          const fecha = (document.getElementById("swal-fecha-seguimiento") as HTMLInputElement)?.value;
+          const hora = (document.getElementById("swal-hora-seguimiento") as HTMLInputElement)?.value;
+          if (!fecha || !hora) {
+            Swal.showValidationMessage("Selecciona una fecha y hora para el seguimiento.");
+            return false;
+          }
+          return { fecha, hora };
+        },
+      }).then((result) => {
+        if (result.isConfirmed && result.value) {
+          Swal.fire({
+            icon: "success",
+            title: "Seguimiento programado",
+            text: `Se registró el seguimiento para el ${result.value.fecha} a las ${result.value.hora}.`,
+            confirmButtonColor: "#002E6D",
+          });
+        }
+      });
+    } else {
+      Swal.fire({
+        title: "Autorizar reingreso",
+        html: AVISO_IA_HTML,
+        showDenyButton: true,
+        showCancelButton: true,
+        confirmButtonText: "Autorizar",
+        denyButtonText: "No autorizar",
+        cancelButtonText: "Cancelar",
+        confirmButtonColor: "#002E6D",
+        denyButtonColor: "#dc2626",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          Swal.fire({ icon: "success", title: "Reingreso autorizado", text: "Se registró la autorización para la recontratación de este candidato.", confirmButtonColor: "#002E6D" });
+        } else if (result.isDenied) {
+          Swal.fire({ icon: "info", title: "Reingreso no autorizado", text: "Se registró que no se autoriza la recontratación de este candidato.", confirmButtonColor: "#002E6D" });
+        }
+      });
+    }
   };
 
   if (!matricula) {
@@ -222,7 +372,7 @@ const AnalisisIndividual: React.FC = () => {
       <div className="flex-1 mt-14 transition-all duration-300 ease-in-out">
         <div className="max-w-7xl mx-auto px-4 space-y-6 pb-6">
           {loading && !resultado && <AnalisisIndividualSkeleton />}
-          {loading && <OverlayCargandoIA />}
+          {loading && <OverlayTransicionAnalisis />}
 
           {error && (
             <div className="flex items-start gap-2 bg-red-50 text-red-600 text-sm px-4 py-3 rounded-xl shadow-md">
@@ -298,11 +448,12 @@ const AnalisisIndividual: React.FC = () => {
               Regenerar
             </button>
             <button
-              onClick={programarSeguimiento}
-              className="flex items-center gap-2 bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
+              onClick={abrirModalAccion}
+              disabled={!resultado}
+              className="flex items-center gap-2 bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap disabled:opacity-40 disabled:pointer-events-none"
             >
-              <i className="mdi mdi-calendar-check-outline"></i>
-              Programar Seguimiento
+              <i className={`mdi ${esActivo ? "mdi-calendar-check-outline" : "mdi-account-check-outline"}`}></i>
+              {esActivo ? "Seguimiento" : "Autorizar"}
             </button>
           </div>
         </div>

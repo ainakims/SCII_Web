@@ -2,6 +2,7 @@ import React from "react";
 import { PrioridadYUrgencia, AptitudLaboral } from "../types";
 import { ESTILOS_PRIORIDAD, ESTILOS_RIESGO_NIVEL, NOMBRE_RIESGO_NIVEL } from "../colores";
 import ShimmerOverlay from "../../saludPoblacional/components/shared/ShimmerOverlay";
+import logoSano from "../../../assets/img/logo_sano.png";
 
 interface RiesgoReciente {
   nivel: 1 | 2 | 3;
@@ -110,20 +111,20 @@ const ESTILO_APTITUD = {
 const HeaderAnalisis: React.FC<HeaderAnalisisProps> = ({ prioridad, aptitud, matricula, riesgoReciente, fechaInicioAnalisis }) => (
   <div>
   <div className="flex flex-col gap-4">
-    <div className={`relative overflow-hidden rounded-xl shadow-xl px-6 py-4 mb-4 bg-linear-to-b ${aptitud.Apto ? "from-horz-blue/20 to-gray-100 text-sea-blue" : "from-red-200/50 to-gray-100 text-red-800"}`}>
-      {fechaInicioAnalisis && (
-        <p className="text-[13px] leading-relaxed font-bold italic opacity-70 flex items-center gap-1.5">
-          <i className="fa-solid fa-clock-rotate-left mr-3"></i>
+    {fechaInicioAnalisis && (
+      <div className={`relative overflow-hidden rounded-xl shadow-xs px-6 py-4 mb-4 bg-white text-sea-blue`}>
+        <p className="text-[13px] leading-relaxed font-bold opacity-70 flex items-center gap-1.5">
+          <i className="fa-solid fa-circle-info mr-3"></i>
           Este análisis se realizó considerando el historial clínico del paciente desde el {fechaInicioAnalisis.toLocaleDateString("es-MX", { day: "numeric", month: "long", year: "numeric" })} hasta la fecha actual.
         </p>
-      )}
-    </div>
+      </div>
+    )}
   </div>
   <div className="flex flex-col gap-4">
-    <div className={`relative overflow-hidden rounded-xl shadow-xl p-6 bg-linear-to-b ${aptitud.Apto ? "from-horz-blue/20 to-gray-100 text-sea-blue" : "from-red-200/50 to-gray-100 text-red-800"}`}>
+    <div className={`relative overflow-hidden rounded-xl shadow-xs p-6 ${aptitud.Apto ? "bg-aqua-green/10 text-[#3A8277]" : "bg-red-100/50 text-red-800"}`}>
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <h2 className="text-sm font-bold flex items-center">
-          <i className="fa-solid fa-circle-nodes mr-3"></i>
+          <i className="fa-solid fa-circle-nodes mr-3 animate-spin-periodic"></i>
           Evaluación de Aptitud Laboral
         </h2>
         {/* <span className={`${badgeCls} ${aptitud.Apto ? ESTILO_APTITUD.apto : ESTILO_APTITUD.noApto}`}>
@@ -131,41 +132,54 @@ const HeaderAnalisis: React.FC<HeaderAnalisisProps> = ({ prioridad, aptitud, mat
           {aptitud.Apto ? "Apto" : "No apto"}
         </span> */}
       </div>
-      <p className="text-[13px] leading-relaxed mb-2.5"><span className="font-bold">Puesto: </span>{resaltarPuestoYMatricula(aptitud.Justificacion, matricula)}</p>
-      {aptitud.FactoresDeRiesgoDetectados.length > 0 && (
+      <p className="relative text-[13px] text-justify leading-relaxed mb-2.5 pl-5">
+        <span className={`absolute left-0 top-0 bottom-0 w-1 rounded-full ${aptitud.Apto ? "bg-[#3A8277]" : "bg-red-700"}`}></span>
+        <span className="font-bold">Puesto: </span>{resaltarPuestoYMatricula(aptitud.Justificacion, matricula)}
+        <br></br>
+        {/* <span className="font-bold">Factores de riesgo:</span> */}
+      </p>
+      {/* {aptitud.FactoresDeRiesgoDetectados.length > 0 && (
         <div className="flex flex-wrap gap-1.5 mb-2.5">
           {aptitud.FactoresDeRiesgoDetectados.map((f, i) => (
             <span key={i} className="px-2 py-0.5 rounded-lg text-[9px] font-semibold uppercase bg-linear-to-r from-red-200 to-red-100/50 text-red-700">{f}</span>
           ))}
         </div>
-      )}
-      <div className="bg-white rounded-lg px-3 py-2">
-        <p className="text-[12px] text-gray-700 leading-relaxed"><span className="font-bold">Recomendación: </span>{resaltarPuestoYMatricula(aptitud.Recomendacion, matricula)}</p>
+      )} */}
+      <div className={`rounded-lg px-3 py-2 flex items-center gap-2.5 ${aptitud.Apto ? "bg-[#3A8277]" : "bg-red-800"}`}>
+        <i className="fa-solid fa-comment-medical text-white text-sm shrink-0"></i>
+        <p className="text-[12px] text-white leading-relaxed"><span className="font-bold">Recomendación: </span>{resaltarPuestoYMatricula(aptitud.Recomendacion, matricula)}</p>
       </div>
       <ShimmerOverlay subtle />
     </div>
 
     {riesgoReciente && (
-      <div className={`rounded-xl shadow-xl p-6 bg-linear-to-b ${ESTILOS_RIESGO_NIVEL[riesgoReciente.nivel]}`}>
-        <h2 className="text-sm font-bold flex items-center mb-2.5">
-          <i className="fa-solid fa-gauge-high mr-3"></i>
+      <div className={`relative overflow-hidden rounded-xl shadow-xs p-6 bg-linear-to-r ${ESTILOS_RIESGO_NIVEL[riesgoReciente.nivel]} to-white`}>
+        <img
+          src={logoSano}
+          alt=""
+          aria-hidden="true"
+          className="pointer-events-none select-none absolute right-6 top-1/2 -translate-y-1/2 h-24 w-auto opacity-20"
+        />
+        <h2 className="relative text-sm font-bold flex items-center mb-2.5">
+          <i className={`fa-solid ${riesgoReciente.nivel === 1 ? "fa-circle-check" : riesgoReciente.nivel === 2 ? "fa-circle-exclamation" : "fa-triangle-exclamation"} mr-3`}></i>
           Nivel de Riesgo: {NOMBRE_RIESGO_NIVEL[riesgoReciente.nivel]}
         </h2>
-        <p className="text-[13px] leading-relaxed">
+        <p className="relative text-[13px] leading-relaxed">
           La toma de indicadores más reciente ({riesgoReciente.fecha.toLocaleDateString("es-MX")}) indicó como resultado un <b>riesgo {NOMBRE_RIESGO_NIVEL[riesgoReciente.nivel].toLowerCase()}</b>. Considerarlo como un personal dentro de este umbral antes de tomar cualquier decisión.
         </p>
       </div>
     )}
 
+    {/* Oculta temporalmente a pedido — no se eliminó, solo se comentó.
     <div className="rounded-xl shadow-xl p-6 bg-linear-to-b from-white to-gray-50">
       <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
         <h2 className="text-sm font-bold text-gray-800 flex items-center">
           <i className="fa-solid fa-triangle-exclamation text-sea-blue mr-3"></i>
           Nivel de Prioridad Médica
         </h2>
-        {/* <span className={`${badgeCls} ${ESTILOS_PRIORIDAD[prioridad.Prioridad]}`}>
+        <span className={`${badgeCls} ${ESTILOS_PRIORIDAD[prioridad.Prioridad]}`}>
           Prioridad {prioridad.Prioridad}
-        </span> */}
+        </span>
       </div>
       {prioridad.Urgente && (
         <div className="flex items-center gap-2 bg-red-50 text-red-600 text-xs font-semibold px-3 py-2 rounded-lg mb-2">
@@ -178,6 +192,7 @@ const HeaderAnalisis: React.FC<HeaderAnalisisProps> = ({ prioridad, aptitud, mat
         <p className="text-[12px] leading-relaxed"><span className="font-bold">Plan sugerido: </span>{prioridad.Recomendacion}</p>
       </div>
     </div>
+    */}
   </div>
   </div>
 );

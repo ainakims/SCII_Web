@@ -18,7 +18,7 @@ const SectionCard: React.FC<SectionCardProps> = ({ icon, title, subtitle, action
   <motion.div
     initial={{ opacity: 0, x: -20 }}
     animate={{ opacity: 1, x: 0 }}
-    className="bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl overflow-hidden p-6"
+    className="bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xs overflow-hidden p-6"
   >
     <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
       <div>
