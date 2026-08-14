@@ -56,12 +56,6 @@ const ICONO_RIESGO: Record<string, { icon: string; color: string }> = {
 
 const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes, fillHeight = false, basePath = "/Pacientes", showFecha = true, onEdit, onDelete, onVerDocumentos }) => {
   const navigate = useNavigate();
-  // El análisis se genera aquí (mismo endpoint que dispara AnalisisIndividual.tsx
-  // al montarse) mientras se muestra el overlay de transición de pantalla
-  // completa sobre Pacientes/Reingresos. Solo se navega una vez que la
-  // respuesta ya está lista, pasándola por location.state — así
-  // AnalisisIndividual.tsx llega con todo cargado y no muestra su propio
-  // overlay de "Generando análisis con IA" (evita el doble overlay).
   const [navegandoAMatricula, setNavegandoAMatricula] = useState<string | null>(null);
   const irAAnalisis = async (p: PacienteResumen) => {
     const matricula = String(p.Empl_matricula ?? "").trim();

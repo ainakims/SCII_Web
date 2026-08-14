@@ -261,7 +261,7 @@ const Login: React.FC = () => {
     }
 
     if (result.success) {
-      navigate("/Agenda");
+      navigate("/Expediente");
     } else {
       setError(result.message);
     }

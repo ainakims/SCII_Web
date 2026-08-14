@@ -42,7 +42,14 @@ function App() {
               <MainLayout />
             </ProtectedRoute>
           }>
-            <Route index element={<Dashboard />} />
+            {/* Ruta vacía ("/") -> Expediente, la ventana principal de la app.
+                Redirect explícito (no solo renderizar Expediente aquí) para que
+                la URL se normalice a /Expediente y el breadcrumb/nav activo del
+                Topbar/Sidebar la reconozcan igual que si se hubiera navegado ahí
+                directamente. Placeholder para permisos: cuando se defina la
+                pantalla principal para roles no admin/médico, este es el único
+                lugar que hay que tocar (condicionar el "to" según el rol). */}
+            <Route index element={<Navigate to="/Expediente" replace />} />
             <Route path="Dashboard" element={<Dashboard />} />
             <Route path="Perfil" element={<Perfil />} />
             <Route path="Agenda" element={<Agenda />} />

@@ -1,6 +1,6 @@
 import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
-import React, { useState, useEffect, useCallback, useMemo, memo, useRef } from "react";
+import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, memo, useRef } from "react";
 import {
   Search, Factory, User, Briefcase, Heart, FlaskConical,
   ClipboardList, CheckCircle, AlertTriangle, Weight, Ruler,
@@ -165,16 +165,16 @@ interface Conclusiones {
 }
 
 const STEPS = [
-  { label: "Ficha de Identificación", icon: "mdi mdi-account" },
-  { label: "Antecedentes Laborales", icon: "mdi mdi-briefcase-variant" },
-  { label: "Antecedentes Familiares", icon: "mdi mdi-human-male-female-child" },
-  { label: "Antecedentes Personales Patológicos", icon: "mdi mdi-virus" },
-  { label: "Antecedentes Personales No Patológicos", icon: "mdi mdi-virus-off-outline" },
-  { label: "Antecedentes Gineco-Obstétricos", icon: "mdi mdi-mother-heart" },
-  { label: "Antecedentes de Incapacidad", icon: "mdi mdi-heart-pulse" },
-  { label: "Exploración Física", icon: "mdi mdi-human-handsdown" },
-  { label: "Estudios de Gabinete y Laboratorio", icon: "mdi mdi-flask" },
-  { label: "Conclusiones", icon: "mdi mdi-chat-processing" },
+  { label: "Ficha de Identificación",                icon: "fa-solid fa-user" },
+  { label: "Antecedentes Laborales",                 icon: "fa-solid fa-briefcase" },
+  { label: "Antecedentes Familiares",                icon: "fa-solid fa-children" },
+  { label: "Antecedentes Personales Patológicos",    icon: "fa-solid fa-virus" },
+  { label: "Antecedentes Personales No Patológicos", icon: "fa-solid fa-lungs-virus" },
+  { label: "Antecedentes Gineco-Obstétricos",        icon: "fa-solid fa-venus-double" },
+  { label: "Antecedentes de Incapacidad",            icon: "fa-solid fa-bandage" },
+  { label: "Exploración Física",                     icon: "fa-solid fa-person" },
+  { label: "Estudios de Gabinete y Laboratorio",     icon: "fa-solid fa-flask" },
+  { label: "Conclusiones",                           icon: "fa-solid fa-comment" },
 ];
 
 const VerticalStepper = memo(({ currentStep, onStepClick }: {
@@ -182,21 +182,21 @@ const VerticalStepper = memo(({ currentStep, onStepClick }: {
   onStepClick: (i: number) => void;
 }) => {
   return (
-    <ol className="space-y-[18.5px] w-100">
+    <ol className="space-y-[25.5px] w-100">
       {STEPS.map((step, i) => {
         const isDone = i < currentStep;
         const isActive = i === currentStep;
         // const isPending = i > currentStep;
 
         const containerClasses =
-          isActive ? "bg-linear-to-r from-sea-blue to-sea-blue/50 text-white"
-          : isDone ? "bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white cursor-pointer"
+          isActive ? "bg-linear-to-r from-sea-blue to-sky-blue text-white"
+          : isDone ? "bg-linear-to-r from-sea-blue to-sky-blue text-white opacity-40 cursor-pointer"
           : "bg-white shadow-sm text-gray-700";
           
         return (
           <li key={i} onClick={() => isDone && onStepClick(i)}>
             <div
-              className={`w-full py-2.5 px-5 rounded-xl transition-colors duration-200 shadow-xl ${containerClasses}`}
+              className={`w-full py-2.5 px-5 rounded-xl transition-colors duration-200 shadow-xs ${containerClasses}`}
               role="alert"
             >
               <div className="flex items-center justify-between">
@@ -211,9 +211,9 @@ const VerticalStepper = memo(({ currentStep, onStepClick }: {
                 </h2>
                 {isDone ? (
                   // <Check className="w-5 h-5" strokeWidth={2} />
-                  <i className="mdi mdi-check-bold"></i>
+                  <i className="fa-solid fa-square-check"></i>
                 ) : (
-                  <i className="mdi mdi-arrow-right-thick"></i>
+                  <i className="fa-solid fa-arrow-right"></i>
                 )}
               </div>
             </div>
@@ -345,7 +345,7 @@ const Toggle2: React.FC<{
         key={opt}
         type="button"
         onClick={() => onChange(value === opt ? "" : opt)}
-        className={`flex-1 px-2 py-1.5 rounded-lg text-xs border transition-all cursor-pointer shadow-md ${
+        className={`flex-1 px-2 py-1.5 rounded-lg text-xs transition-all cursor-pointer shadow-xs ${
           value === opt
             ? "bg-gray-100 text-gray-800 border-gray-100 font-semibold"
             : "bg-white text-gray-400 border-gray-100"
@@ -361,7 +361,7 @@ const CkCell = memo(({ checked, onChange }: { checked: boolean | null; onChange:
   <button
     type="button"
     onClick={() => onChange(checked ? null : true)}
-    className={`w-5 h-5 rounded border transition-all cursor-pointer flex items-center justify-center shadow-md ${
+    className={`w-5 h-5 rounded transition-all cursor-pointer flex items-center justify-center shadow-xs ${
       checked ? "bg-linear-to-b from-sea-blue to-sky-blue text-white border-gray-400" : "border-gray-100 bg-white"
     }`}
   >
@@ -653,7 +653,7 @@ function AgudezaInput({ value, onChange, disabled }: { value: string; onChange: 
     onChange(newTop || newBottom ? `${newTop} / ${newBottom}` : "");
 
   return (
-    <div className={`flex items-center justify-center gap-1 border border-gray-100 shadow-md rounded text-center py-1 focus-within:ring-1 focus-within:ring-sea-blue ${disabled ? "bg-gray-100" : "bg-white"}`}>
+ <div className={`flex items-center justify-center gap-1 border-gray-100 shadow-xs rounded text-center py-1 focus-within:ring-1 focus-within:ring-sea-blue ${disabled ? "bg-gray-100" : "bg-white"}`}>
       <input
         ref={topRef}
         type="number"
@@ -832,7 +832,7 @@ const DescExpTable = memo(({ title, fields, section, setter }: {
                   value={section[field]?.descripcion ?? ""}
                   onChange={(e) => setter((p) => ({ ...p, [field]: { ...p[field], descripcion: e.target.value } }))}
                   placeholder="Seleccione una opción primero"
-                  className={`w-full px-3 py-1.5 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none ${!section[field]?.valor && "text-gray-800 bg-gray-50"}`}
+                  className={`w-full px-3 py-1.5 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none ${!section[field]?.valor && "text-gray-800 bg-gray-50"}`}
                   disabled={!section[field]?.valor}
                 />
               </td>
@@ -927,7 +927,7 @@ function DescExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter, po
                       value={leftSection[lf]?.descripcion ?? ""}
                       onChange={(e) => leftSetter((p) => ({ ...p, [lf]: { ...p[lf], descripcion: e.target.value } }))}
                       placeholder="Seleccione una opción primero"
-                      className={`w-full px-2 py-1.5 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none ${!leftSection[lf]?.valor && "text-gray-800 bg-gray-50 border-gray-100"}`}
+                      className={`w-full px-2 py-1.5 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none ${!leftSection[lf]?.valor && "text-gray-800 bg-gray-50 border-gray-100"}`}
                       disabled={!leftSection[lf]?.valor}
                     />
                   )}
@@ -1004,6 +1004,28 @@ const Evaluacion: React.FC = () => {
       navigate("/Agenda");
     }
   }, [user, navigate]);
+
+  // Mismo patrón que Pacientes.tsx/Configuracion.tsx: mide el espacio real
+  // disponible hasta el borde inferior de la ventana. Sin esto, el
+  // contenedor no tenía una altura acotada, así que el overflow-y-auto del
+  // panel de la derecha nunca se activaba (crecía sin límite) y el
+  // overflow-hidden del contenedor raíz terminaba recortando el contenido
+  // sin mostrar ninguna barra de desplazamiento.
+  const pageContainerRef = useRef<HTMLDivElement>(null);
+  const [pageHeight, setPageHeight] = useState<number>(() => Math.max(window.innerHeight - 150, 400));
+
+  useLayoutEffect(() => {
+    const updateHeight = () => {
+      if (!pageContainerRef.current) return;
+      const top = pageContainerRef.current.getBoundingClientRect().top;
+      const mainEl = pageContainerRef.current.closest("main");
+      const bottomPad = mainEl ? parseFloat(getComputedStyle(mainEl).paddingBottom) || 0 : 0;
+      setPageHeight(Math.max(Math.floor(window.innerHeight - top - bottomPad), 400));
+    };
+    updateHeight();
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
+  }, []);
 
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -1779,13 +1801,13 @@ const Evaluacion: React.FC = () => {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const stepPanels = useMemo(() => [
     <div key="ficha">
-      <div className="overflow-hidden mb-1">
-        <div className="bg-linear-to-r from-white to-gray-100 px-6 py-1">
+      <div className="mb-1">
+        <div className="py-1">
           <span className="text-xs font-medium text-gray-700">
             Ficha de identificación
           </span>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className={`${matriculaNotFound ? "mb-2" : ""}`}>
             <div className="block text-xs font-medium text-gray-700 mb-1">
               Matrícula <b className="text-red-400">*</b>
@@ -1800,7 +1822,7 @@ const Evaluacion: React.FC = () => {
                 placeholder="Matrícula (5 dígitos)"
                 disabled={loadingMat || nuevoIngreso || foundField === "nombre"}
                 maxLength={5}
-                className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none shadow-md transition-colors ${nuevoIngreso || foundField === "nombre" ? "border-gray-100 bg-gray-100" : !patientData.matricula ? "border-gray-100 focus:ring-1 focus:ring-sea-blue" : loadingMat ? "border-gray-100 bg-gray-100" : matriculaNotFound ? "border-red-400 bg-red-50 text-red-700" : "border-gray-100 focus:ring-1 focus:ring-sea-blue"}`}
+                className={`w-full rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none shadow-xs transition-colors ${nuevoIngreso || foundField === "nombre" ? "border-gray-100 bg-gray-100" : !patientData.matricula ? "border-gray-100 focus:ring-1 focus:ring-sea-blue" : loadingMat ? "border-gray-100 bg-gray-100" : matriculaNotFound ? "border-red-400 bg-red-50 text-red-700" : "border-gray-100 focus:ring-1 focus:ring-sea-blue"}`}
                 // matriculaNotRegis ? "border-yellow-400 bg-yellow-50 text-yellow-700"
               />
               {loadingMat && searchField === "matricula" &&
@@ -1856,7 +1878,7 @@ const Evaluacion: React.FC = () => {
                 onChange={(e) => nuevoIngreso ? setPatientData(p => ({ ...p, nombre: e.target.value })) : handleSearchByName(e)}
                 disabled={loadingMat || foundField === "matricula"}
                 placeholder={"Nombre"}
-                className={`w-full ${nuevoIngreso ? "px-3" : "pl-9 px-3 pr-10"} py-2 border rounded-lg text-xs shadow-md text-gray-800 font-medium outline-none transition-colors ${foundField === "matricula" ? "border-gray-100 bg-gray-100" : matriculaNotFound && searchField === "nombre" ? "border-red-400 bg-red-50 text-red-700" : "border-gray-100 bg-white focus:ring-1 focus:ring-sea-blue"}`}
+                className={`w-full ${nuevoIngreso ? "px-3" : "pl-9 px-3 pr-10"} py-2 rounded-lg text-xs shadow-xs text-gray-800 font-medium outline-none transition-colors ${foundField === "matricula" ? "border-gray-100 bg-gray-100" : matriculaNotFound && searchField === "nombre" ? "border-red-400 bg-red-50 text-red-700" : "border-gray-100 bg-white focus:ring-1 focus:ring-sea-blue"}`}
               />
               {loadingMat && searchField === "nombre" &&
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
@@ -1880,7 +1902,7 @@ const Evaluacion: React.FC = () => {
                 value={new Date().toISOString().split('T')[0]}
                 disabled
                 placeholder="Fecha"
-                className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md bg-gray-50 text-gray-800 font-medium outline-none"
+                className="w-full px-3 py-2 border-gray-100 rounded-lg text-xs shadow-xs bg-gray-50 text-gray-800 font-medium outline-none"
               />
               {/* <i className="mdi mdi-calendar-blank font-medium text-gray-700 text-[15px] absolute right-[15px] top-[9px]"></i> */}
             </div>
@@ -1898,7 +1920,7 @@ const Evaluacion: React.FC = () => {
                 setFicha((f) => ({ ...f, fechaNacimiento: dob, edad: age }));
               }}
               placeholder="Fecha"
-              className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 rounded-lg text-xs shadow-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -1910,7 +1932,7 @@ const Evaluacion: React.FC = () => {
               value={`${ficha.edad ? ficha.edad + " años" : ""}`}
               disabled 
               // onChange={(e) => setFicha((f) => ({ ...f, edad: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md bg-gray-50 text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 rounded-lg text-xs shadow-xs bg-gray-50 text-gray-800 font-medium outline-none"
               placeholder="Edad"
             />
           </div>
@@ -1932,7 +1954,7 @@ const Evaluacion: React.FC = () => {
                   });
                 }
               }}
-              className="w-full border border-gray-100 rounded-lg p-2 text-xs shadow-md focus:ring-1 focus:ring-sea-blue outline-none" 
+              className="w-full border-gray-100 rounded-lg p-2 text-xs shadow-xs focus:ring-1 focus:ring-sea-blue outline-none" 
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="F">Femenino</option>
@@ -1946,7 +1968,7 @@ const Evaluacion: React.FC = () => {
             <select
               value={ficha.estadoCivil}
               onChange={(e) => setFicha((f) => ({ ...f, estadoCivil: e.target.value }))}
-              className="w-full border border-gray-100 rounded-lg p-2 text-xs shadow-md focus:ring-1 focus:ring-sea-blue outline-none" 
+              className="w-full border-gray-100 rounded-lg p-2 text-xs shadow-xs focus:ring-1 focus:ring-sea-blue outline-none" 
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="S">Soltero</option>
@@ -1962,7 +1984,7 @@ const Evaluacion: React.FC = () => {
             <select
               value={ficha.escolaridad}
               onChange={(e) => setFicha((f) => ({ ...f, escolaridad: e.target.value }))}
-              className="w-full border border-gray-100 rounded-lg p-2 text-xs shadow-md focus:ring-1 focus:ring-sea-blue outline-none" 
+              className="w-full border-gray-100 rounded-lg p-2 text-xs shadow-xs focus:ring-1 focus:ring-sea-blue outline-none" 
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="1">Sin escolaridad</option>
@@ -1985,7 +2007,7 @@ const Evaluacion: React.FC = () => {
               maxLength={11}
               value={ficha.noImss}
               onChange={(e) => setFicha((f) => ({ ...f, noImss: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md focus:ring-1 text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 rounded-lg text-xs shadow-xs focus:ring-1 text-gray-800 font-medium outline-none"
               placeholder="No. IMSS (11 caracteres)"
             />
           </div>
@@ -1999,7 +2021,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => nuevoIngreso && setFicha(f => ({ ...f, puestoAspira: e.target.value }))}
               disabled={!nuevoIngreso}
               placeholder="Puesto al que aspira"
-              className={`w-full px-3 py-2 border rounded-lg text-xs shadow-md text-gray-800 font-medium outline-none transition-colors ${nuevoIngreso ? "border-gray-100 bg-white focus:ring-1 focus:ring-sea-blue" : "border-gray-100 bg-gray-50"}`}
+              className={`w-full px-3 py-2 rounded-lg text-xs shadow-xs text-gray-800 font-medium outline-none transition-colors ${nuevoIngreso ? "border-gray-100 bg-white focus:ring-1 focus:ring-sea-blue" : "border-gray-100 bg-gray-50"}`}
             />
           </div>
           <div>
@@ -2011,7 +2033,7 @@ const Evaluacion: React.FC = () => {
               value={ficha.contactoEmergencia}
               onChange={(e) => setFicha((f) => ({ ...f, contactoEmergencia: e.target.value }))}
               placeholder="Nombre de contacto" 
-              className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md focus:ring-1 text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 rounded-lg text-xs shadow-xs focus:ring-1 text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2024,7 +2046,7 @@ const Evaluacion: React.FC = () => {
               value={ficha.numeroContacto}
               onChange={(e) => { if (e.target.value.length > 12) return; setFicha((f) => ({ ...f, numeroContacto: e.target.value })); }}
               maxLength={12}
-              className="w-full px-3 py-2 border border-gray-100 rounded-lg text-xs shadow-md focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-full px-3 py-2 border-gray-100 rounded-lg text-xs shadow-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="Número de contacto"
             />
           </div>
@@ -2052,7 +2074,7 @@ const Evaluacion: React.FC = () => {
                 maxLength={2}
                 value={edadInicioLaboral}
                 onChange={(e) => setEdadInicioLaboral(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                 placeholder="18"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">
@@ -2092,7 +2114,7 @@ const Evaluacion: React.FC = () => {
                           maxLength={2}
                           value={edadInicioLaboral}
                           onChange={(e) => setEdadInicioLaboral(e.target.value)}
-                          className="w-full px-3 py-2 border border-gray-100 bg-white shadow-md rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                          className="w-full px-3 py-2 border-gray-100 bg-white shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                           placeholder="18"
                         />
                         <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">
@@ -2111,7 +2133,7 @@ const Evaluacion: React.FC = () => {
                         type="text"
                         value={row[col]}
                         onChange={(e) => setAntLaborales((prev) => prev.map((r, index) => index === i ? { ...r, [col]: e.target.value } : r ) ) }
-                        className="w-full px-3 py-2 border border-gray-100 bg-white shadow-md rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                        className="w-full px-3 py-2 border-gray-100 bg-white shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                         placeholder={col.charAt(0).toUpperCase() + col.slice(1)}
                       />
                     </td>
@@ -2165,7 +2187,7 @@ const Evaluacion: React.FC = () => {
                       type="text"
                       value={val[col]}
                       onChange={(e) => setAgentes((prev) => ({ ...prev, [agente]: { ...prev[agente], [col]: e.target.value, }, })) }
-                      className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                      className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                       placeholder={col.charAt(0).toUpperCase() + col.slice(1)}
                     />
                   </td>
@@ -2208,7 +2230,7 @@ const Evaluacion: React.FC = () => {
                     type="text"
                     value={row.tipo}
                     onChange={(e) => setOtrosAgentes((prev) => prev.map((r, idx) => idx === i ? { ...r, tipo: e.target.value } : r))}
-                    className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                    className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                     placeholder="Tipo"
                   />
                 </td>
@@ -2219,7 +2241,7 @@ const Evaluacion: React.FC = () => {
                       type="text"
                       value={row[col]}
                       onChange={(e) => setOtrosAgentes((prev) => prev.map((r, idx) => idx === i ? { ...r, [col]: e.target.value } : r))}
-                      className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                      className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                       placeholder={col.charAt(0).toUpperCase() + col.slice(1)}
                     />
                   </td>
@@ -2324,7 +2346,7 @@ const Evaluacion: React.FC = () => {
                     onChange={(e) => setAntPatologicos((p) => ({ ...p, [left]: { ...p[left], observacion: e.target.value } }))}
                     placeholder="Observación"
                     disabled={!antPatologicos[left]?.si}
-                    className={`w-full px-3 py-1.5 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none transition-colors ${ antPatologicos[left]?.si ? "text-gray-800 bg-white focus:ring-sea-blue" : " bg-gray-50 cursor-not-allowed" }`}
+                    className={`w-full px-3 py-1.5 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none transition-colors ${ antPatologicos[left]?.si ? "text-gray-800 bg-white focus:ring-sea-blue" : " bg-gray-50 cursor-not-allowed" }`}
                   />
                 </td>
                 <td className="px-6 py-2 font-medium text-gray-700">
@@ -2345,7 +2367,7 @@ const Evaluacion: React.FC = () => {
                     onChange={(e) => setAntPatologicos((p) => ({ ...p, [right]: { ...p[right], observacion: e.target.value } }))}
                     placeholder="Observación"
                     disabled={!antPatologicos[right]?.si}
-                    className={`w-full px-3 py-1.5 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none transition-colors ${ antPatologicos[right]?.si ? "text-gray-800 bg-white focus:ring-sea-blue" : "bg-gray-50 cursor-not-allowed" }`}
+                    className={`w-full px-3 py-1.5 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none transition-colors ${ antPatologicos[right]?.si ? "text-gray-800 bg-white focus:ring-sea-blue" : "bg-gray-50 cursor-not-allowed" }`}
                   />
                 </td>
               </tr>
@@ -2423,7 +2445,7 @@ const Evaluacion: React.FC = () => {
                       // new Date().toISOString().split("T")[0]
                       disabled={!checked}
                       onChange={(e) => setVacunas((p) => ({ ...p, [v]: e.target.value })) }
-                      className={`w-32 px-3 py-1.5 border border-gray-100 shadow-md rounded-lg text-xs outline-none transition-colors ${ checked ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-sea-blue/50 bg-gray-50 cursor-not-allowed" }`}
+                      className={`w-32 px-3 py-1.5 border-gray-100 shadow-xs rounded-lg text-xs outline-none transition-colors ${ checked ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-sea-blue/50 bg-gray-50 cursor-not-allowed" }`}
                     />
                   </td>
                   <td className="px-6 py-2 font-medium text-gray-700">
@@ -2446,7 +2468,7 @@ const Evaluacion: React.FC = () => {
                         value={vacunas[covid.fechaKey]}
                         disabled={!vacunas[covid.key]}
                         onChange={(e) => setVacunas((p) => ({ ...p, [covid.fechaKey]: e.target.value, })) }
-                        className={`w-32 px-3 py-1.5 border border-gray-100 shadow-md rounded-lg text-xs outline-none transition-colors ${ vacunas[covid.key] ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-sea-blue/50 bg-gray-50 cursor-not-allowed" }`}
+                        className={`w-32 px-3 py-1.5 border-gray-100 shadow-xs rounded-lg text-xs outline-none transition-colors ${ vacunas[covid.key] ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-sea-blue/50 bg-gray-50 cursor-not-allowed" }`}
                       />
                     )}
                   </td>
@@ -2479,7 +2501,7 @@ const Evaluacion: React.FC = () => {
                 toxicomanias: e.target.value === "SI",
                 toxicomaniasEsp: e.target.value === "SI" ? p.toxicomaniasEsp : "",
               }))}
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="SI">Sí</option>
@@ -2496,7 +2518,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => setAntNoPatologico((p) => ({ ...p, toxicomaniasEsp: e.target.value }))}
               placeholder="Seleccione una opción primero"
               disabled={!antNoPatologico.toxicomanias}
-              className={`w-full px-3 py-2 border rounded-lg text-xs font-medium outline-none shadow-md transition-colors ${ antNoPatologico.toxicomanias ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-100" : "text-gray-800 bg-gray-50 border-gray-100" }`}
+              className={`w-full px-3 py-2 rounded-lg text-xs font-medium outline-none shadow-xs transition-colors ${ antNoPatologico.toxicomanias ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-100" : "text-gray-800 bg-gray-50 border-gray-100" }`}
             />
           </div>
           <div className="md:col-span-1">
@@ -2510,7 +2532,7 @@ const Evaluacion: React.FC = () => {
                 alcoholismo: e.target.value === "SI",
                 alcoholismoEsp: e.target.value === "SI" ? p.alcoholismoEsp : "",
               }))}
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="SI">Sí</option>
@@ -2527,7 +2549,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => setAntNoPatologico((p) => ({ ...p, alcoholismoEsp: e.target.value }))}
               placeholder="Seleccione una opción primero"
               disabled={!antNoPatologico.alcoholismo}
-              className={`w-full px-3 py-2 border rounded-lg text-xs font-medium outline-none shadow-md transition-colors ${ antNoPatologico.alcoholismo ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-100" : "text-gray-800 bg-gray-50 border-gray-100" }`}
+              className={`w-full px-3 py-2 rounded-lg text-xs font-medium outline-none shadow-xs transition-colors ${ antNoPatologico.alcoholismo ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-100" : "text-gray-800 bg-gray-50 border-gray-100" }`}
             />
           </div>
           <div className="md:col-span-1">
@@ -2541,7 +2563,7 @@ const Evaluacion: React.FC = () => {
                 tabaquismo: e.target.value === "SI",
                 tabaquismoEsp: e.target.value === "SI" ? p.tabaquismoEsp : "",
               }))}
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="SI">Sí</option>
@@ -2558,7 +2580,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => setAntNoPatologico((p) => ({ ...p, tabaquismoEsp: e.target.value }))}
               placeholder="Seleccione una opción primero"
               disabled={!antNoPatologico.tabaquismo}
-              className={`w-full px-3 py-2 border rounded-lg text-xs font-medium outline-none shadow-md transition-colors ${ antNoPatologico.tabaquismo ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-100" : "text-gray-800 bg-gray-50 border-gray-100" }`}
+              className={`w-full px-3 py-2 rounded-lg text-xs font-medium outline-none shadow-xs transition-colors ${ antNoPatologico.tabaquismo ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-100" : "text-gray-800 bg-gray-50 border-gray-100" }`}
             />
           </div>
         </div>
@@ -2569,7 +2591,7 @@ const Evaluacion: React.FC = () => {
       <div className={`relative overflow-hidden mb-4 transition-opacity ${ficha.genero !== "F" ? "opacity-50 pointer-events-none select-none" : ""}`}>
         {ficha.genero !== "F" && (
           <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 rounded-lg">
-            <span className="text-xs text-gray-700 font-semibold bg-white border border-gray-100 rounded-lg px-4 py-2 shadow-md">
+ <span className="text-xs text-gray-700 font-semibold bg-white border-gray-100 rounded-lg px-4 py-2 shadow-xs">
               <i className="mdi mdi-lock mr-1" />
               {ficha.genero !== "F" && "Sección solo disponible para género femenino"}
             </span>
@@ -2592,7 +2614,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.menarquia}
               onChange={(e) => setGineco((g) => ({ ...g, menarquia: e.target.value }))} 
               placeholder="Menarquia" 
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2604,7 +2626,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.ritmo} 
               onChange={(e) => setGineco((g) => ({ ...g, ritmo: e.target.value }))} 
               placeholder="Ritmo" 
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2616,7 +2638,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.papanicolau} 
               onChange={(e) => setGineco((g) => ({ ...g, papanicolau: e.target.value }))} 
               placeholder="Papanicolau" 
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2627,7 +2649,7 @@ const Evaluacion: React.FC = () => {
               type="date" 
               value={gineco.fum} 
               onChange={(e) => setGineco((g) => ({ ...g, fum: e.target.value }))} 
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
             <p className="text-xs text-gray-400 mt-1">Fecha de última menstruación</p>
           </div>
@@ -2640,7 +2662,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.dismenorrea} 
               onChange={(e) => setGineco((g) => ({ ...g, dismenorrea: e.target.value }))} 
               placeholder="Dismenorrea" 
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2651,7 +2673,7 @@ const Evaluacion: React.FC = () => {
               <select
                 value={gineco.incapacitante} 
                 onChange={(e) => setGineco((g) => ({ ...g, incapacitante: e.target.value, diasDismenorrea: e.target.value !== "SI" ? "" : g.diasDismenorrea }))}
-                className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+                className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
               >
                 <option value="" disabled hidden>Seleccionar</option>
                 <option value="SI">Si</option>
@@ -2669,7 +2691,7 @@ const Evaluacion: React.FC = () => {
                   disabled={gineco.incapacitante !== "SI"}
                   onChange={(e) => { if (e.target.value.length > 3) return; setGineco((g) => ({ ...g, diasDismenorrea: e.target.value })); }}
                   placeholder="1" 
-                  className={`w-full px-3 py-2 ${gineco.incapacitante == "SI" ? "" : "bg-gray-50"} border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                  className={`w-full px-3 py-2 ${gineco.incapacitante == "SI" ? "" : "bg-gray-50"} border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                 />
                 <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">día(s)</span>
               </div>
@@ -2687,7 +2709,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.gestas} 
               onChange={(e) => setGineco((g) => ({ ...g, gestas: e.target.value }))} 
               placeholder="Gestas" 
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2699,7 +2721,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.partos} 
               onChange={(e) => setGineco((g) => ({ ...g, partos: e.target.value }))} 
               placeholder="Partos" 
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2711,7 +2733,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.cesareas} 
               onChange={(e) => setGineco((g) => ({ ...g, cesareas: e.target.value }))} 
               placeholder="Cesáreas" 
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2723,7 +2745,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.abortos} 
               onChange={(e) => setGineco((g) => ({ ...g, abortos: e.target.value }))} 
               placeholder="Abortos" 
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
         </div>
@@ -2737,7 +2759,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.mamas}
               onChange={(e) => setGineco((g) => ({ ...g, mamas: e.target.value }))}
               placeholder="Mamas" 
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
         </div>
@@ -2751,7 +2773,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.usg}
               onChange={(e) => setGineco((g) => ({ ...g, usg: e.target.value }))}
               placeholder="USG" 
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
             {/* <p className="text-xs text-gray-400 mt-1">Ultrasonido de mamas</p> */}
           </div>
@@ -2764,7 +2786,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.mastografia} 
               onChange={(e) => setGineco((g) => ({ ...g, mastografia: e.target.value }))}
               placeholder="Mastografía" 
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2774,7 +2796,7 @@ const Evaluacion: React.FC = () => {
             <select
               value={gineco.birads} 
               onChange={(e) => setGineco((g) => ({ ...g, birads: e.target.value }))}
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="B0">Bi-Rads 0</option>
@@ -2813,7 +2835,7 @@ const Evaluacion: React.FC = () => {
                 setIncapacidadRiesgo(val);
                 if (val !== "SI") setIncapacidadValuacion("");
               }}
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="SI">Sí</option>
@@ -2830,7 +2852,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => setIncapacidadValuacion(e.target.value)}
               placeholder="Seleccione una opción primero"
               disabled={incapacidadRiesgo !== "SI"}
-              className={`w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs font-medium outline-none transition-colors ${
+              className={`w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs font-medium outline-none transition-colors ${
                 incapacidadRiesgo === "SI" ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-gray-800 bg-gray-50"
               }`}
             />
@@ -2846,7 +2868,7 @@ const Evaluacion: React.FC = () => {
                 setIncapacidadEG(val);
                 if (val !== "SI") setIncapacidadComentario("");
               }}
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="SI">Sí</option>
@@ -2863,7 +2885,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => setIncapacidadComentario(e.target.value)}
               placeholder="Seleccione una opción primero"
               disabled={incapacidadEG !== "SI"}
-              className={`w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs font-medium outline-none transition-colors ${
+              className={`w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs font-medium outline-none transition-colors ${
                 incapacidadEG === "SI" ? "text-gray-100 shadow-md bg-white focus:ring-1 focus:ring-sea-blue" : "text-gray-800 bg-gray-50"
               }`}
             />
@@ -2875,7 +2897,7 @@ const Evaluacion: React.FC = () => {
             <select
               value={manoDominante}
               onChange={(e) => setManoDominante(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="DER">Derecha</option>
@@ -2891,7 +2913,7 @@ const Evaluacion: React.FC = () => {
               rows={1} 
               value={enfermedadActual} 
               onChange={(e) => setEnfermedadActual(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none resize-none"
+              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none resize-none"
               placeholder="Especifique la enfermedad que actualmente padece"
             />
           </div>
@@ -2920,7 +2942,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={vitalSigns.Peso} 
                 onChange={(e) => { if(e.target.value.length > 6) return;handleMeasureChange("Peso",e.target.value); }} 
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.0"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">kg</span>
@@ -2937,7 +2959,7 @@ const Evaluacion: React.FC = () => {
                 step="0.01" 
                 value={vitalSigns.Talla} 
                 onChange={(e) => { if(e.target.value.length > 4) return;handleMeasureChange("Talla",e.target.value); }} 
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                 placeholder="0.00" 
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">m</span>
@@ -2953,7 +2975,7 @@ const Evaluacion: React.FC = () => {
                 type="text" 
                 value={vitalSigns.IMC} 
                 disabled 
-                className={`w-full p-2 border rounded-lg text-xs outline-none shadow-md transition-colors ${getImcInput(vitalSigns.IMC)}`} 
+                className={`w-full p-2 rounded-lg text-xs outline-none shadow-xs transition-colors ${getImcInput(vitalSigns.IMC)}`} 
                 placeholder="0.00"
               />
             </div>
@@ -2968,7 +2990,7 @@ const Evaluacion: React.FC = () => {
                 type="text"
                 value={vitalSigns.Abdomen}
                 onChange={(e) => { if (e.target.value.length > 6) return; setVitalSigns((v) => ({ ...v, Abdomen: e.target.value })); }}
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.00"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">cm</span>
@@ -2978,7 +3000,7 @@ const Evaluacion: React.FC = () => {
             <label className="block text-xs font-medium text-gray-700 mb-1">
              T/A (mmHg) <b className="text-red-400">*</b>
             </label>
-            <div className="relative flex items-center border border-gray-100 shadow-md rounded-lg focus-within:ring-1 focus-within:ring-clinical-blue focus-within:border-clinical-blue bg-white">
+ <div className="relative flex items-center border-gray-100 shadow-xs rounded-lg focus-within:ring-1 focus-within:ring-clinical-blue focus-within:border-clinical-blue bg-white">
               {/* <Activity className="h-3.5 w-3.5 absolute left-3 text-gray-400 pointer-events-none z-10" /> */}
               <div className="flex items-center w-full pl-2 pr-2 py-2">
                 <input 
@@ -3012,7 +3034,7 @@ const Evaluacion: React.FC = () => {
                 type="text" 
                 value={vitalSigns.TA} 
                 disabled 
-                className="w-full p-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-700 font-medium outline-none" 
+                className="w-full p-2 border-gray-100 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-700 font-medium outline-none" 
                 placeholder="12 / 8"
               />
             </div>
@@ -3030,7 +3052,7 @@ const Evaluacion: React.FC = () => {
                 type="number" 
                 value={vitalSigns.FC} 
                 onChange={(e) => { if (e.target.value.length > 3) return; setVitalSigns((v) => ({ ...v, FC: e.target.value })); }}
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                 placeholder="70"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">lpm</span>
@@ -3050,7 +3072,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={vitalSigns.FR} 
                 onChange={(e) => { if (e.target.value.length > 4) return; setVitalSigns((v) => ({ ...v, FR: e.target.value })); }}
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="18"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">rpm</span>
@@ -3069,7 +3091,7 @@ const Evaluacion: React.FC = () => {
                 type="number" 
                 value={vitalSigns.SpO2} 
                 onChange={(e) => { const r = e.target.value; if (r === "") { setVitalSigns((v) => ({ ...v, SpO2: "" })); return; } if (parseInt(r) > 100 || r.length > 3) return; setVitalSigns((v) => ({ ...v, SpO2: r })); }}
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                 placeholder="98"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">%</span>
@@ -3374,7 +3396,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.bh} 
                 onChange={(e) => setLabs((p) => ({ ...p, bh: e.target.value }))}
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.0"
               />
             </div>
@@ -3390,7 +3412,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.hto} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, hto: e.target.value })); } }}
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="45"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">%</span>
@@ -3407,7 +3429,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.gr} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, gr: e.target.value })); } }}
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="5.0"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mill/µL</span>
@@ -3424,7 +3446,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.gb} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 5) { setLabs((p) => ({ ...p, gb: e.target.value })); } }}
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="7000"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">/µL</span>
@@ -3441,7 +3463,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.plaq} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 6) { setLabs((p) => ({ ...p, plaq: e.target.value })); } }}
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="250000"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">/µL</span>
@@ -3460,7 +3482,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.glucosa} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, glucosa: e.target.value })); } }}
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="90"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
@@ -3476,7 +3498,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.colesterol} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, colesterol: e.target.value })); } }}
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="180"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
@@ -3492,7 +3514,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.trigliceridos} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, trigliceridos: e.target.value })); } }}
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="120"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
@@ -3509,7 +3531,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.urea} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 2) { setLabs((p) => ({ ...p, urea: e.target.value })); } }}
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="25"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
@@ -3525,7 +3547,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.acUrico} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, acUrico: e.target.value })); } }}
-                className="w-full p-2 pr-10 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="5.5"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
@@ -3597,7 +3619,7 @@ const Evaluacion: React.FC = () => {
                     onChange={(e) => setConclusiones((g) => ({ ...g, [key]: e.target.value }))}
                     placeholder="Diagnóstico"
                     disabled={!isEnabled}
-                    className={`w-full px-3 py-2 pl-9 border rounded-lg text-xs focus:ring-1 focus:ring-sea-blue font-medium outline-none transition-colors shadow-md ${
+                    className={`w-full px-3 py-2 pl-9 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue font-medium outline-none transition-colors shadow-xs ${
                       isEnabled
                         ? "border-gray-100 text-gray-800 bg-white" : "border-gray-100 text-gray-800 bg-gray-50"
                     }`}
@@ -3629,7 +3651,7 @@ const Evaluacion: React.FC = () => {
                   onChange={(e) => setConclusiones((c) => ({ ...c, [key]: e.target.value }))}
                   placeholder={`Recomendación`}
                   disabled={!isEnabled}
-                  className={`w-full px-3 py-2 pl-9 border rounded-lg text-xs focus:ring-1 focus:ring-sea-blue font-medium outline-none transition-colors shadow-md ${
+                  className={`w-full px-3 py-2 pl-9 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue font-medium outline-none transition-colors shadow-xs ${
                     isEnabled
                       ? "border-gray-100 text-gray-800 bg-white"
                       : "border-gray-100 text-gray-800 bg-gray-50"
@@ -3723,13 +3745,16 @@ const Evaluacion: React.FC = () => {
   return (
     <div className="relative flex w-full overflow-hidden">
       <div className="flex-1 mt-14 transition-all duration-300 ease-in-out">
-        <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
-          {/* <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-xl border border-gray-200 shadow-sm gap-4 mb-6"> */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4">
+        <div
+          // ref={pageContainerRef}
+          className="max-w-7xl mx-auto px-4 pb-0 flex flex-col gap-6"
+          style={{ height: pageHeight }}
+        >
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-xl shadow-xs shadow-restore gap-4 shrink-0">
             <div className="flex items-center gap-3">
               <div>
-                <h1 className="text-2xl font-bold text-sea-blue">
-                  Evaluación Médica
+                <h1 className="text-2xl font-bold bg-linear-to-r from-sea-blue to-sky-blue bg-clip-text text-transparent flex items-center">
+                  Evaluación
                 </h1>
                 <p className="text-sm text-gray-500 mt-1">
                   Registro completo de antecedentes y exploración física.
@@ -3743,33 +3768,34 @@ const Evaluacion: React.FC = () => {
               className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0"
             >
               {saving
-                ? <><i className="mdi mdi-loading mdi-spin mr-2" />Guardando...</>
-                : <><i className="mdi mdi-plus-thick mr-2" />Guardar</>
+                ? <><i className="fa-solid fa-spinner fa-spin text-xs mr-2"></i>Guardando...</>
+                : <><i className="fa-solid fa-plus text-xs mr-2"></i>Guardar</>
               }
             </button>
           </div>
 
-          <div className="flex gap-6 items-stretch">
+          <div className="flex gap-6 items-stretch flex-1 min-h-0">
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="sticky top-0 self-start hidden lg:block "
+              className="self-start hidden lg:block overflow-y-auto max-h-full"
             >
               <VerticalStepper currentStep={currentStep} onStepClick={handleStepClick} />
             </motion.div>
-            
+
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="flex-1 bg-white rounded-xl shadow-xl shadow-sm h-154.5 flex flex-col overflow-y-auto"
+              // className="flex-1 bg-white rounded-xl shadow-xl shadow-sm h-154.5 flex flex-col overflow-y-auto"
+              className="flex-1 bg-white rounded-xl shadow-xs overflow-hidden p-6 mb-1 flex flex-col min-h-0"
             >
               <div 
                 // className="flex items-center justify-between p-6 border-b border-gray-100"
-                className="flex items-center justify-between p-6 bg-linear-to-r from-white to-gray-100 shrink-0 rounded-t-xl"
+                className="flex items-center justify-between shrink-0 rounded-t-xl"
               >
-                <h2 className="text-sm font-bold text-gray-800 flex items-center">
-                  <i className={`${STEPS[currentStep].icon} mr-2`}></i>
-                  <p className="ml-2">{STEPS[currentStep].label}</p>
+                <h2 className="text-sm font-bold text-gray-800 flex items-center mb-4 shrink-0">
+                  <i className={`${STEPS[currentStep].icon} text-sea-blue mr-3`}></i>
+                  {STEPS[currentStep].label}
                 </h2>
                 <StepNavButtons
                   currentStep={currentStep}
@@ -3778,7 +3804,7 @@ const Evaluacion: React.FC = () => {
                   onNext={handleNext}
                 />
               </div>
-              <div className="flex-1 overflow-y-auto">
+              <div className="flex-1 overflow-y-auto p-1 -m-1">
                 {stepPanels[currentStep]}
               </div>
             </motion.div>

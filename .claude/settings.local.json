@@ -55,7 +55,9 @@
       "Bash(cd \"C:\\\\Users\\\\Olivos.victor\\\\Documents\\\\Visual Studio Code\" && ls -la 2>/dev/null)",
       "Bash(ping -n 2 10.133.18.28)",
       "Bash(curl -s -o /dev/null -w \"%{http_code}\\\\n\" --max-time 5 http://10.133.18.28:5000/uploads/11421/)",
-      "Bash(xargs grep -l \"FileBytes\")"
+      "Bash(xargs grep -l \"FileBytes\")",
+      "Bash(perl -ne 'print if \\(/\\(?<![\\\\w-]\\)border\\(?![\\\\w-]\\)/ && /shadow-md/\\)' Evaluacion.tsx)",
+      "Bash(perl -i -pe ' *)"
     ]
   }
 }
