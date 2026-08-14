@@ -30,10 +30,23 @@ export interface PrioridadYUrgencia {
   Recomendacion: string;
 }
 
+export type NivelRiesgoAptitud = "Verde" | "Amarillo" | "Rojo" | "No evaluable";
+export type DictamenAptitud = "Apto" | "Apto con seguimiento" | "No apto - Revaloración" | "No evaluable";
+
 export interface AptitudLaboral {
-  Apto: boolean;
+  NivelRiesgo: NivelRiesgoAptitud;
+  Dictamen: DictamenAptitud;
   Justificacion: string;
+  CriteriosAplicados: string[];
   FactoresDeRiesgoDetectados: string[];
+  ResumenIncapacidades: {
+    EventosUltimos12Meses: number;
+    DiasAcumuladosUltimos12Meses: number;
+    IncapacidadVigente: boolean;
+    Evaluable: boolean;
+  };
+  FechaEvaluacion: string;
+  VentanaEvaluacionMeses: number;
   Recomendacion: string;
 }
 

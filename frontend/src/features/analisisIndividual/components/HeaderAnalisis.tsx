@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { PrioridadYUrgencia, AptitudLaboral } from "../types";
 import { ESTILOS_PRIORIDAD, ESTILOS_RIESGO_NIVEL, NOMBRE_RIESGO_NIVEL } from "../colores";
 import ShimmerOverlay from "../../saludPoblacional/components/shared/ShimmerOverlay";
@@ -94,11 +94,76 @@ function resaltarPuestoYMatricula(texto: string, matricula?: string): React.Reac
 // bg-linear-to-r teñido, rounded-lg, mayúsculas, SIN borde — no el pill
 // rounded-full con borde que llevaban antes, que no es como se ven las demás
 // badges del sistema.
-const badgeCls = "px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide flex items-center gap-1 w-fit";
+const badgeCls = "px-2.5 py-1 rounded-lg text-[10px] font-bold uppercase tracking-wide flex items-center gap-3 w-fit";
 
 const ESTILO_APTITUD = {
   apto: "bg-linear-to-r from-aqua-green/30 to-aqua-green/10 text-green-900",
   noApto: "bg-linear-to-r from-red-200 to-red-100/50 text-red-600",
+};
+
+// Semáforo de 4 niveles que regresa ahora el servicio (antes era un booleano
+// `Apto`). Mismo lenguaje de color que el resto del dashboard: verde/rojo
+// para los extremos, ámbar para el intermedio, gris neutro para "No evaluable".
+const ESTILOS_NIVEL_APTITUD: Record<AptitudLaboral["NivelRiesgo"], { fondo: string; texto: string; acento: string }> = {
+  Verde: { fondo: "bg-aqua-green/10", texto: "text-[#3A8277]", acento: "bg-[#3A8277]" },
+  Amarillo: { fondo: "bg-amber-100/60", texto: "text-amber-800", acento: "bg-amber-600" },
+  Rojo: { fondo: "bg-red-100/50", texto: "text-red-800", acento: "bg-red-700" },
+  "No evaluable": { fondo: "bg-gray-100", texto: "text-gray-600", acento: "bg-gray-400" },
+};
+
+// Botón "?" junto al badge de dictamen (mismo renglón, no flotando encima).
+// Al hacer clic abre un panel angosto con un CriteriosAplicados a la vez
+// (pueden ser párrafos largos) y flechas para navegar entre ellos, en vez de
+// listarlos todos de un jalón y desbordar la card.
+const TogglecriteriosAplicados: React.FC<{ criterios: string[]; acento: string }> = ({ criterios, acento }) => {
+  const [abierto, setAbierto] = useState(false);
+  const [indice, setIndice] = useState(0);
+
+  if (criterios.length === 0) return null;
+
+  return (
+    <div className="relative shrink-0">
+      <button
+        type="button"
+        onClick={() => setAbierto((v) => !v)}
+        className={`h-6 w-6 rounded-full flex items-center justify-center text-white text-[11px] shadow-sm ${acento}`}
+        aria-label="Ver criterios aplicados"
+        aria-expanded={abierto}
+      >
+        <i className="fa-solid fa-question"></i>
+      </button>
+      {abierto && (
+        <div className="absolute right-0 top-full mt-2 w-72 rounded-lg bg-white text-gray-700 normal-case font-normal shadow-lg p-3 text-left z-10">
+          <div className="flex items-center justify-between gap-2 mb-1.5">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-gray-400">
+              Criterio {indice + 1} de {criterios.length}
+            </span>
+            {criterios.length > 1 && (
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setIndice((i) => (i - 1 + criterios.length) % criterios.length)}
+                  className="h-5 w-5 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100"
+                  aria-label="Criterio anterior"
+                >
+                  <i className="fa-solid fa-chevron-left text-[10px]"></i>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIndice((i) => (i + 1) % criterios.length)}
+                  className="h-5 w-5 rounded-full flex items-center justify-center text-gray-400 hover:bg-gray-100"
+                  aria-label="Siguiente criterio"
+                >
+                  <i className="fa-solid fa-chevron-right text-[10px]"></i>
+                </button>
+              </div>
+            )}
+          </div>
+          <p className="text-[12px] leading-relaxed">{criterios[indice]}</p>
+        </div>
+      )}
+    </div>
+  );
 };
 
 // Mismo shell que SectionCard (rounded-xl shadow-xl p-6, header con ícono +
@@ -121,31 +186,25 @@ const HeaderAnalisis: React.FC<HeaderAnalisisProps> = ({ prioridad, aptitud, mat
     )}
   </div>
   <div className="flex flex-col gap-4">
-    <div className={`relative overflow-hidden rounded-xl shadow-xs p-6 ${aptitud.Apto ? "bg-aqua-green/10 text-[#3A8277]" : "bg-red-100/50 text-red-800"}`}>
-      <div className="flex items-center justify-between gap-3 mb-4 flex-wrap">
+    <div className={`relative overflow-hidden rounded-xl shadow-xs p-6 ${ESTILOS_NIVEL_APTITUD[aptitud.NivelRiesgo].fondo} ${ESTILOS_NIVEL_APTITUD[aptitud.NivelRiesgo].texto}`}>
+      <div className="flex items-center justify-between gap-4 mb-5 flex-wrap">
         <h2 className="text-sm font-bold flex items-center">
           <i className="fa-solid fa-circle-nodes mr-3 animate-spin-periodic"></i>
           Evaluación de Aptitud Laboral
         </h2>
-        {/* <span className={`${badgeCls} ${aptitud.Apto ? ESTILO_APTITUD.apto : ESTILO_APTITUD.noApto}`}>
-          <i className={`fa-solid ${aptitud.Apto ? "fa-check" : "fa-xmark"}`}></i>
-          {aptitud.Apto ? "Apto" : "No apto"}
-        </span> */}
+        <div className="flex items-center gap-2.5">
+          <span className={`${badgeCls} ${aptitud.NivelRiesgo === "Verde" ? ESTILO_APTITUD.apto : aptitud.NivelRiesgo === "Rojo" ? ESTILO_APTITUD.noApto : "bg-linear-to-r from-amber-200 to-amber-100/50 text-amber-700"}`}>
+            {aptitud.Dictamen}
+          </span>
+          <TogglecriteriosAplicados criterios={aptitud.CriteriosAplicados} acento={ESTILOS_NIVEL_APTITUD[aptitud.NivelRiesgo].acento} />
+        </div>
       </div>
-      <p className="relative text-[13px] text-justify leading-relaxed mb-2.5 pl-5">
-        <span className={`absolute left-0 top-0 bottom-0 w-1 rounded-full ${aptitud.Apto ? "bg-[#3A8277]" : "bg-red-700"}`}></span>
+      <p className="relative text-[13px] text-justify leading-relaxed mb-3 pl-5">
+        <span className={`absolute left-0 top-0 bottom-0 w-1 rounded-full ${ESTILOS_NIVEL_APTITUD[aptitud.NivelRiesgo].acento}`}></span>
         <span className="font-bold">Puesto: </span>{resaltarPuestoYMatricula(aptitud.Justificacion, matricula)}
         <br></br>
-        {/* <span className="font-bold">Factores de riesgo:</span> */}
       </p>
-      {/* {aptitud.FactoresDeRiesgoDetectados.length > 0 && (
-        <div className="flex flex-wrap gap-1.5 mb-2.5">
-          {aptitud.FactoresDeRiesgoDetectados.map((f, i) => (
-            <span key={i} className="px-2 py-0.5 rounded-lg text-[9px] font-semibold uppercase bg-linear-to-r from-red-200 to-red-100/50 text-red-700">{f}</span>
-          ))}
-        </div>
-      )} */}
-      <div className={`rounded-lg px-3 py-2 flex items-center gap-2.5 ${aptitud.Apto ? "bg-[#3A8277]" : "bg-red-800"}`}>
+      <div className={`rounded-lg px-3 py-2 flex items-center gap-2.5 ${ESTILOS_NIVEL_APTITUD[aptitud.NivelRiesgo].acento}`}>
         <i className="fa-solid fa-comment-medical text-white text-sm shrink-0"></i>
         <p className="text-[12px] text-white leading-relaxed"><span className="font-bold">Recomendación: </span>{resaltarPuestoYMatricula(aptitud.Recomendacion, matricula)}</p>
       </div>
