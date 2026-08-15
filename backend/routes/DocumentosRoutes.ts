@@ -9,6 +9,7 @@ export default function DocumentosRoutes(db: DB): Router {
 
   router.post('/ObtenerPaciente', ValidarToken, con.ObtenerPaciente);
   router.post('/ObtenerArchivos', ValidarToken, con.ObtenerArchivos);
+  router.post('/ObtenerArchivoBytes', ValidarToken, con.ObtenerArchivoBytes);
   router.post('/SubirDocumentos', ValidarToken, con.SubirDocumentos);
   router.post('/BorraDocumentos', ValidarToken, con.BorraDocumentos);
 

@@ -74,7 +74,6 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
       children: [
         { name: "Evaluación", icon: "clipboard-list",       path: "/Evaluacion", roles: ["admin", "médico"] },
         { name: "Consultas",  icon: "truck-medical",   path: "/Consultas",  roles: ["admin", "médico"] },
-        { name: "Recetas",    icon: "file-waveform",        path: "/Recetas",    roles: ["admin", "médico"] },
         { name: "Documentos", icon: "file",             path: "/Documentos", roles: ["admin", "médico", "usuario"] },
       ],
     },
@@ -135,7 +134,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
   return (
     <div
       id="app-sidebar"
-      className={`bg-white backdrop-blur-md h-screen flex flex-col hidden md:flex fixed top-0 left-0 z-50 transition-all duration-300 ${
+      className={`bg-white backdrop-blur-md shadow-xs h-screen flex flex-col hidden md:flex fixed top-0 left-0 z-50 transition-all duration-300 ${
         isCollapsed ? "w-20" : "w-64"
       }`}
     >

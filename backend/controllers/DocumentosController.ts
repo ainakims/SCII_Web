@@ -5,6 +5,7 @@ import { Parametros, TipoConsulta } from "../interfaces/params_web_service";
 const fs = require('fs');
 const path = require('path');
 const multer = require('multer');
+import { resolveUploadsDir } from "../utils/paths";
 
 export function DocumentosController(db: DB) {
   const { executeConnection,executeConnection_FileBinary } = db;
@@ -47,11 +48,21 @@ export function DocumentosController(db: DB) {
       ];
 
       const sql = "[TNGCORE].[dbo].[SCII_Control_Documentos]";
-      const result = await executeConnection<boolean>(sql, TipoConsulta.ProcedimientoAlmacenado, params);
+      const result = await executeConnection<any>(sql, TipoConsulta.ProcedimientoAlmacenado, params);
+
+      // El listado no debe traer FileBytes (puede pesar varios MB por
+      // documento): eso hacía muy lenta cada consulta aunque casi siempre
+      // el archivo se sirve desde disco (Direccion). Se manda solo un flag
+      // para que el frontend sepa si hay respaldo en BD y lo pida bajo
+      // demanda con ObtenerArchivoBytes cuando el archivo físico no exista.
+      const data = (result ?? []).map((doc: any) => {
+        const { FileBytes, ...rest } = doc;
+        return { ...rest, TieneFileBytes: !!FileBytes };
+      });
 
       return res.json({
         ok: true,
-        data: result
+        data
       });
     } catch (error: any) {
       return res.status(500).json({
@@ -63,7 +74,36 @@ export function DocumentosController(db: DB) {
     }
   };
 
-  const BaseDoc = path.join(__dirname, '..', 'uploads');
+  const ObtenerArchivoBytes = async (req: Request, res: Response): Promise<Response> => {
+    try {
+      const { matricula, idDocumento } = req.body;
+      const params: Parametros[] = [
+        { Nombre: "@Case",      Valor: "1" },
+        { Nombre: "@Matricula", Valor: matricula },
+        { Nombre: "@IdDocumento", Valor: String(idDocumento ?? "") },
+        { Nombre: "@IdModifica", Valor: "" }
+      ];
+
+      const sql = "[TNGCORE].[dbo].[SCII_Control_Documentos]";
+      const result = await executeConnection<any>(sql, TipoConsulta.ProcedimientoAlmacenado, params);
+
+      const doc = (result ?? []).find((d: any) => String(d.IdDocumento) === String(idDocumento)) ?? null;
+
+      return res.json({
+        ok: true,
+        fileBytes: doc?.FileBytes ?? null
+      });
+    } catch (error: any) {
+      return res.status(500).json({
+        ok: false,
+        error: "Error interno",
+        message: error.message,
+        stack: error.stack
+      });
+    }
+  };
+
+  const BaseDoc = resolveUploadsDir();
 
   if (!fs.existsSync(BaseDoc)) {
     fs.mkdirSync(BaseDoc, { recursive: true });
@@ -151,13 +191,8 @@ export function DocumentosController(db: DB) {
         const file = (req as any).file;
         const filePath: string = file.path;
         const fileBuffer: Buffer = fs.readFileSync(filePath);
-        const fileBytes: number[] = Array.from(fileBuffer);
         const fileBase64: string = fileBuffer.toString('base64');
 
-        function limpiarNombrePDF(filename: any): string {
-          return String(filename)
-              .replace(/[^a-zA-ZáéíóúÁÉÍÓÚüÜñÑ0-9.\-]/g, '');
-        }
         const params: Parametros[] = [
           { Nombre: "@Case",      Valor: "0" },
           { Nombre: "@Matricula", Valor: matricula },
@@ -177,7 +212,7 @@ export function DocumentosController(db: DB) {
         const doc_param: Parametros[] = [
           { Nombre: "@PacienteId", Valor: String(pacienteId) },
           { Nombre: "@Matricula",  Valor: matricula },
-          { Nombre: "@NombrePDF",  Valor: limpiarNombrePDF(file.filename) },
+          { Nombre: "@NombrePDF",  Valor: file.filename },
           { Nombre: "@TipoDoc",    Valor: String(parseInt(categoria)) },
           { Nombre: "@Direccion",  Valor: filePath.toUpperCase() },
           // { Nombre: "@FileBytes",  Valor: fileBase64 },
@@ -193,10 +228,12 @@ export function DocumentosController(db: DB) {
         });
       } catch (error: any) {
         const mensaje: string = error?.message ?? "";
+        const tamanoArchivo = (req as any).file?.size;
+        console.error(`[SubirDocumentos] Falló el envío al servicio SOAP. Archivo: ${tamanoArchivo} bytes (${(tamanoArchivo / (1024 * 1024)).toFixed(2)} MB). Error crudo: ${mensaje}`);
         if (mensaje.includes("Maximum request length exceeded")) {
           res.status(413).json({
             ok: false,
-            error: "El archivo es demasiado grande para el servicio de almacenamiento. Intenta con un PDF de menor tamaño."
+            error: "El servicio de almacenamiento externo rechazó el archivo por tamaño (su límite es menor a los 10 MB permitidos aquí). Intenta con un PDF de menor tamaño o solicita aumentar el límite en ese servicio."
           });
           return;
         }
@@ -232,5 +269,5 @@ export function DocumentosController(db: DB) {
     }
   };
 
-  return { ObtenerPaciente, ObtenerArchivos, SubirDocumentos, BorraDocumentos };
+  return { ObtenerPaciente, ObtenerArchivos, ObtenerArchivoBytes, SubirDocumentos, BorraDocumentos };
 }

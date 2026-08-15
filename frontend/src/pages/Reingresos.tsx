@@ -35,11 +35,8 @@ const Reingresos: React.FC = () => {
   const [pacientes, setPacientes] = useState<PacienteResumen[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Igual que Pacientes.tsx: alto fijo por fórmula (no medido con
-  // getBoundingClientRect) — medir el top real con useLayoutEffect en cada
-  // montaje de ruta SPA cae, a veces, en un momento de la transición donde el
-  // layout todavía no se asienta, dando un top inflado y una altura mínima
-  // (400px, solo 2 filas visibles) hasta recargar la página.
+  // Se recalcula con el zoom/resize para que la card siempre llene el
+  // espacio disponible, en vez de quedar congelada hasta la próxima recarga.
   const [pageHeight, setPageHeight] = useState<number>(() => Math.max(window.innerHeight - 150, 400));
 
   useEffect(() => {

@@ -33,6 +33,7 @@ const PAGE_TITLES: PageTitles = {
   '/Reingresos':    { label: 'Reingresos',    icon: 'mdi-account-switch-outline' },
   '/Agenda':        { label: 'Agenda',        icon: 'mdi-calendar-blank' },
   '/Consultas':     { label: 'Consultas',     icon: 'mdi-clipboard-pulse-outline' },
+  '/Evaluacion':    { label: 'Evaluación',    icon: 'mdi-clipboard-check-outline' },
   '/Recetas':       { label: 'Recetas',       icon: 'mdi-pill' },
   '/Inventario':    { label: 'Inventario',    icon: 'mdi-package-variant-closed' },
   '/Documentos':    { label: 'Documentos',    icon: 'mdi-file-document-outline' },
@@ -79,7 +80,7 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
 
   return (
     <header
-      className={`h-16 bg-white backdrop-blur-md flex items-center justify-between px-4 sm:px-5 lg:px-5 fixed top-0 right-0 z-50 transition-all duration-300 ${
+      className={`h-16 bg-white backdrop-blur-md shadow-xs flex items-center justify-between px-4 sm:px-5 lg:px-5 fixed top-0 right-0 z-50 transition-all duration-300 ${
         isCollapsed ? "left-0 md:left-20" : "left-0 md:left-64"
       }`}
     >

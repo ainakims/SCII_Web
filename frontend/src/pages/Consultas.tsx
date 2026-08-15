@@ -1,16 +1,6 @@
 import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
 import React, { useState, useEffect, useRef, memo } from "react";
-import {
-  ShieldAlert, Sparkles, Search,
-  X, FileText,
-  AlertTriangle,
-  Pill,
-  Calendar,
-  Clock,
-  Beaker,
-  CircleAlert,
-} from "lucide-react";
 import Swal from "sweetalert2";
 import { useReactToPrint } from "react-to-print";
 import { motion, AnimatePresence } from "framer-motion";
@@ -182,8 +172,8 @@ const CkCell = memo(({ checked, onChange }: { checked: boolean | null; onChange:
   <button
     type="button"
     onClick={() => onChange(checked ? null : true)}
-    className={`w-5 h-5 rounded border transition-all cursor-pointer flex items-center justify-center shadow-md ${
-      checked ? "bg-linear-to-b from-sea-blue to-sky-blue text-white border-gray-400" : "border-gray-100 bg-white"
+    className={`w-5 h-5 rounded border transition-all cursor-pointer flex items-center justify-center shadow-xs ${
+      checked ? "bg-linear-to-b from-sea-blue to-sky-blue text-white border-gray-400" : "border-gray-50 bg-white"
     }`}
   >
     {checked && <span className="text-[10px] font-bold">✓</span>}
@@ -210,12 +200,12 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onDelete: (id: number) => 
       <div className="flex items-center gap-3">
         {/*
           <button className="h-10 w-10 flex items-center justify-center text-gray-300 cursor-default pointer-events-none">
-            <i className="mdi mdi-help-circle-outline text-xl"></i>
+            <i className="fa-solid fa-circle-question text-xl"></i>
           </button>
         */}
         {/* <div>
           <p className="text-[10px] font-bold text-gray-400 uppercase tracking-wide">
-            <i className="mdi mdi-calendar-blank mr-1"></i>
+            <i className="fa-solid fa-calendar-days mr-1"></i>
             {formatDate(consulta.FechaConsulta ?? "")}
           </p>
           <p className="text-xs font-bold text-gray-800 truncate uppercase max-w-[320px]">
@@ -230,7 +220,7 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onDelete: (id: number) => 
             onClick={onToggleFullscreen}
             className="w-10 h-10 text-gray-400 hover:text-sea-blue rounded-xl flex items-center justify-center transition-all group cursor-pointer"
           >
-            <i className="mdi mdi-fullscreen text-xl"></i>
+            <i className="fa-solid fa-expand text-lg"></i>
           </button>
           <button
             title="Eliminar"
@@ -249,7 +239,7 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onDelete: (id: number) => 
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Diagnóstico
           </label>
-          <div className="w-full px-3 py-2 text-sea-blue bg-blue-50 shadow-md rounded-lg text-xs font-semibold uppercase outline-none">
+          <div className="w-full px-3 py-2 border border-gray-50 text-sea-blue bg-blue-50 shadow-xs rounded-lg text-xs font-semibold uppercase outline-none">
             <i className="fa-solid fa-lightbulb mr-2"></i>
             {consulta.Diagnostico}
           </div>
@@ -259,7 +249,7 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onDelete: (id: number) => 
         <label className="block text-xs font-medium text-gray-700 mb-1">
           Tipo de atención
         </label>
-        <div className="w-full px-3 py-2 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+        <div className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
           {consulta.TipoAtencion
             ? consulta.TipoAtencion === "AUX" ? "Primeros auxilios" : "Enfermedad general" : ""}
         </div>
@@ -269,7 +259,7 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onDelete: (id: number) => 
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Atención primeros auxilios
           </label>
-          <div className="w-full px-3 py-2 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+          <div className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
             {consulta.PrimerosAux === 1 ? "Accidente de trabajo" : "Accidente de trayecto"}
           </div>
         </div>
@@ -278,7 +268,7 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onDelete: (id: number) => 
         <label className="block text-xs font-medium text-gray-700 mb-1">
           Protocolo de atención
         </label>
-        <div className="w-full px-3 py-2 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+        <div className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
           {consulta.ProtocoloNombre}
         </div>
       </div>
@@ -287,7 +277,7 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onDelete: (id: number) => 
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Procedimiento realizado
           </label>
-          <div className="w-full px-3 py-2 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+          <div className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
             {consulta.Procedimiento}
           </div>
         </div>
@@ -297,7 +287,7 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onDelete: (id: number) => 
           <label className="block text-xs font-medium text-gray-700 mb-1">
             Padecimiento actual
           </label>
-          <div className="w-full px-3 py-2 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+          <div className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
             {consulta.Padecimiento}
           </div>
         </div>
@@ -307,63 +297,63 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onDelete: (id: number) => 
           Exploración fisica
         </label>
         <div className="grid grid-cols-3 gap-1.5 text-[10px]">
-          <div className="flex justify-between w-full px-3 py-2 mb-1 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+          <div className="flex justify-between w-full px-3 py-2 mb-1 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
             <span className="flex items-center gap-1">
               {/* <Weight className="h-3 w-3 mr-1 text-gray-400" /> */}
               Peso
             </span>
             <p>{formatExploracion(consulta.Peso, " kg")}</p>
           </div>
-          <div className="flex justify-between w-full px-3 py-2 mb-1 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+          <div className="flex justify-between w-full px-3 py-2 mb-1 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
             <span className="flex items-center gap-1">
               {/* <Ruler className="h-3 w-3 mr-1 text-gray-400" /> */}
               Altura
             </span>
             <p>{formatExploracion(consulta.Talla, " m")}</p>
           </div>
-          <div className="flex justify-between w-full px-3 py-2 mb-1 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+          <div className="flex justify-between w-full px-3 py-2 mb-1 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
             <span className="flex items-center gap-1">
               {/* <Scale className="h-3 w-3 mr-1 text-gray-400" /> */}
               IMC
             </span>
             <p>{formatExploracion(consulta.IMC)}</p>
           </div>
-          <div className="flex justify-between w-full px-3 py-2 mb-1 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+          <div className="flex justify-between w-full px-3 py-2 mb-1 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
             <span className="flex items-center gap-1">
               {/* <RulerDimensionLine className="h-3 w-3 mr-1 text-gray-400" /> */}
               PA
             </span>
             <p>{formatExploracion(consulta.Abdomen, " cm")}</p>
           </div>
-          <div className="flex justify-between w-full px-3 py-2 mb-1 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+          <div className="flex justify-between w-full px-3 py-2 mb-1 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
             <span className="flex items-center gap-1">
               {/* <Dumbbell className="h-3 w-3 mr-1 text-gray-400" /> */}
               ICT
             </span>
             <p>{formatExploracion(consulta.ICT)}</p>
           </div>
-          <div className="flex justify-between w-full px-3 py-2 mb-1 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+          <div className="flex justify-between w-full px-3 py-2 mb-1 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
             <span className="flex items-center gap-1">
               {/* <Activity className="h-3 w-3 mr-1 text-gray-400" /> */}
               T/A
             </span>
             <p>{formatExploracion(consulta.PA)}</p>
           </div>
-          <div className="flex justify-between w-full px-3 py-2 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+          <div className="flex justify-between w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
             <span className="flex items-center gap-1">
               {/* <HeartPulse className="h-3 w-3 mr-1 text-gray-400" /> */}
               FC
             </span>
             <p>{formatExploracion(consulta.FC, " lmp")}</p>
           </div>
-          <div className="flex justify-between w-full px-3 py-2 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+          <div className="flex justify-between w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
             <span className="flex items-center gap-1">
               {/* <Wind className="h-3 w-3 mr-1 text-gray-400" /> */}
               FR
             </span>
             <p>{formatExploracion(consulta.FR, " rpm")}</p>
           </div>
-          <div className="flex justify-between w-full px-3 py-2 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
+          <div className="flex justify-between w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none">
             <span className="flex items-center gap-1">
               {/* <Bubbles className="h-3 w-3 mr-1 text-gray-400" /> */}
               SpO2
@@ -379,8 +369,8 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onDelete: (id: number) => 
           </label>
           <textarea
             rows={3}
-            // className="w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none resize-none"
-            className="w-full p-2.5 border-gray-100 shadow-md rounded-lg text-xs bg-gray-50 text-gray-400 font-small focus:ring-1 outline-none resize-none"
+            // className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small outline-none resize-none"
+            className="w-full p-2.5 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-400 font-small focus:ring-1 outline-none resize-none"
             value={consulta.Recomendacion}
             disabled
           />
@@ -400,7 +390,7 @@ const DetalleConsulta: React.FC<{ consulta: Consulta; onDelete: (id: number) => 
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Lista de medicamentos
             </label>
-            <div className="overflow-x-auto border border-gray-100 shadow-md rounded-lg">
+            <div className="overflow-x-auto border border-gray-50 shadow-xs rounded-lg">
               <table className="w-full text-left text-sm border-collapse">
                 <tbody>
                   {recetas.map((r: any, i: number) => (
@@ -809,16 +799,23 @@ const Consultas: React.FC = () => {
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">¿Eliminar consulta?</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">Si confirma esta acción se <b>eliminará la consulta del historial</b> de forma permanente.</p>`,
       iconHtml: `
-      <i class="mdi mdi-help-circle-outline success-icon"></i>
+      <i class="fa-solid fa-question success-icon"></i>
       <style>
         .success-icon {
-          font-size: 90px;
-          animation: pop 0.4s ease-out forwards;
+          color: #545454;
+          font-size: 70px;
+          animation: pop 0.4s ease-out forwards,
+                     popPeriodic 4s ease-in-out 1.5s infinite;
         }
         @keyframes pop {
           0% { transform: scale(0.5); opacity: 0; }
           70% { transform: scale(1.15); opacity: 1; }
           100% { transform: scale(1); }
+        }
+        @keyframes popPeriodic {
+          0%, 85%, 100% { transform: scale(1); }
+          90% { transform: scale(1.15); }
+          95% { transform: scale(0.95); }
         }
       </style>
       `,
@@ -827,7 +824,7 @@ const Consultas: React.FC = () => {
         if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" });
       },
       buttonsStyling: false,
-      confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
+      confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> OK`,
       customClass: {
         confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
       },
@@ -968,17 +965,23 @@ const Consultas: React.FC = () => {
           title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Cita detectada</p>`,
           html: `<p style="font-size: 16px; padding: 0 40px">Se detectó una cita para el día <b>${fechaCita.toLowerCase()} a las ${horaCita}</b>. ¿Desea confirmar la asistencia?</p>`,
           iconHtml: `
-          <i class="mdi mdi-calendar-question success-icon"></i>
+          <i class="fa-solid fa-calendar-check success-icon"></i>
           <style>
             .success-icon {
-              // color: #54BBAB;
-              font-size: 90px;
-              animation: pop 0.4s ease-out forwards;
+              color: #545454;
+              font-size: 70px;
+              animation: pop 0.4s ease-out forwards,
+                         popPeriodic 4s ease-in-out 1.5s infinite;
             }
             @keyframes pop {
               0% { transform: scale(0.5); opacity: 0; }
               70% { transform: scale(1.15); opacity: 1; }
               100% { transform: scale(1); }
+            }
+            @keyframes popPeriodic {
+              0%, 85%, 100% { transform: scale(1); }
+              90% { transform: scale(1.15); }
+              95% { transform: scale(0.95); }
             }
           </style>
           `,
@@ -987,8 +990,8 @@ const Consultas: React.FC = () => {
             if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" });
           },
           buttonsStyling: false,
-          confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> Confirmar`,
-          cancelButtonText: `<i class="mdi mdi-close-thick mr-1"></i> Ahora no`,
+          confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> Confirmar`,
+          cancelButtonText: `<i class="fa-solid fa-xmark mr-1"></i> Ahora no`,
           showCancelButton: true,
           customClass: {
             confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
@@ -1039,17 +1042,23 @@ const Consultas: React.FC = () => {
           html: `<p style="font-size: 16px; padding: 0 40px">Se encontraron <b>${citasPendientes.length} citas pendientes</b>. Seleccione si desea confirmar la asistencia del paciente.</p>
                  <div class="mt-4" style="max-height: 260px; overflow-y: auto; padding:0 4px">${opcionesHtml}</div>`,
           iconHtml: `
-            <i class="mdi mdi-calendar-question success-icon"></i>
+            <i class="fa-solid fa-calendar-check success-icon"></i>
             <style>
               .success-icon {
-                // color: #54BBAB;
-                font-size: 90px;
-                animation: pop 0.4s ease-out forwards;
+                color: #545454;
+                font-size: 70px;
+                animation: pop 0.4s ease-out forwards,
+                           popPeriodic 4s ease-in-out 1.5s infinite;
               }
               @keyframes pop {
                 0% { transform: scale(0.5); opacity: 0; }
                 70% { transform: scale(1.15); opacity: 1; }
                 100% { transform: scale(1); }
+              }
+              @keyframes popPeriodic {
+                0%, 85%, 100% { transform: scale(1); }
+                90% { transform: scale(1.15); }
+                95% { transform: scale(0.95); }
               }
             </style>
           `,
@@ -1072,12 +1081,12 @@ const Consultas: React.FC = () => {
             });
           },
           buttonsStyling: false,
-          confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> Confirmar`,
-          denyButtonText: `<i class="mdi mdi-close-thick mr-1"></i> Ahora no`,
+          confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> Confirmar`,
+          denyButtonText: `<i class="fa-solid fa-xmark mr-1"></i> Ahora no`,
           showDenyButton: true,
           preConfirm: () => {
             const radio = document.querySelector<HTMLInputElement>('.swal2-popup input[name="citaSelect"]:checked');
-            if (!radio?.value) { Swal.showValidationMessage('<i class="mdi mdi-information-slab-circle me-2"></i><span>Seleccione una cita para continuar.</span>'); return false; }
+            if (!radio?.value) { Swal.showValidationMessage('<i class="fa-solid fa-circle-info me-2"></i><span>Seleccione una cita para continuar.</span>'); return false; }
             return radio.value;
           },
           customClass: {
@@ -1154,16 +1163,29 @@ const Consultas: React.FC = () => {
         title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Alerta de fármaco</p>`,
         html: `<p style="font-size: 16px; padding: 0 40px">Se está prescribiendo <b class='uppercase'>${farmacosAlergenos.join(", ")}</b>, el cual se reportó como alergia del paciente.</p>`,
         iconHtml: `
-        <i class="mdi mdi-alert-circle-outline success-icon"></i>
+        <i class="fa-solid fa-exclamation aviso-exclamation"></i>
         <style>
-          .success-icon {
-            font-size: 90px;
-            animation: pop 0.4s ease-out forwards;
+          .aviso-exclamation {
+            font-size: 70px;
+            animation: shakeInitial 0.6s ease-in-out,
+                       shakePeriodic 4s ease-in-out 1.5s infinite;
           }
-          @keyframes pop {
-            0% { transform: scale(0.5); opacity: 0; }
-            70% { transform: scale(1.15); opacity: 1; }
-            100% { transform: scale(1); }
+          @keyframes shakeInitial {
+            0%   { transform: scale(0.5) rotate(0deg); opacity: 0; }
+            20%  { transform: scale(1.15) rotate(-12deg); opacity: 1; }
+            40%  { transform: scale(1.05) rotate(10deg); }
+            60%  { transform: scale(1.05) rotate(-7deg); }
+            80%  { transform: scale(1) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); }
+          }
+          @keyframes shakePeriodic {
+            0%, 85%, 100% { transform: rotate(0deg); }
+            87% { transform: rotate(-10deg); }
+            89% { transform: rotate(10deg); }
+            91% { transform: rotate(-8deg); }
+            93% { transform: rotate(8deg); }
+            95% { transform: rotate(-4deg); }
+            97% { transform: rotate(4deg); }
           }
         </style>
         `,
@@ -1172,8 +1194,8 @@ const Consultas: React.FC = () => {
           if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" });
         },
         buttonsStyling: false,
-        confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> Permitir`,
-        cancelButtonText: `<i class="mdi mdi-close-thick mr-1"></i> Cancelar`,
+        confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> Permitir`,
+        cancelButtonText: `<i class="fa-solid fa-xmark mr-1"></i> Cancelar`,
         showCancelButton: true,
         customClass: {
           confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
@@ -1275,10 +1297,30 @@ const Consultas: React.FC = () => {
     Swal.fire({
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">${title}</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">${message}</p>`,
-      iconHtml: `<i class="mdi mdi-check-circle-outline" style="color: #54BBAB; font-size: 90px"></i>`,
+      iconHtml: `
+      <i class="fa-solid fa-check success-icon"></i>
+      <style>
+        .success-icon {
+          color: #545454;
+          font-size: 70px;
+          animation: pop 0.4s ease-out forwards,
+                     popPeriodic 4s ease-in-out 1.5s infinite;
+        }
+        @keyframes pop {
+          0% { transform: scale(0.5); opacity: 0; }
+          70% { transform: scale(1.15); opacity: 1; }
+          100% { transform: scale(1); }
+        }
+        @keyframes popPeriodic {
+          0%, 85%, 100% { transform: scale(1); }
+          90% { transform: scale(1.15); }
+          95% { transform: scale(0.95); }
+        }
+      </style>
+      `,
       didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" }); },
       buttonsStyling: false, 
-      confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
+      confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> OK`,
       customClass:
       { 
         confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
@@ -1290,12 +1332,38 @@ const Consultas: React.FC = () => {
     Swal.fire({
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">${title}</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">${message}</p>`,
-      iconHtml: `<i class="mdi mdi-alert-circle-outline" style="font-size: 90px"></i>`,
+      iconHtml: `
+      <i class="fa-solid fa-exclamation aviso-exclamation"></i>
+      <style>
+        .aviso-exclamation {
+          font-size: 70px;
+          animation: shakeInitial 0.6s ease-in-out,
+                     shakePeriodic 4s ease-in-out 1.5s infinite;
+        }
+        @keyframes shakeInitial {
+          0%   { transform: scale(0.5) rotate(0deg); opacity: 0; }
+          20%  { transform: scale(1.15) rotate(-12deg); opacity: 1; }
+          40%  { transform: scale(1.05) rotate(10deg); }
+          60%  { transform: scale(1.05) rotate(-7deg); }
+          80%  { transform: scale(1) rotate(5deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes shakePeriodic {
+          0%, 85%, 100% { transform: rotate(0deg); }
+          87% { transform: rotate(-10deg); }
+          89% { transform: rotate(10deg); }
+          91% { transform: rotate(-8deg); }
+          93% { transform: rotate(8deg); }
+          95% { transform: rotate(-4deg); }
+          97% { transform: rotate(4deg); }
+        }
+      </style>
+      `,
       didOpen: (p) => {
         const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" });
       },
       buttonsStyling: false, 
-      confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
+      confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> OK`,
       customClass:
       {
         confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
@@ -1391,7 +1459,7 @@ const Consultas: React.FC = () => {
   const getImcInput = (imc: string) => {
     const v = parseFloat(imc);
     
-    if (!imc || isNaN(v) || v === 0) return "border-gray-100 bg-gray-100 text-gray-700";
+    if (!imc || isNaN(v) || v === 0) return "border-gray-50 bg-gray-100 text-gray-700";
     if (v < 18.5) return "border-yellow-300/20 bg-yellow-50 text-yellow-500";
     if (v <= 24.9) return "border-horz-blue/20 bg-blue-50 text-sky-blue";
     if (v <= 29.9) return "border-yellow-300/20 bg-yellow-50 text-yellow-500";
@@ -1411,7 +1479,7 @@ const Consultas: React.FC = () => {
   const getIctInput = (ict: string) => {
     const v = parseFloat(ict);
 
-    if (!ict || isNaN(v) || v === 0) return "border-gray-100 bg-gray-100 text-gray-700";
+    if (!ict || isNaN(v) || v === 0) return "border-gray-50 bg-gray-100 text-gray-700";
     if (v < 0.5) return "border-horz-blue/20 bg-blue-50 text-sky-blue";
     if (v < 0.6) return "border-yellow-300/20 bg-yellow-50 text-yellow-500";
     return "border-red-200/20 bg-red-50 text-red-500";
@@ -1632,7 +1700,7 @@ const Consultas: React.FC = () => {
   };
 
   const protocoloHabilitado = formData.TipoAtencion === "EFG" || (formData.TipoAtencion === "AUX" && !!formData.TipoEnfermedad);
-  const matriculaValida = pacienteExterno || (!!patientData.matricula?.trim() && !matriculaNotFound);
+  const matriculaValida = pacienteExterno || (!!patientData.matricula?.trim() && !!patientData.nombre && !matriculaNotFound);
   const requiereProcedimiento = formData.ProtocoloAtencion !== "17" && subtiposAtencion[formData.ProtocoloAtencion]?.length > 0;
   const datosAtencionCompletos = !!formData.ProtocoloAtencion && (!requiereProcedimiento || !!formData.Procedimiento);
 
@@ -1662,7 +1730,7 @@ const Consultas: React.FC = () => {
         style={{ marginRight: showHistory ? 300 : 0 }}
       >
         <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl shadow-xl gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl border border-gray-50 shadow-xs gap-4">
             <div>
               <h1 className="text-2xl font-bold text-sea-blue flex items-center">
                 Consulta Médica
@@ -1673,12 +1741,12 @@ const Consultas: React.FC = () => {
             </div>
             <button
               onClick={handleSaveConsult}
-              disabled={saving}
-              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
+              disabled={saving || loadingMat || !matriculaValida}
+              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
             >
               {saving
-                ? <><i className="mdi mdi-loading mdi-spin mr-2"></i></>
-                : <><i className="mdi mdi-plus-thick mr-2"></i></>
+                ? <><i className="fa-solid fa-spinner fa-spin mr-2"></i></>
+                : <><i className="fa-solid fa-plus mr-2"></i></>
               }
               Guardar
             </button>
@@ -1691,7 +1759,7 @@ const Consultas: React.FC = () => {
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
                   // className="flex items-center bg-blue-50 border border-horz-blue rounded-xl shadow-sm px-4 py-3 gap-3"
-                  className={`relative overflow-hidden flex items-center bg-gradient-to-b from-blue-50 to-white rounded-xl border-horz-blue shadow-lg shadow-horz-blue px-4 py-3 gap-3`}
+                  className={`relative overflow-hidden flex items-center bg-gradient-to-b from-blue-50 to-white rounded-xl border border-gray-50 shadow-xs px-4 py-3 gap-3`}
                   // sticky top-55 z-1
                 >
                   <ShimmerOverlay subtle />
@@ -1712,7 +1780,7 @@ const Consultas: React.FC = () => {
                       {citaLigada.motivo && (
                         <>
                           {/* <span>·</span> */}
-                          <i className="mdi mdi-vector-point px-1"></i>
+                          <i className="fa-solid fa-circle text-[3px] align-middle px-1"></i>
                           {citaLigada.motivo ? citaLigada.motivo == "IND" ? "Indicadores TNG sano" : citaLigada.motivo == "SEG" ? "Seguimiento" : citaLigada.motivo == "PER" ? "Periódico" : "" : ""}
                         </>
                       )}
@@ -1723,7 +1791,7 @@ const Consultas: React.FC = () => {
                     className="text-gray-400 hover:text-red-500 transition-colors shrink-0 cursor-pointer"
                     onClick={() => setCitaLigada(null)}
                   >
-                    <i className="mdi mdi-close-thick text-lg"></i>
+                    <i className="fa-solid fa-xmark text-lg"></i>
                   </button>
                 </motion.div>
               )}
@@ -1733,7 +1801,7 @@ const Consultas: React.FC = () => {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   // className="bg-yellow-50 border border-yellow-200 rounded-xl p-4 flex items-start shadow-sm"
-                  className={`relative overflow-hidden flex items-center bg-gradient-to-b from-yellow-50 to-white rounded-xl border-yellow-100 shadow-lg shadow-gray-200 px-4 py-3 gap-3`}
+                  className={`relative overflow-hidden flex items-center bg-gradient-to-b from-yellow-50 to-white rounded-xl border border-gray-50 shadow-xs px-4 py-3 gap-3`}
                 >
                   <ShimmerOverlay subtle />
                   <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-yellow-100 shrink-0">
@@ -1749,7 +1817,7 @@ const Consultas: React.FC = () => {
                         Alergias: <strong>{patientData.alergias}</strong>
                       </span>
                     )}
-                    {patientData.alergias && patientData.alergiasMedicamentos && <i className="mdi mdi-vector-point px-1"></i>}
+                    {patientData.alergias && patientData.alergiasMedicamentos && <i className="fa-solid fa-circle text-[3px] align-middle px-1"></i>}
                     {patientData.alergiasMedicamentos && (
                       <>
                         Alergias a medicamentos: <strong>{patientData.alergiasMedicamentos}</strong>
@@ -1764,7 +1832,7 @@ const Consultas: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 }}
-                className={`bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl p-6`}
+                className={`bg-linear-to-b from-white to-gray-50 rounded-xl border border-gray-50 shadow-xs p-6`}
               >
                 <div className="mb-4 relative flex items-center">
                   <h2 className="text-sm font-bold text-gray-800 flex items-center">
@@ -1796,7 +1864,7 @@ const Consultas: React.FC = () => {
                       Matrícula / CURP
                     </label>
                     <div className="relative">
-                      <Search className={`h-3.5 w-3.5 absolute left-3 top-2.5 ${!patientData.matricula ? "text-gray-400" : loadingMat ? "text-gray-400" : matriculaNotFound ? "text-red-500" : "text-gray-400"}`} />
+                      <i className={`fa-solid fa-magnifying-glass text-xs absolute left-3 top-2.5 ${!patientData.matricula ? "text-gray-400" : loadingMat ? "text-gray-400" : matriculaNotFound ? "text-red-500" : "text-gray-400"}`}></i>
                       <input
                         type="text"
                         value={patientData.matricula ?? ""}
@@ -1805,11 +1873,11 @@ const Consultas: React.FC = () => {
                         // disabled={loadingMat}
                         disabled={loadingMat || pacienteExterno}
                         maxLength={18}
-                        className={`w-full rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none shadow-md transition-colors ${pacienteExterno ? "border-gray-100 bg-gray-100 text-gray-400 cursor-not-allowed" : !patientData.matricula ? "border-gray-100 bg-white focus:ring-1 focus:ring-sea-blue" : loadingMat ? "border-gray-100 bg-gray-100" : matriculaNotFound ? "border-red-200 bg-red-50 text-red-500 focus:ring-0" : "border-gray-100 bg-white focus:ring-1 focus:ring-sea-blue"}`}
+                        className={`w-full border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none shadow-xs transition-colors ${pacienteExterno ? "border-gray-50 bg-gray-100 text-gray-400 cursor-not-allowed" : !patientData.matricula ? "border-gray-50 bg-white focus:ring-1 focus:ring-sea-blue" : loadingMat ? "border-gray-50 bg-gray-100" : matriculaNotFound ? "border-red-200 bg-red-50 text-red-500 focus:ring-0" : "border-gray-50 bg-white focus:ring-1 focus:ring-sea-blue"}`}
                       />
                       {loadingMat && (
                         <div className="absolute right-3 top-[10px] -translate-y-1/4">
-                          <i className="mdi mdi-loading mdi-spin text-gray-400 text-lg"></i>
+                          <i className="fa-solid fa-spinner fa-spin text-gray-400 text-lg"></i>
                         </div>
                       )}
                       <div className="flex items-center mt-2 gap-2">
@@ -1866,7 +1934,7 @@ const Consultas: React.FC = () => {
                       type="datetime-local"
                       value={formData.FechaAtencion}
                       onChange={(e) => setFormData(f => ({ ...f, FechaAtencion: e.target.value }))}
-                      className="w-full bg-white border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
+                      className="w-full bg-white border border-gray-50 shadow-xs rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
                     />
                   </div>
                   <div>
@@ -1879,7 +1947,7 @@ const Consultas: React.FC = () => {
                       onChange={(e) => setPatientData(p => ({ ...p, nombre: e.target.value })) }
                       disabled={!pacienteExterno}
                       placeholder="Nombre del paciente"
-                      className={`w-full px-3 py-2 border-gray-100 shadow-md rounded-lg text-xs font-medium outline-none ${ pacienteExterno ? "bg-white text-gray-800" : "bg-gray-100 text-gray-800" }`}
+                      className={`w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs font-medium outline-none ${ pacienteExterno ? "bg-white text-gray-800" : "bg-gray-100 text-gray-800" }`}
                     />
                   </div>
                   {pacienteExterno ? (
@@ -1892,7 +1960,7 @@ const Consultas: React.FC = () => {
                         value={patientData.embarcacion}
                         onChange={(e) => setPatientData(p => ({ ...p, embarcacion: e.target.value }))}
                         placeholder="Embarcación"
-                        className="w-full px-3 py-2 border-gray-100 shadow-md rounded-lg text-xs bg-white text-gray-800 font-medium outline-none focus:ring-1 focus:ring-sea-blue"
+                        className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs bg-white text-gray-800 font-medium outline-none focus:ring-1 focus:ring-sea-blue"
                       />
                     </div>
                   ) : (
@@ -1905,7 +1973,7 @@ const Consultas: React.FC = () => {
                         value={patientData.especialidad}
                         disabled
                         placeholder="Especialidad"
-                        className="w-full px-3 py-2 border-gray-100 shadow-md rounded-lg text-xs bg-gray-100 text-gray-800 font-medium outline-none"
+                        className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-100 text-gray-800 font-medium outline-none"
                       />
                     </div>
                   )}
@@ -1916,7 +1984,7 @@ const Consultas: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 }}
-                className={`bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl p-6`}
+                className={`bg-linear-to-b from-white to-gray-50 rounded-xl border border-gray-50 shadow-xs p-6`}
               >
                 <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
                   <i className="fa-solid fa-comment-medical text-sea-blue mr-3"></i>
@@ -1928,7 +1996,7 @@ const Consultas: React.FC = () => {
                       Tipo de atención
                     </label>
                     <select
-                      className="w-full bg-white border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
+                      className="w-full bg-white border border-gray-50 shadow-xs rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
                       value={formData.TipoAtencion}
                       onChange={(e) => setFormData(f => ({ ...f, TipoAtencion: e.target.value }))}
                     >
@@ -1944,7 +2012,7 @@ const Consultas: React.FC = () => {
                         Atención por primeros auxilios
                       </label>
                       <select
-                        className={`w-full border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none ${!formData.TipoAtencion ? "bg-gray-100 text-gray-800 cursor-not-allowed" : "bg-white"}`}
+                        className={`w-full border border-gray-50 shadow-xs rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none ${!formData.TipoAtencion ? "bg-gray-100 text-gray-800 cursor-not-allowed" : "bg-white"}`}
                         value={formData.TipoEnfermedad || ""}
                         onChange={(e) => setFormData(f => ({ ...f,TipoEnfermedad: e.target.value }))}
                         disabled={!formData.TipoAtencion}
@@ -1962,7 +2030,7 @@ const Consultas: React.FC = () => {
                       Protocolo de atención
                     </label>
                     <select
-                      className={`w-full border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none ${!protocoloHabilitado ? "bg-gray-100 text-gray-800 cursor-not-allowed" : "bg-white"}`}
+                      className={`w-full border border-gray-50 shadow-xs rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none ${!protocoloHabilitado ? "bg-gray-100 text-gray-800 cursor-not-allowed" : "bg-white"}`}
                       value={formData.ProtocoloAtencion || ""}
                       onChange={(e) => setFormData(f => ({ ...f, ProtocoloAtencion: e.target.value, Procedimiento: "" }))}
                       disabled={!protocoloHabilitado}
@@ -2001,7 +2069,7 @@ const Consultas: React.FC = () => {
                         Procedimiento realizado
                       </label>
                       <select
-                        className={`w-full border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none ${!protocoloHabilitado ? "bg-gray-100 text-gray-800 cursor-not-allowed" : "bg-white"}`}
+                        className={`w-full border border-gray-50 shadow-xs rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none ${!protocoloHabilitado ? "bg-gray-100 text-gray-800 cursor-not-allowed" : "bg-white"}`}
                         value={formData.Procedimiento}
                         onChange={(e) => setFormData(f => ({ ...f, Procedimiento: e.target.value }))}
                         disabled={!protocoloHabilitado}
@@ -2023,7 +2091,7 @@ const Consultas: React.FC = () => {
                     value={formData.PadecimientoActual}
                     onChange={(e) => setFormData(f => ({ ...f,PadecimientoActual:e.target.value }))}
                     disabled={!datosAtencionCompletos}
-                    className={`w-full p-2.5 border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none resize-none ${!datosAtencionCompletos ? "bg-gray-100 text-gray-800 cursor-not-allowed" : "bg-white"}`}
+                    className={`w-full p-2.5 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none resize-none ${!datosAtencionCompletos ? "bg-gray-100 text-gray-800 cursor-not-allowed" : "bg-white"}`}
                     placeholder="Descripción del padecimiento"
                   />
                 </div>
@@ -2037,7 +2105,7 @@ const Consultas: React.FC = () => {
                     // value={formData.PadecimientoActual}
                     // onChange={(e) => setFormData(f => ({ ...f,PadecimientoActual:e.target.value }))}
                     disabled={!datosAtencionCompletos}
-                    className={`w-full p-2.5 border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none resize-none ${!datosAtencionCompletos ? "bg-gray-100 text-gray-800 cursor-not-allowed" : "bg-white"}`}
+                    className={`w-full p-2.5 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none resize-none ${!datosAtencionCompletos ? "bg-gray-100 text-gray-800 cursor-not-allowed" : "bg-white"}`}
                     placeholder="Resultado de la exploración"
                   />
                 </div> */}
@@ -2047,7 +2115,7 @@ const Consultas: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.3 }}
-                className={`bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl p-6`}
+                className={`bg-linear-to-b from-white to-gray-50 rounded-xl border border-gray-50 shadow-xs p-6`}
               >
                 <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
                   <i className="fa-solid fa-person text-sea-blue mr-3"></i>
@@ -2065,7 +2133,7 @@ const Consultas: React.FC = () => {
                         step="0.1" 
                         value={vitalSigns.Peso}
                         onChange={(e) => { if(e.target.value.length > 6) return; handleMeasureChange("Peso",e.target.value); }}
-                        className="w-full p-2 pl-9 pr-10 bg-white border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-full p-2 pl-9 pr-10 bg-white border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0.0"
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">kg</span>
@@ -2085,7 +2153,7 @@ const Consultas: React.FC = () => {
                         step="0.01" 
                         value={vitalSigns.Talla} 
                         onChange={(e) => { if(e.target.value.length > 4) return; handleMeasureChange("Talla",e.target.value); }}
-                        className="w-full p-2 pl-9 pr-10 bg-white border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-full p-2 pl-9 pr-10 bg-white border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0.00" 
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">m</span>
@@ -2102,7 +2170,7 @@ const Consultas: React.FC = () => {
                         type="text" 
                         value={vitalSigns.IMC} 
                         disabled 
-                        className={`w-full px-3 py-2 pl-9 rounded-lg text-xs shadow-md outline-none transition-colors ${getImcInput(vitalSigns.IMC)}`}
+                        className={`w-full px-3 py-2 pl-9 rounded-lg border text-xs shadow-xs outline-none transition-colors ${getImcInput(vitalSigns.IMC)}`}
                         placeholder="0.00"
                       />
                     </div>
@@ -2120,7 +2188,7 @@ const Consultas: React.FC = () => {
                         type="text"
                         value={vitalSigns.Abdomen}
                         onChange={(e) => { const val = e.target.value; if(val.length > 6) return; setVitalSigns(v => ({ ...v, Abdomen: val, ICT: calcICT(val, v.Talla) })); }}
-                        className="w-full px-3 py-2 pl-9 pr-10 bg-white border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-full px-3 py-2 pl-9 pr-10 bg-white border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="0.00"
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">cm</span>
@@ -2136,7 +2204,7 @@ const Consultas: React.FC = () => {
                         type="text"
                         value={vitalSigns.ICT}
                         disabled
-                        className={`w-full px-3 py-2 pl-9 rounded-lg text-xs shadow-md outline-none transition-colors ${getIctInput(vitalSigns.ICT)}`}
+                        className={`w-full px-3 py-2 pl-9 rounded-lg border text-xs shadow-xs outline-none transition-colors ${getIctInput(vitalSigns.ICT)}`}
                         placeholder="0.00"
                       />
                     </div>
@@ -2145,7 +2213,7 @@ const Consultas: React.FC = () => {
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       T/A (mmHg)
                     </label>
-                    <div className={`relative flex items-center border shadow-md rounded-lg focus-within:ring-1 focus-within:ring-clinical-blue focus-within:border-clinical-blue ${(camposCargados.sistolica || camposCargados.diastolica) ? "bg-gray-100 border-gray-100" : "bg-white border-gray-100"}`}>
+                    <div className={`relative flex items-center border shadow-xs rounded-lg focus-within:ring-1 focus-within:ring-clinical-blue focus-within:border-clinical-blue ${(camposCargados.sistolica || camposCargados.diastolica) ? "bg-gray-100 border-gray-50" : "bg-white border-gray-50"}`}>
                       <i className="fa-solid fa-gauge-high text-xs absolute left-3 text-gray-400 pointer-events-none z-10"></i>
                       <div className="flex items-center w-full pl-9 pr-2 py-2">
                         <input
@@ -2231,7 +2299,7 @@ const Consultas: React.FC = () => {
                         value={vitalSigns.FC}
                         disabled={camposCargados.fc}
                         onChange={(e) => { if (e.target.value.length > 3) {  return; } setVitalSigns(v => ({ ...v, FC: e.target.value })); }}
-                        className={`w-full p-2 pl-9 pr-10 border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${camposCargados.fc ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white"}`}
+                        className={`w-full p-2 pl-9 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${camposCargados.fc ? "bg-gray-100 text-gray-400 cursor-not-allowed" : "bg-white"}`}
                         placeholder="70"
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">lpm</span>
@@ -2257,7 +2325,7 @@ const Consultas: React.FC = () => {
                           
                           setVitalSigns(v => ({ ...v, FR: e.target.value }));
                         }} 
-                        className="w-full p-2 pl-9 pr-10 bg-white border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-full p-2 pl-9 pr-10 bg-white border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         placeholder="18"
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">rpm</span>
@@ -2285,7 +2353,7 @@ const Consultas: React.FC = () => {
                           if (parseInt(r) > 100 || r.length > 3)
                             return;setVitalSigns(v => ({ ...v, SpO2: r }));
                         }}
-                        className={`w-full p-2 pl-9 pr-10 border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${camposCargados.spo2 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}
+                        className={`w-full p-2 pl-9 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none ${camposCargados.spo2 ? "bg-gray-100 text-gray-400 cursor-not-allowed" : ""}`}
                         placeholder="98"
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">%</span>
@@ -2301,7 +2369,7 @@ const Consultas: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.4 }}
-                className={`bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl p-6`}
+                className={`bg-linear-to-b from-white to-gray-50 rounded-xl border border-gray-50 shadow-xs p-6`}
               >
                 <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
                   <i className="fa-solid fa-clipboard text-sea-blue mr-3"></i>
@@ -2316,7 +2384,7 @@ const Consultas: React.FC = () => {
                       type="text"
                       value={formData.Diagnostico}
                       onChange={(e) => setFormData(f => ({ ...f, Diagnostico: e.target.value }))}
-                      className="w-full p-2 bg-white border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none"
+                      className="w-full p-2 bg-white border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none"
                       placeholder="Diagnóstico"
                     />
                   </div>
@@ -2328,7 +2396,7 @@ const Consultas: React.FC = () => {
                       rows={2} 
                       value={formData.Recomendaciones} 
                       onChange={(e) => setFormData(f => ({ ...f, Recomendaciones: e.target.value }))}
-                      className="w-full p-2.5 bg-white border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none resize-none"
+                      className="w-full p-2.5 bg-white border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none resize-none"
                       placeholder="Recomendaciones"
                     />
                   </div>
@@ -2339,17 +2407,18 @@ const Consultas: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.5 }}
-                className={`bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl px-6 py-4`}
+                className={`bg-linear-to-b from-white to-gray-50 rounded-xl border border-gray-50 shadow-xs px-6 py-4`}
               >
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-sm font-bold text-gray-800 mb-0 flex items-center">
                     <i className="fa-solid fa-capsules text-sea-blue mr-3"></i>
                     Receta Médica
                   </h2>
-                  <button 
-                    onClick={agregarMedicamento} 
+                  <button
+                    onClick={agregarMedicamento}
+                    disabled={!matriculaValida}
                     // className="flex items-center bg-horz-blue/15 hover:bg-horz-blue/30 -translate-y-1 hover:-translate-y-2 text-sea-blue px-2.5 py-1 rounded-lg text-sm font-medium border border-horz-blue transition-all cursor-pointer"
-                    className="flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-4 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
+                    className="flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-4 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
                   >
                     <i className="fa-solid fa-plus mr-2"></i>
                     Añadir Fármaco
@@ -2359,7 +2428,7 @@ const Consultas: React.FC = () => {
                   Lista de medicamentos
                 </label>
                 {medicamentosReceta.length > 0 ? (
-                  <div className="overflow-x-auto mb-4 border border-gray-100 shadow-md rounded-lg">
+                  <div className="overflow-x-auto mb-4 border border-gray-50 shadow-xs rounded-lg">
                     <table className="w-full text-left text-sm border-collapse">
                       <thead>
                         <tr className="bg-linear-to-r from-white to-gray-100 text-xs font-medium text-gray-700">
@@ -2388,25 +2457,25 @@ const Consultas: React.FC = () => {
                           >
                             <td className="w-full px-2 py-1">
                               <div className="relative flex items-center">
-                                {/* <Pill className="h-4 w-4 absolute left-3 top-1.5 text-gray-400" /> */}
-                                <i className="mdi mdi-pill absolute left-3 text-gray-400"></i>
+                                {/* <i className="fa-solid fa-pills text-xs absolute left-3 top-2 text-gray-400"></i> */}
+                                <i className="fa-solid fa-pills absolute left-3 text-gray-400"></i>
                                 <input
                                   type="text" 
                                   value={med.medicamento} 
                                   onChange={(e) => actualizarMedicamento(med.id, "medicamento", e.target.value)} 
-                                  className="w-full border-gray-100 shadow-md rounded px-2 py-1.5 pl-9 outline-none text-xs"
+                                  className="w-full border border-gray-50 shadow-xs rounded px-2 py-1.5 pl-9 outline-none text-xs"
                                   placeholder="Fármaco / Sustancia"
                                 />
                               </div>
                             </td>
                             <td className="px-2 py-1">
                               <div className="relative flex items-center">
-                                <Beaker className="h-4 w-4 absolute left-3 top-1.5 text-gray-400" />
+                                <i className="fa-solid fa-flask text-xs absolute left-3 top-2 text-gray-400"></i>
                                 <input 
                                   type="text" 
                                   value={med.dosis} 
                                   onChange={(e) => { if (e.target.value.length > 20) { return; } actualizarMedicamento(med.id, "dosis", e.target.value) }}
-                                  className="w-30 border-gray-100 shadow-md rounded px-2 py-1.5 pl-9 outline-none text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  className="w-30 border border-gray-50 shadow-xs rounded px-2 py-1.5 pl-9 outline-none text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                   placeholder="1"
                                 />
                                 {/* <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">tab</span> */}
@@ -2414,13 +2483,13 @@ const Consultas: React.FC = () => {
                             </td>
                             <td className="px-2 py-1">
                               <div className="relative flex items-center">
-                                <Clock className="h-4 w-4 absolute left-3 top-1.5 text-gray-400" />
+                                <i className="fa-solid fa-clock text-xs absolute left-3 top-2 text-gray-400"></i>
                                 <span className="absolute left-9 text-gray-400 text-xs pointer-events-none">c /</span>
                                 <input 
                                   type="number" 
                                   value={med.frecuencia} 
                                   onChange={(e) => { if (e.target.value.length > 2) { return; } actualizarMedicamento(med.id, "frecuencia", e.target.value) }} 
-                                  className="w-30 border-gray-100 shadow-md rounded px-2 py-1.5 pl-13 outline-none text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  className="w-30 border border-gray-50 shadow-xs rounded px-2 py-1.5 pl-13 outline-none text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                   placeholder="12" 
                                 />
                                 <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">hrs</span>
@@ -2428,12 +2497,12 @@ const Consultas: React.FC = () => {
                             </td>
                             <td className="px-2 py-1">
                               <div className="relative flex items-center">
-                                <Calendar className="h-4 w-4 absolute left-3 top-1.5 text-gray-400" />
+                                <i className="fa-solid fa-calendar-days text-xs absolute left-3 top-2 text-gray-400"></i>
                                 <input 
                                   type="number" 
                                   value={med.duracion} 
                                   onChange={(e) => { if (e.target.value.length > 2) { return; } actualizarMedicamento(med.id, "duracion", e.target.value) }} 
-                                  className="w-30 border-gray-100 shadow-md rounded px-2 py-1.5 pl-9 outline-none text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                                  className="w-30 border border-gray-50 shadow-xs rounded px-2 py-1.5 pl-9 outline-none text-xs [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                                   placeholder="7"
                                 />
                                 <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">días</span>
@@ -2446,7 +2515,7 @@ const Consultas: React.FC = () => {
                                 // className="p-1.5 w-9 h-9 text-gray-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all cursor-pointer"
                                 className="w-10 h-10 text-gray-400 hover:text-red-500 rounded-xl flex items-center justify-center transition-all group cursor-pointer"
                               >
-                                <i className="mdi mdi-close"></i>
+                                <i className="fa-solid fa-xmark"></i>
                               </button>
                             </td>
                           </tr>
@@ -2455,7 +2524,7 @@ const Consultas: React.FC = () => {
                     </table>
                   </div>
                 ) : (
-                  <div className="text-center py-[32px] mb-4 border border-gray-100 rounded-lg shadow-md text-xs bg-gray-100 text-gray-400 font-small outline-none">
+                  <div className="text-center py-[32px] mb-4 border border-gray-50 rounded-lg shadow-xs text-xs bg-gray-100 text-gray-400 font-small outline-none">
                     No hay medicamentos prescritos en la receta actual.
                   </div>
                 )}
@@ -2464,10 +2533,10 @@ const Consultas: React.FC = () => {
               <div className="mt-4 flex items-center justify-end">
                 <button
                   onClick={handleSaveConsult}
-                  disabled={saving}
-                  className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+                  disabled={saving || loadingMat || !matriculaValida}
+                  className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
                 >
-                  {saving ? <><i className="mdi mdi-loading mdi-spin mr-2"></i></> : <><i className="mdi mdi-plus-thick mr-2"></i></> }
+                  {saving ? <><i className="fa-solid fa-spinner fa-spin mr-2"></i></> : <><i className="fa-solid fa-plus mr-2"></i></> }
                   Guardar
                 </button>
               </div>
@@ -2478,13 +2547,13 @@ const Consultas: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className={`relative overflow-hidden bg-linear-to-b from-blue-50 to-white rounded-xl bsorder-horz-blue shadow-lg shadow-horz-blue p-6`}
+                className={`relative overflow-hidden bg-linear-to-b from-blue-50 to-white rounded-xl border border-gray-50 shadow-xs p-6`}
                 // sticky top-55 z-1
               >
                 <ShimmerOverlay subtle />
                 <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center text-clinical-darkBlue font-bold text-lg">
-                    <i className="fa-solid fa-robot mr-2"></i>
+                  <div className="flex items-center text-clinical-darkBlue font-bold text-sm">
+                    <i className="fa-solid fa-robot mr-3"></i>
                     TNG Sano-AI Assistant
                   </div>
                   {!aiResult&&!analyzing&&(
@@ -2499,12 +2568,11 @@ const Consultas: React.FC = () => {
                     <div className="relative z-0 flex items-center justify-center mt-3 mb-8">
                       {analyzing &&
                         [0, 0.5, 1, 1.5, 2].map((d, i) => (
-                          <Sparkles
+                          <i
                             key={i}
-                            className="absolute text-horz-blue/30"
+                            className="fa-solid fa-atom absolute text-horz-blue/30"
                             style={{
-                              width: 48,
-                              height: 48,
+                              fontSize: 48,
                               animation: "aiSparkRipple 2.6s ease-out infinite",
                               animationDelay: `${d}s`,
                             }}
@@ -2512,21 +2580,36 @@ const Consultas: React.FC = () => {
                         ))
                       }
 
-                      <Sparkles className={`relative h-12 w-12 ${analyzing ? "text-horz-blue animate-pulse" : "text-gray-300"}`} />
+                      <i className={`fa-solid fa-atom relative text-5xl ${analyzing ? "ai-icon-pulse-transicion animate-spin-periodic" : "text-gray-300"}`}></i>
                     </div>
                       
-                    <p className="relative z-0 text-xs text-gray-500 mb-6 min-h-8">
+                    <p className="relative z-0 text-xs font-semibold text-gray-700 mb-6 min-h-8">
                       {analyzing ? "Analizando cuadro clínico y cruzando datos capturados" : "El asistente está listo para analizar los síntomas y signos capturados."}
                     </p>
                       
                     <button
                       onClick={handleAIAnalysis}
                       disabled={analyzing || !matriculaValida}
-                      className="relative z-0 w-full items-center bg-linear-to-r from-sea-blue to-sky-blue disabled:from-sea-blue/80 disabled:to-sky-blue/80 disabled:cursor-default disabled:hover:-translate-0 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+                      className="relative z-0 w-full items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
                     >
                       {analyzing ? "Procesando..." : "Analizar Consulta Actual"}
                     </button>
                       
+                    <style>{`
+                      .ai-icon-pulse-transicion::before {
+                        background: linear-gradient(90deg, #002E6D, #009BDE, #002E6D);
+                        background-size: 250% auto;
+                        -webkit-background-clip: text;
+                        background-clip: text;
+                        color: transparent;
+                        animation: aiIconShimmerTransicion 2.2s linear infinite;
+                      }
+                      @keyframes aiIconShimmerTransicion {
+                        0%   { background-position: 0% center; }
+                        100% { background-position: -250% center; }
+                      }
+                    `}</style>
+
                     {analyzing && (
                       <style>{`
                         @keyframes aiSparkRipple {
@@ -2548,7 +2631,7 @@ const Consultas: React.FC = () => {
                     animate={{opacity:1,scale:1}} 
                     className="space-y-5"
                   >
-                    <div className={`flex items-center gap-3 rounded-xl shadow-md px-4 py-3 bg-linear-to-r ${aiResult.riesgo === "Alto" ? "from-red-100 to-red-50/50 text-red-600" : aiResult.riesgo === "Moderado" ? "from-sunray-yellow/20 to-sunray-yellow/5 text-yellow-600" : "from-horz-blue/30 to-horz-blue/5 text-sea-blue"}`}>
+                    <div className={`flex items-center gap-3 rounded-xl border border-gray-50 shadow-xs px-4 py-3 bg-linear-to-r ${aiResult.riesgo === "Alto" ? "from-red-100 to-red-50/50 text-red-600" : aiResult.riesgo === "Moderado" ? "from-sunray-yellow/20 to-sunray-yellow/5 text-yellow-600" : "from-horz-blue/30 to-horz-blue/5 text-sea-blue"}`}>
                       <i className="fa-solid fa-shield-halved shrink-0"></i>
                       <div className="flex-1 min-w-0">
                         <p className="text-sm font-bold tracking-wide">
@@ -2568,7 +2651,7 @@ const Consultas: React.FC = () => {
                           {aiResult.antecedentesRelevantes.map((a, i) => (
                             <li
                               key={i}
-                              className="flex items-center gap-2 w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs text-justify bg-white text-gray-700 font-medium"
+                              className="flex items-center gap-2 w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs text-justify bg-white text-gray-700 font-medium"
                             >
                               {/* <i className="fa-solid fa-clock-rotate-left text-sea-blue shrink-0"></i> */}
                               {a}
@@ -2585,7 +2668,7 @@ const Consultas: React.FC = () => {
                         {(aiResult.diagnosticoDiferencial || aiResult.diferencial || []).map((d,i)=>(
                           <li
                             key={i}
-                            className="flex items-center gap-2 w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-white text-gray-700 font-medium"
+                            className="flex items-center gap-2 w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs bg-white text-gray-700 font-medium"
                           >
                             {/* <i className="fa-solid fa-stethoscope text-sea-blue shrink-0"></i> */}
                             {d}
@@ -2602,7 +2685,7 @@ const Consultas: React.FC = () => {
                         {(aiResult.sugerenciasTratamiento || aiResult.sugerencias || []).map((s, i) => (
                           <li
                             key={i}
-                            className="flex items-start gap-2 w-full px-3 py-2 border border-gray-100 shadow-md rounded-lg text-xs bg-white text-gray-700 font-medium text-justify"
+                            className="flex items-start gap-2 w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs bg-white text-gray-700 font-medium text-justify"
                           >
                             {/* <i className="fa-solid fa-lightbulb text-sea-blue shrink-0 mt-0.5"></i> */}
                             {s}
@@ -2627,13 +2710,13 @@ const Consultas: React.FC = () => {
                     animate={{ opacity: 1, y: 0, scale: 1 }}
                     exit={{ opacity: 0, y: -12, scale: 0.97 }}
                     transition={{ duration: 0.4, ease: "easeOut" }}
-                    className={`relative overflow-hidden bg-linear-to-b from-blue-50 to-white rounded-xl border-horz-blue shadow-lg shadow-horz-blue p-6`}
+                    className={`relative overflow-hidden bg-linear-to-b from-blue-50 to-white rounded-xl border border-gray-50 shadow-xs p-6`}
                   >
                     <ShimmerOverlay subtle />
 
                     <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center text-sea-blue font-bold text-lg">
-                        <i className="fa-solid fa-heart-circle-bolt mr-2"></i>
+                      <div className="flex items-center text-sea-blue font-bold text-sm">
+                        <i className="fa-solid fa-heart-circle-bolt mr-3"></i>
                         Toma de Signos Vitales
                       </div>
                     </div>
@@ -2673,7 +2756,7 @@ const Consultas: React.FC = () => {
                         animate={{ opacity: 1 }}
                         transition={{ duration: 0.4 }}
                       >
-                        <p className="relative z-0 text-xs text-gray-500 mb-4">
+                        <p className="relative z-0 text-xs font-semibold text-gray-700 mb-4">
                           <i className="mr-1"></i>
                           Fecha de medición: {formatFechaMedicion(medicionEquipo.Fecha_medicion)}
                         </p>
@@ -2682,7 +2765,7 @@ const Consultas: React.FC = () => {
                           {indicadoresMedicion(medicionEquipo).map((ind, i) => (
                             <div
                               key={i}
-                              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-100 shadow-md bg-white"
+                              className="flex items-center gap-2 px-3 py-2 rounded-lg border border-gray-50 shadow-xs bg-white"
                             >
                               <i className={`${ind.iconClass} text-sm w-4 text-center shrink-0 text-sea-blue`}></i>
                               <div className="overflow-hidden">
@@ -2702,7 +2785,7 @@ const Consultas: React.FC = () => {
                           disabled={signosCargados}
                           className="mt-4 w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
                         >
-                          {/* <i className={`mdi ${signosCargados ? "mdi-check-bold" : "mdi-tray-arrow-down"} mr-2`}></i> */}
+                          {/* <i className={`fa-solid ${signosCargados ? "fa-check" : "fa-download"} mr-2`}></i> */}
                           {signosCargados ? "Resultados cargados" : "Cargar Resultados"}
                         </button>
                       </motion.div>
@@ -2716,7 +2799,7 @@ const Consultas: React.FC = () => {
       </div>
 
       <aside
-        className={`fixed top-[64px] right-0 h-[calc(100vh-64px)] bg-white shadow-xl z-40 transition-all duration-300 ease-in-out ${ showHistory ? "" : "translate-x-full" }`}
+        className={`fixed top-[64px] right-0 h-[calc(100vh-64px)] bg-white shadow-xs z-40 transition-all duration-300 ease-in-out ${ showHistory ? "" : "translate-x-full" }`}
         style={isDetailFullscreen ? { left: fullscreenLeft } : { width: showHistory ? (isDetailOpen ? 300 + 420 : 300) : 300 }}
       >
         <div className="flex h-full w-full">
@@ -2726,10 +2809,10 @@ const Consultas: React.FC = () => {
               <div className="flex items-center gap-2">
                 <button 
                   title="Regresar"
-                  className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-sea-blue rounded-xl transition-all cursor-pointer"
+                  className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue transition-all cursor-pointer"
                   onClick={handleCloseExp}
                 >
-                  <i className={`mdi ${isDetailOpen ? "mdi-chevron-left" : "mdi-chevron-right"} text-2xl`}></i>
+                  {isDetailOpen ? <i className="fa-solid fa-chevron-left text-sm"></i> : <i className="fa-solid fa-chevron-right text-sm"></i>}
                 </button>
                 <div>
                   <p className="text-xs font-bold text-gray-800 truncate uppercase max-w-[320px]">
@@ -2755,8 +2838,8 @@ const Consultas: React.FC = () => {
                 </div>
               ) : historyData.length === 0 ? (
                 <div className="text-center py-8 px-2">
-                  <div className="bg-linear-to-b from-gray-200/50 to-gray-50 shadow-md w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                    <CircleAlert className="h-8 w-8 text-gray-400/50" />
+                  <div className="bg-linear-to-b from-gray-200/50 to-gray-50 shadow-xs w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <i className="fa-solid fa-circle-exclamation text-3xl text-gray-400/50"></i>
                   </div>
                   {/* <h2 className="text-sm font-bold text-gray-800">
                     Sin consultas previas
@@ -2855,7 +2938,7 @@ const Consultas: React.FC = () => {
                 <div className={`flex flex-col transition-all duration-300 overflow-hidden ${isDetailFullscreen ? "flex-1 min-w-0 opacity-100" : "w-0 opacity-0"}`}>
                     <div className="py-4 px-5 flex justify-between items-center shrink-0">
                       <p className="text-xs font-bold text-gray-800 flex items-center">
-                        {/* <i className="mdi mdi-prescription mr-1.5"></i>
+                        {/* <i className="fa-solid fa-file-prescription mr-1.5"></i>
                         Receta médica */}
                       </p>
                       <div className="flex items-center gap-1">
@@ -2866,7 +2949,7 @@ const Consultas: React.FC = () => {
                               onClick={() => setIsDetailFullscreen(false)}
                               className="w-10 h-10 text-gray-400 hover:text-sea-blue rounded-xl flex items-center justify-center transition-all cursor-pointer"
                             >
-                              <i className="mdi mdi-fullscreen-exit text-xl"></i>
+                              <i className="fa-solid fa-compress text-lg"></i>
                             </button>
                             <button
                               title="Eliminar"
@@ -2882,7 +2965,7 @@ const Consultas: React.FC = () => {
                           onClick={handlePrintReceta}
                           className="w-10 h-10 text-gray-400 hover:text-sea-blue rounded-xl flex items-center justify-center transition-all cursor-pointer"
                         >
-                          <i className="mdi mdi-printer-wireless text-lg"></i>
+                          <i className="fa-solid fa-print text-lg"></i>
                         </button>
                       </div>
                     </div>

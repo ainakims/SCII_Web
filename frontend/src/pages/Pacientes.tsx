@@ -1,6 +1,6 @@
 import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
-import React, { useState, useEffect, useLayoutEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Camera,
@@ -150,8 +150,15 @@ const Pacientes: React.FC = () => {
   const [editingType, setEditingType] = useState<"internal" | "external" | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const originalCurpRef = useRef<string>("");
-  const pageContainerRef = useRef<HTMLDivElement>(null);
+  // Se recalcula con el zoom/resize para que la card siempre llene el
+  // espacio disponible, en vez de quedar congelada hasta la próxima recarga.
   const [pageHeight, setPageHeight] = useState<number>(() => Math.max(window.innerHeight - 150, 400));
+
+  useEffect(() => {
+    const updateHeight = () => setPageHeight(Math.max(window.innerHeight - 150, 400));
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
+  }, []);
 
   const [loadingPacientes, setLoadingPacientes] = useState<boolean>(false);
   const [curpDuplicado, setCurpDuplicado] = useState<boolean>(false);
@@ -166,22 +173,6 @@ const Pacientes: React.FC = () => {
     if (proveedorSolicitadoRef.current) return;
     proveedorSolicitadoRef.current = true;
     ObtenerProveedor();
-  }, []);
-
-  // Mide el espacio real disponible hasta el borde inferior de la ventana,
-  // en vez de adivinarlo con un número fijo (evita cortes/espacios en blanco
-  // al cambiar el zoom o el alto del navegador).
-  useLayoutEffect(() => {
-    const updateHeight = () => {
-      if (!pageContainerRef.current) return;
-      const top = pageContainerRef.current.getBoundingClientRect().top;
-      const mainEl = pageContainerRef.current.closest("main");
-      const bottomPad = mainEl ? parseFloat(getComputedStyle(mainEl).paddingBottom) || 0 : 0;
-      setPageHeight(Math.max(Math.floor(window.innerHeight - top - bottomPad), 400));
-    };
-    updateHeight();
-    window.addEventListener("resize", updateHeight);
-    return () => window.removeEventListener("resize", updateHeight);
   }, []);
 
   // Mismo motivo que proveedorSolicitadoRef: evita el doble disparo de

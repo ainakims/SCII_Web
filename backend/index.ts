@@ -7,6 +7,7 @@ import express from 'express';
 import cors from 'cors';
 import 'dotenv/config';
 import { createDb } from './server/config/db';
+import { resolveUploadsDir } from './utils/paths';
 import LoginRouter from './routes/LoginRoutes';
 import AsistenteIA from './routes/consultRoutes';
 // import DashboardRouter from './routes/DashboardRoutes';
@@ -43,8 +44,7 @@ const db = createDb();
 // const cookieParser = require("cookie-parser");
 // app.use(cookieParser());
 
-const path = require('path');
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use('/uploads', express.static(resolveUploadsDir()));
 
 app.use('/LoginToken', LoginRouter(db));
 app.use('/AsistenteIA', AsistenteIA(db));

@@ -2,18 +2,8 @@ import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
 import React, { useState, useEffect, useLayoutEffect, useCallback, useMemo, memo, useRef } from "react";
 import {
-  Search, Factory, User, Briefcase, Heart, FlaskConical,
-  ClipboardList, CheckCircle, AlertTriangle, Weight, Ruler,
-  Scale, Activity, HeartPulse, Wind, Bubbles, AudioWaveform,
-  Baby, Cigarette, Wine, Syringe, Eye, Ear, Stethoscope,
-  Bone, Brain, FileText, Check,
-  BriefcaseBusiness,
-  Calendar,
   ChevronLeft,
   ChevronRight,
-  MessageCircle,
-  MessageCircleDashed,
-  Goal,
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { motion } from 'framer-motion';
@@ -182,7 +172,7 @@ const VerticalStepper = memo(({ currentStep, onStepClick }: {
   onStepClick: (i: number) => void;
 }) => {
   return (
-    <ol className="space-y-[25.5px] w-100">
+    <ol className="w-100 h-full flex flex-col justify-between">
       {STEPS.map((step, i) => {
         const isDone = i < currentStep;
         const isActive = i === currentStep;
@@ -190,13 +180,13 @@ const VerticalStepper = memo(({ currentStep, onStepClick }: {
 
         const containerClasses =
           isActive ? "bg-linear-to-r from-sea-blue to-sky-blue text-white"
-          : isDone ? "bg-linear-to-r from-sea-blue to-sky-blue text-white opacity-40 cursor-pointer"
+          : isDone ? "bg-linear-to-r from-sea-blue/80 to-sky-blue/80 text-white cursor-pointer"
           : "bg-white shadow-sm text-gray-700";
-          
+
         return (
           <li key={i} onClick={() => isDone && onStepClick(i)}>
             <div
-              className={`w-full py-2.5 px-5 rounded-xl transition-colors duration-200 shadow-xs ${containerClasses}`}
+              className={`w-full py-3.5 px-5 rounded-xl transition-colors duration-200 shadow-xs ${containerClasses}`}
               role="alert"
             >
               <div className="flex items-center justify-between">
@@ -211,9 +201,9 @@ const VerticalStepper = memo(({ currentStep, onStepClick }: {
                 </h2>
                 {isDone ? (
                   // <Check className="w-5 h-5" strokeWidth={2} />
-                  <i className="fa-solid fa-square-check"></i>
+                  <i className="fa-solid fa-circle-check"></i>
                 ) : (
-                  <i className="fa-solid fa-arrow-right"></i>
+                  <i className="fa-solid fa-circle-arrow-right"></i>
                 )}
               </div>
             </div>
@@ -293,7 +283,7 @@ const ZoneTable: React.FC<{
                 value={section[field]?.descripcion ?? ""}
                 onChange={(e) => setter((prev) => ({ ...prev, [field]: { ...prev[field], descripcion: e.target.value }, })) }
                 placeholder="Descripción"
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs text-gray-800 font-medium outline-none"
+                className="w-full px-3 py-2 border border-gray-50 rounded-lg text-xs text-gray-800 font-medium outline-none"
                 // className="w-full p-2 pl-9 pr-10 border border-gray-300 rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
               />
             </div>
@@ -345,10 +335,10 @@ const Toggle2: React.FC<{
         key={opt}
         type="button"
         onClick={() => onChange(value === opt ? "" : opt)}
-        className={`flex-1 px-2 py-1.5 rounded-lg text-xs transition-all cursor-pointer shadow-xs ${
+        className={`flex-1 px-2 py-1.5 rounded-lg border border-gray-50 text-xs transition-all cursor-pointer shadow-xs ${
           value === opt
-            ? "bg-gray-100 text-gray-800 border-gray-100 font-semibold"
-            : "bg-white text-gray-400 border-gray-100"
+            ? "bg-gray-100 text-gray-800 font-semibold"
+            : "bg-white text-gray-400"
         }`}
       >
         {opt}
@@ -361,8 +351,8 @@ const CkCell = memo(({ checked, onChange }: { checked: boolean | null; onChange:
   <button
     type="button"
     onClick={() => onChange(checked ? null : true)}
-    className={`w-5 h-5 rounded transition-all cursor-pointer flex items-center justify-center shadow-xs ${
-      checked ? "bg-linear-to-b from-sea-blue to-sky-blue text-white border-gray-400" : "border-gray-100 bg-white"
+    className={`w-5 h-5 rounded border border-gray-50 transition-all cursor-pointer flex items-center justify-center shadow-xs ${
+      checked ? "bg-linear-to-b from-sea-blue to-sky-blue text-white" : "bg-white"
     }`}
   >
     {checked && <span className="text-[10px] font-bold">✓</span>}
@@ -380,8 +370,7 @@ const StepNavButtons: React.FC<{
       title="Anterior"
       onClick={onBack}
       disabled={currentStep === 0}
-      // className="p-1.5 rounded-lg hover:bg-gray-100 text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
-      className="p-1.5 rounded-full bg-linear-to-b hover:from-gray-300 hover:to-gray-50 disabled:opacity-30 disabled:pointer-events-none text-gray-600 hover:text-sea-blue cursor-pointer"
+      className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 text-gray-600 hover:text-sea-blue disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
     >
       <ChevronLeft className="h-4 w-4" />
     </button>
@@ -389,7 +378,7 @@ const StepNavButtons: React.FC<{
       title="Siguiente"
       onClick={onNext}
       disabled={currentStep === totalSteps - 1}
-      className="p-1.5 rounded-full bg-linear-to-b hover:from-gray-300 hover:to-gray-50 disabled:opacity-30 disabled:pointer-events-none text-gray-600 hover:text-sea-blue cursor-pointer"
+      className="w-7 h-7 flex items-center justify-center rounded-lg bg-linear-to-b hover:from-gray-100 hover:to-gray-50 hover:text-sea-blue text-gray-600 disabled:opacity-30 disabled:pointer-events-none transition-all cursor-pointer"
     >
       <ChevronRight className="h-4 w-4" />
     </button>
@@ -518,11 +507,11 @@ function ExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter, rightT
   const rAllA = rightFields.every((f) => rightSection[f]?.valor === "Anormal");
 
   return (
-    <div className="overflow-hidden mb-4">
+    <div className="overflow-hidden border border-gray-50 rounded-lg p-2 mb-4">
       <table className="w-full text-xs">
         <thead>
-          <tr className="bg-linear-to-r from-white to-gray-100">
-            <th className="px-6 py-2 text-left font-medium text-gray-700 w-[30%]">
+          <tr>
+            <th className="px-3 py-2 text-left font-medium text-gray-700 w-[30%]">
               {leftTitle}
             </th>
             <th
@@ -653,7 +642,7 @@ function AgudezaInput({ value, onChange, disabled }: { value: string; onChange: 
     onChange(newTop || newBottom ? `${newTop} / ${newBottom}` : "");
 
   return (
- <div className={`flex items-center justify-center gap-1 border-gray-100 shadow-xs rounded text-center py-1 focus-within:ring-1 focus-within:ring-sea-blue ${disabled ? "bg-gray-100" : "bg-white"}`}>
+ <div className={`flex items-center justify-center gap-1 border border-gray-50 shadow-xs rounded text-center py-1 focus-within:ring-1 focus-within:ring-sea-blue ${disabled ? "bg-gray-100" : "bg-white"}`}>
       <input
         ref={topRef}
         type="number"
@@ -778,11 +767,11 @@ const DescExpTable = memo(({ title, fields, section, setter }: {
   const allN = fields.every((f) => section[f]?.valor === "Normal");
   const allA = fields.every((f) => section[f]?.valor === "Anormal");
   return (
-    <div className="overflow-hidden mb-4">
+    <div className="overflow-hidden border border-gray-50 rounded-lg p-2 mb-4">
       <table className="w-full text-xs">
         <thead>
-          <tr className="bg-linear-to-r from-white to-gray-100">
-            <th className="px-6 py-2 text-left font-medium text-gray-700 w-[30%]">
+          <tr>
+            <th className="px-3 py-2 text-left font-medium text-gray-700 w-[30%]">
               {title}
             </th>
             <th
@@ -807,7 +796,7 @@ const DescExpTable = memo(({ title, fields, section, setter }: {
         <tbody>
           {fields.map((field) => (
             <tr key={field}>
-              <td className="px-6 py-2 font-medium text-gray-700">
+              <td className="px-3 py-2 font-medium text-gray-700">
                 {field}
               </td>
               <td className="px-3 py-2 text-center">
@@ -832,7 +821,7 @@ const DescExpTable = memo(({ title, fields, section, setter }: {
                   value={section[field]?.descripcion ?? ""}
                   onChange={(e) => setter((p) => ({ ...p, [field]: { ...p[field], descripcion: e.target.value } }))}
                   placeholder="Seleccione una opción primero"
-                  className={`w-full px-3 py-1.5 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none ${!section[field]?.valor && "text-gray-800 bg-gray-50"}`}
+                  className={`w-full px-3 py-1.5 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none ${!section[field]?.valor && "text-gray-800 bg-gray-50"}`}
                   disabled={!section[field]?.valor}
                 />
               </td>
@@ -864,12 +853,12 @@ function DescExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter, po
   const headerNeg = negLabel ?? (leftTitle == "Genitales" ? "Ausente" : "Anormal");
   const rows = Math.max(leftFields.length);
   return (
-    <div className="overflow-hidden mb-4">
+    <div className="overflow-hidden border border-gray-50 rounded-lg p-2 mb-4">
       <table className="w-full text-xs">
         <thead>
-          <tr className="bg-linear-to-r from-white to-gray-100">
-            <th className="px-6 py-2 text-left font-medium text-gray-700 w-[30%]">
-              {leftTitle}
+          <tr>
+            <th className="px-3 py-2 text-left font-medium text-gray-700 w-[30%]">
+              {/* {leftTitle} */}
             </th>
             <th
               className={thSelectClsNarrow(lAllN, "normal") + " w-[10%]"}
@@ -897,7 +886,7 @@ function DescExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter, po
             const lfLabel = lf ? stripSiNoSuffix(lf) : "";
             return (
               <tr key={i}>
-                <td className="px-6 py-2 font-medium text-gray-700">
+                <td className="px-3 py-2 font-medium text-gray-700">
                   {lfLabel}
                 </td>
                 <td className="px-3 py-2 text-center">
@@ -927,7 +916,7 @@ function DescExpTableDouble({ leftTitle, leftFields, leftSection, leftSetter, po
                       value={leftSection[lf]?.descripcion ?? ""}
                       onChange={(e) => leftSetter((p) => ({ ...p, [lf]: { ...p[lf], descripcion: e.target.value } }))}
                       placeholder="Seleccione una opción primero"
-                      className={`w-full px-2 py-1.5 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none ${!leftSection[lf]?.valor && "text-gray-800 bg-gray-50 border-gray-100"}`}
+                      className={`w-full px-2 py-1.5 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none ${!leftSection[lf]?.valor && "text-gray-800 bg-gray-50 border-gray-50"}`}
                       disabled={!leftSection[lf]?.valor}
                     />
                   )}
@@ -1005,27 +994,7 @@ const Evaluacion: React.FC = () => {
     }
   }, [user, navigate]);
 
-  // Mismo patrón que Pacientes.tsx/Configuracion.tsx: mide el espacio real
-  // disponible hasta el borde inferior de la ventana. Sin esto, el
-  // contenedor no tenía una altura acotada, así que el overflow-y-auto del
-  // panel de la derecha nunca se activaba (crecía sin límite) y el
-  // overflow-hidden del contenedor raíz terminaba recortando el contenido
-  // sin mostrar ninguna barra de desplazamiento.
-  const pageContainerRef = useRef<HTMLDivElement>(null);
   const [pageHeight, setPageHeight] = useState<number>(() => Math.max(window.innerHeight - 150, 400));
-
-  useLayoutEffect(() => {
-    const updateHeight = () => {
-      if (!pageContainerRef.current) return;
-      const top = pageContainerRef.current.getBoundingClientRect().top;
-      const mainEl = pageContainerRef.current.closest("main");
-      const bottomPad = mainEl ? parseFloat(getComputedStyle(mainEl).paddingBottom) || 0 : 0;
-      setPageHeight(Math.max(Math.floor(window.innerHeight - top - bottomPad), 400));
-    };
-    updateHeight();
-    window.addEventListener("resize", updateHeight);
-    return () => window.removeEventListener("resize", updateHeight);
-  }, []);
 
   const [currentStep, setCurrentStep] = useState(0);
   const [saving, setSaving] = useState(false);
@@ -1151,7 +1120,7 @@ const Evaluacion: React.FC = () => {
   const getImcInput = (imc: string) => {
     const v = parseFloat(imc);
     
-    if (!imc || isNaN(v) || v === 0) return "border-gray-100 bg-gray-50 text-gray-700";
+    if (!imc || isNaN(v) || v === 0) return "border border-gray-50 bg-gray-50 text-gray-700";
     if (v < 18.5) return "border-yellow-300/20 bg-yellow-50 text-yellow-500";
     if (v <= 24.9) return "border-horz-blue/20 bg-blue-50 text-sky-blue";
     if (v <= 29.9) return "border-yellow-300/20 bg-yellow-50 text-yellow-500";
@@ -1274,11 +1243,11 @@ const Evaluacion: React.FC = () => {
                 const { isConfirmed: cargarBorrador } = await Swal.fire({
                   title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Avance previo</p>`,
                   html: `<p style="font-size: 16px; padding: 0 40px">Se identificó un avance guardado el <b>${fechaBorrador}</b>. ¿Desea continuar?</p>`,
-                  iconHtml: `<i class="mdi mdi-alert-circle-outline success-icon"></i><style> .success-icon { font-size: 90px; animation: pop 0.4s ease-out forwards; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } </style>`,
+                  iconHtml: `<i class="fa-solid fa-question success-icon"></i><style> .success-icon { color: #545454; font-size: 70px; animation: pop 0.4s ease-out forwards, popPeriodic 4s ease-in-out 1.5s infinite; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } @keyframes popPeriodic { 0%, 85%, 100% { transform: scale(1); } 90% { transform: scale(1.15); } 95% { transform: scale(0.95); } } </style>`,
                   didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" }); },
                   buttonsStyling: false,
-                  confirmButtonText: `<i class="mdi mdi-autorenew mr-1"></i> Cargar`,
-                  cancelButtonText: `<i class="mdi mdi-plus-thick mr-1"></i> Nueva`,
+                  confirmButtonText: `<i class="fa-solid fa-clock-rotate-left mr-1"></i> Cargar`,
+                  cancelButtonText: `<i class="fa-solid fa-plus mr-1"></i> Nueva`,
                   showCancelButton: true,
                   customClass: {
                     confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
@@ -1356,11 +1325,11 @@ const Evaluacion: React.FC = () => {
           await Swal.fire({
             title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Evaluación previa</p>`,
             html: `<p style="font-size: 16px; padding: 0 40px">Se identificó una evaluación médica previa (<b>${evalData.FechaEvaluacion ? new Date(evalData.FechaEvaluacion).toLocaleDateString("es-MX") : ""}</b>). ¿Desea precargar los datos?</p>`,
-            iconHtml: `<i class="mdi mdi-alert-circle-outline success-icon"></i><style> .success-icon { font-size: 90px; animation: pop 0.4s ease-out forwards; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } </style>`,
+            iconHtml: `<i class="fa-solid fa-question success-icon"></i><style> .success-icon { color: #545454; font-size: 70px; animation: pop 0.4s ease-out forwards, popPeriodic 4s ease-in-out 1.5s infinite; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } @keyframes popPeriodic { 0%, 85%, 100% { transform: scale(1); } 90% { transform: scale(1.15); } 95% { transform: scale(0.95); } } </style>`,
             didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" }); },
             buttonsStyling: false,
-            confirmButtonText: `<i class="mdi mdi-autorenew mr-1"></i> Cargar`,
-            cancelButtonText: `<i class="mdi mdi-plus-thick mr-1"></i> Nueva`,
+            confirmButtonText: `<i class="fa-solid fa-clock-rotate-left mr-1"></i> Cargar`,
+            cancelButtonText: `<i class="fa-solid fa-plus mr-1"></i> Nueva`,
             showCancelButton: true,
             customClass: {
               confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
@@ -1527,11 +1496,11 @@ const Evaluacion: React.FC = () => {
     Swal.fire({
       title: `<p style="font-size:18px" class="font-bold uppercase text-gray-800">${title}</p>`,
       html: `<p style="font-size:16px;padding:0 40px">${message}</p>`,
-      // iconHtml: `<i class="mdi mdi-check-circle-outline" style="color:#54BBAB;font-size:90px"></i>`,
-      iconHtml: `<i class="mdi mdi-check-circle-outline success-icon"></i><style> .success-icon { color:#54BBAB; font-size: 90px; animation: pop 0.4s ease-out forwards; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } }</style>`,
+      // iconHtml: `<i class="fa-solid fa-check" style="color:#54BBAB;font-size:70px"></i>`,
+      iconHtml: `<i class="fa-solid fa-check success-icon"></i><style> .success-icon { color: #545454; font-size: 70px; animation: pop 0.4s ease-out forwards, popPeriodic 4s ease-in-out 1.5s infinite; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } @keyframes popPeriodic { 0%, 85%, 100% { transform: scale(1); } 90% { transform: scale(1.15); } 95% { transform: scale(0.95); } } </style>`,
       didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" }); },
       buttonsStyling: false,
-      confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
+      confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> OK`,
       customClass: { confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer" },
     });
 
@@ -1539,10 +1508,36 @@ const Evaluacion: React.FC = () => {
     Swal.fire({
       title: `<p style="font-size:18px" class="font-bold uppercase text-gray-800">${title}</p>`,
       html: `<p style="font-size:16px;padding:0 40px">${message}</p>`,
-      iconHtml: `<i class="mdi mdi-alert-circle-outline" style="font-size:90px"></i>`,
+      iconHtml: `
+        <i class="fa-solid fa-exclamation aviso-exclamation"></i>
+        <style>
+          .aviso-exclamation {
+            font-size: 70px;
+            animation: shakeInitial 0.6s ease-in-out,
+                       shakePeriodic 4s ease-in-out 1.5s infinite;
+          }
+          @keyframes shakeInitial {
+            0%   { transform: scale(0.5) rotate(0deg); opacity: 0; }
+            20%  { transform: scale(1.15) rotate(-12deg); opacity: 1; }
+            40%  { transform: scale(1.05) rotate(10deg); }
+            60%  { transform: scale(1.05) rotate(-7deg); }
+            80%  { transform: scale(1) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); }
+          }
+          @keyframes shakePeriodic {
+            0%, 85%, 100% { transform: rotate(0deg); }
+            87% { transform: rotate(-10deg); }
+            89% { transform: rotate(10deg); }
+            91% { transform: rotate(-8deg); }
+            93% { transform: rotate(8deg); }
+            95% { transform: rotate(-4deg); }
+            97% { transform: rotate(4deg); }
+          }
+        </style>
+      `,
       didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" }); },
       buttonsStyling: false,
-      confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
+      confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> OK`,
       customClass: { confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer" },
     });
 
@@ -1588,11 +1583,37 @@ const Evaluacion: React.FC = () => {
       title: `<p style="font-size:18px" class="font-bold uppercase text-gray-800">Campo requerido</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">Complete los campos obligatorios (<b class="text-red-400">*</b>) de la sección <b>${stepLabel}</b></p>
       `,
-      
-      iconHtml: `<i class="mdi mdi-alert-circle-outline" style="font-size:90px"></i>`,
+
+      iconHtml: `
+        <i class="fa-solid fa-exclamation aviso-exclamation"></i>
+        <style>
+          .aviso-exclamation {
+            font-size: 70px;
+            animation: shakeInitial 0.6s ease-in-out,
+                       shakePeriodic 4s ease-in-out 1.5s infinite;
+          }
+          @keyframes shakeInitial {
+            0%   { transform: scale(0.5) rotate(0deg); opacity: 0; }
+            20%  { transform: scale(1.15) rotate(-12deg); opacity: 1; }
+            40%  { transform: scale(1.05) rotate(10deg); }
+            60%  { transform: scale(1.05) rotate(-7deg); }
+            80%  { transform: scale(1) rotate(5deg); }
+            100% { transform: scale(1) rotate(0deg); }
+          }
+          @keyframes shakePeriodic {
+            0%, 85%, 100% { transform: rotate(0deg); }
+            87% { transform: rotate(-10deg); }
+            89% { transform: rotate(10deg); }
+            91% { transform: rotate(-8deg); }
+            93% { transform: rotate(8deg); }
+            95% { transform: rotate(-4deg); }
+            97% { transform: rotate(4deg); }
+          }
+        </style>
+      `,
       didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" }); },
       buttonsStyling: false,
-      confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
+      confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> OK`,
       customClass: { confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer" },
     });
   };
@@ -1663,13 +1684,32 @@ const Evaluacion: React.FC = () => {
     const confirmacion = await Swal.fire({
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Guardar evaluación</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">Seleccione si desea <b>guardar el avance</b> o <b>finalizar la evaluación</b> y generar el PDF.</p>`,
-      iconHtml: `<i class="mdi mdi-help-circle-outline success-icon"></i><style> .success-icon { font-size: 90px; animation: pop 0.4s ease-out forwards; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } </style>`,
+      iconHtml: `
+        <i class="fa-solid fa-question aviso-question"></i>
+        <style>
+          .aviso-question {
+            font-size: 70px;
+            animation: pop 0.4s ease-out forwards,
+                       popPeriodic 4s ease-in-out 1.5s infinite;
+          }
+          @keyframes pop {
+            0% { transform: scale(0.5); opacity: 0; }
+            70% { transform: scale(1.15); opacity: 1; }
+            100% { transform: scale(1); }
+          }
+          @keyframes popPeriodic {
+            0%, 85%, 100% { transform: scale(1); }
+            90% { transform: scale(1.15); }
+            95% { transform: scale(0.95); }
+          }
+        </style>
+      `,
       didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" }); },
       showConfirmButton: true,
       showDenyButton: true,
       buttonsStyling: false,
-      confirmButtonText: `<span title="Guardar borrador"><i class="mdi mdi-content-save mr-1"></i> Avance</span>`,
-      denyButtonText: `<span title="Finalizar evaluación"><i class="mdi mdi-check-decagram mr-1"></i> Finalizar</span>`,
+      confirmButtonText: `<span title="Guardar borrador"><i class="fa-solid fa-pause mr-1"></i> Avance</span>`,
+      denyButtonText: `<span title="Finalizar evaluación"><i class="fa-solid fa-circle-check mr-1"></i> Finalizar</span>`,
       customClass: {
         confirmButton: "flex items-center bg-gray-50 hover:bg-gray-100/80 hover:-translate-y-1 text-gray-800 px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-gray-500/30 transition-all cursor-pointer",
         denyButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer ml-3",
@@ -1694,11 +1734,11 @@ const Evaluacion: React.FC = () => {
         await Swal.fire({
           title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Avance guardado</p>`,
           html: `<p style="font-size: 16px; padding: 0 40px">Se ha guardado el avance de la evaluación. Puede retomarlo en cualquier momento.</p>`,
-          iconHtml: `<i class="mdi mdi-check-circle-outline success-icon"></i><style> .success-icon { color: #54BBAB; font-size: 90px; animation: pop 0.4s ease-out forwards; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } </style>`,
+          iconHtml: `<i class="fa-solid fa-check success-icon"></i><style> .success-icon { color: #545454; font-size: 70px; animation: pop 0.4s ease-out forwards, popPeriodic 4s ease-in-out 1.5s infinite; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } @keyframes popPeriodic { 0%, 85%, 100% { transform: scale(1); } 90% { transform: scale(1.15); } 95% { transform: scale(0.95); } } </style>`,
           didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" }); },
           showConfirmButton: true,
           buttonsStyling: false,
-          confirmButtonText: `<i class="mdi mdi-check" style="margin-right:4px"></i> OK`,
+          confirmButtonText: `<i class="fa-solid fa-check" style="margin-right:4px"></i> OK`,
           customClass: {
             confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
           },
@@ -1755,13 +1795,13 @@ const Evaluacion: React.FC = () => {
             const result = await Swal.fire({
               title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Evaluación registrada</p>`,
               html: `<p style="font-size: 16px; padding: 0 40px">La evaluación médica ha sido guardada y registrada en los documentos del paciente.</p>`,
-              iconHtml: `<i class="mdi mdi-check-circle-outline success-icon"></i><style> .success-icon { color: #54BBAB; font-size: 90px; animation: pop 0.4s ease-out forwards; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } </style>`,
+              iconHtml: `<i class="fa-solid fa-check success-icon"></i><style> .success-icon { color: #545454; font-size: 70px; animation: pop 0.4s ease-out forwards, popPeriodic 4s ease-in-out 1.5s infinite; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } @keyframes popPeriodic { 0%, 85%, 100% { transform: scale(1); } 90% { transform: scale(1.15); } 95% { transform: scale(0.95); } } </style>`,
               didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" }); },
               // showConfirmButton: true,
               showCancelButton: true,
               buttonsStyling: false,
-              confirmButtonText: `<i class="mdi mdi-folder" style="margin-right:4px"></i> Abrir`,
-              cancelButtonText: `<i class="mdi mdi-close" style="margin-right:4px"></i> Cerrar`,
+              confirmButtonText: `<i class="fa-solid fa-folder-open" style="margin-right:4px"></i> Abrir`,
+              cancelButtonText: `<i class="fa-solid fa-xmark" style="margin-right:4px"></i> Cerrar`,
               customClass: {
                 confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
               cancelButton: "flex items-center bg-gray-50 hover:bg-gray-100/80 hover:-translate-y-1 text-gray-800 px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-gray-500/30 transition-all cursor-pointer ml-3"
@@ -1778,12 +1818,12 @@ const Evaluacion: React.FC = () => {
           await Swal.fire({
             title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Evaluación finalizada</p>`,
             html: `<p style="font-size: 16px; padding: 0 40px">La evaluación se ha guardado correctamente en el sistema.</p>`,
-            iconHtml: `<i class="mdi mdi-check-circle-outline success-icon"></i><style> .success-icon { color: #54BBAB; font-size: 90px; animation: pop 0.4s ease-out forwards; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } </style>`,
+            iconHtml: `<i class="fa-solid fa-check success-icon"></i><style> .success-icon { color: #545454; font-size: 70px; animation: pop 0.4s ease-out forwards, popPeriodic 4s ease-in-out 1.5s infinite; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } @keyframes popPeriodic { 0%, 85%, 100% { transform: scale(1); } 90% { transform: scale(1.15); } 95% { transform: scale(0.95); } } </style>`,
             didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" }); },
             showConfirmButton: true,
             showCancelButton: false,
             buttonsStyling: false,
-            confirmButtonText: `<i class="mdi mdi-check" style="margin-right:4px"></i> OK`,
+            confirmButtonText: `<i class="fa-solid fa-check" style="margin-right:4px"></i> OK`,
             customClass: {
               confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
             },
@@ -1802,18 +1842,19 @@ const Evaluacion: React.FC = () => {
   const stepPanels = useMemo(() => [
     <div key="ficha">
       <div className="mb-1">
-        <div className="py-1">
+        {/* <div className="py-1">
           <span className="text-xs font-medium text-gray-700">
             Ficha de identificación
           </span>
-        </div>
+        </div> */}
+        <div className="border border-gray-50 rounded-lg py-4 px-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
           <div className={`${matriculaNotFound ? "mb-2" : ""}`}>
             <div className="block text-xs font-medium text-gray-700 mb-1">
               Matrícula <b className="text-red-400">*</b>
             </div>
             <div className="relative">
-              <Search className={`h-3.5 w-3.5 absolute left-3 top-2.5 ${!patientData.matricula ? "text-gray-400" : loadingMat ? "text-gray-400" : matriculaNotFound ? "text-red-700" : "text-gray-400"}`} />
+              <i className={`fa-solid fa-magnifying-glass text-xs absolute left-3 top-2.5 ${!patientData.matricula ? "text-gray-400" : loadingMat ? "text-gray-400" : matriculaNotFound ? "text-red-700" : "text-gray-400"}`}></i>
               {/* matriculaNotRegis ? "text-yellow-700" */}
               <input
                 type="text"
@@ -1822,12 +1863,12 @@ const Evaluacion: React.FC = () => {
                 placeholder="Matrícula (5 dígitos)"
                 disabled={loadingMat || nuevoIngreso || foundField === "nombre"}
                 maxLength={5}
-                className={`w-full rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none shadow-xs transition-colors ${nuevoIngreso || foundField === "nombre" ? "border-gray-100 bg-gray-100" : !patientData.matricula ? "border-gray-100 focus:ring-1 focus:ring-sea-blue" : loadingMat ? "border-gray-100 bg-gray-100" : matriculaNotFound ? "border-red-400 bg-red-50 text-red-700" : "border-gray-100 focus:ring-1 focus:ring-sea-blue"}`}
+                className={`border w-full rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none shadow-xs transition-colors ${nuevoIngreso || foundField === "nombre" ? "border-gray-50 bg-gray-50 text-gray-800" : !patientData.matricula ? "border-gray-50 focus:ring-1 focus:ring-sea-blue" : loadingMat ? "border-gray-50 bg-gray-50 text-gray-800" : matriculaNotFound ? "border-red-400 bg-red-50 text-red-700" : "border-gray-50 focus:ring-1 focus:ring-sea-blue"}`}
                 // matriculaNotRegis ? "border-yellow-400 bg-yellow-50 text-yellow-700"
               />
               {loadingMat && searchField === "matricula" &&
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <i className="mdi mdi-loading mdi-spin text-gray-400 text-lg"></i>
+                  <i className="fa-solid fa-spinner fa-spin text-gray-400 text-lg leading-none flex items-center justify-center"></i>
                 </div>
               }
             </div>
@@ -1870,7 +1911,7 @@ const Evaluacion: React.FC = () => {
             </label>
             <div className="relative">
               {!nuevoIngreso && (
-                <Search className={`h-3.5 w-3.5 absolute left-3 top-2.5 ${matriculaNotFound && searchField === "nombre" ? "text-red-700" : "text-gray-400"}`} />
+                <i className={`fa-solid fa-magnifying-glass text-xs absolute left-3 top-2.5 ${matriculaNotFound && searchField === "nombre" ? "text-red-700" : "text-gray-400"}`}></i>
               )}
               <input
                 type="text"
@@ -1878,11 +1919,11 @@ const Evaluacion: React.FC = () => {
                 onChange={(e) => nuevoIngreso ? setPatientData(p => ({ ...p, nombre: e.target.value })) : handleSearchByName(e)}
                 disabled={loadingMat || foundField === "matricula"}
                 placeholder={"Nombre"}
-                className={`w-full ${nuevoIngreso ? "px-3" : "pl-9 px-3 pr-10"} py-2 rounded-lg text-xs shadow-xs text-gray-800 font-medium outline-none transition-colors ${foundField === "matricula" ? "border-gray-100 bg-gray-100" : matriculaNotFound && searchField === "nombre" ? "border-red-400 bg-red-50 text-red-700" : "border-gray-100 bg-white focus:ring-1 focus:ring-sea-blue"}`}
+                className={`border w-full ${nuevoIngreso ? "px-3" : "pl-9 px-3 pr-10"} py-2 rounded-lg text-xs shadow-xs text-gray-800 font-medium outline-none transition-colors ${foundField === "matricula" || loadingMat ? "border-gray-50 bg-gray-50" : matriculaNotFound && searchField === "nombre" ? "border-red-400 bg-red-50 text-red-700" : "border-gray-50 bg-white focus:ring-1 focus:ring-sea-blue"}`}
               />
               {loadingMat && searchField === "nombre" &&
                 <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <i className="mdi mdi-loading mdi-spin text-gray-400 text-lg"></i>
+                  <i className="fa-solid fa-spinner fa-spin text-gray-400 text-lg leading-none flex items-center justify-center"></i>
                 </div>
               }
             </div>
@@ -1902,7 +1943,7 @@ const Evaluacion: React.FC = () => {
                 value={new Date().toISOString().split('T')[0]}
                 disabled
                 placeholder="Fecha"
-                className="w-full px-3 py-2 border-gray-100 rounded-lg text-xs shadow-xs bg-gray-50 text-gray-800 font-medium outline-none"
+                className="w-full px-3 py-2 border border-gray-50 rounded-lg text-xs shadow-xs bg-gray-50 text-gray-800 font-medium outline-none"
               />
               {/* <i className="mdi mdi-calendar-blank font-medium text-gray-700 text-[15px] absolute right-[15px] top-[9px]"></i> */}
             </div>
@@ -1920,7 +1961,7 @@ const Evaluacion: React.FC = () => {
                 setFicha((f) => ({ ...f, fechaNacimiento: dob, edad: age }));
               }}
               placeholder="Fecha"
-              className="w-full px-3 py-2 border-gray-100 rounded-lg text-xs shadow-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 rounded-lg text-xs shadow-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -1932,7 +1973,7 @@ const Evaluacion: React.FC = () => {
               value={`${ficha.edad ? ficha.edad + " años" : ""}`}
               disabled 
               // onChange={(e) => setFicha((f) => ({ ...f, edad: e.target.value }))}
-              className="w-full px-3 py-2 border-gray-100 rounded-lg text-xs shadow-xs bg-gray-50 text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 rounded-lg text-xs shadow-xs bg-gray-50 text-gray-800 font-medium outline-none"
               placeholder="Edad"
             />
           </div>
@@ -1954,7 +1995,7 @@ const Evaluacion: React.FC = () => {
                   });
                 }
               }}
-              className="w-full border-gray-100 rounded-lg p-2 text-xs shadow-xs focus:ring-1 focus:ring-sea-blue outline-none" 
+              className="w-full border border-gray-50 rounded-lg p-2 text-xs shadow-xs focus:ring-1 focus:ring-sea-blue outline-none" 
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="F">Femenino</option>
@@ -1968,7 +2009,7 @@ const Evaluacion: React.FC = () => {
             <select
               value={ficha.estadoCivil}
               onChange={(e) => setFicha((f) => ({ ...f, estadoCivil: e.target.value }))}
-              className="w-full border-gray-100 rounded-lg p-2 text-xs shadow-xs focus:ring-1 focus:ring-sea-blue outline-none" 
+              className="w-full border border-gray-50 rounded-lg p-2 text-xs shadow-xs focus:ring-1 focus:ring-sea-blue outline-none" 
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="S">Soltero</option>
@@ -1984,7 +2025,7 @@ const Evaluacion: React.FC = () => {
             <select
               value={ficha.escolaridad}
               onChange={(e) => setFicha((f) => ({ ...f, escolaridad: e.target.value }))}
-              className="w-full border-gray-100 rounded-lg p-2 text-xs shadow-xs focus:ring-1 focus:ring-sea-blue outline-none" 
+              className="w-full border border-gray-50 rounded-lg p-2 text-xs shadow-xs focus:ring-1 focus:ring-sea-blue outline-none" 
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="1">Sin escolaridad</option>
@@ -2007,7 +2048,7 @@ const Evaluacion: React.FC = () => {
               maxLength={11}
               value={ficha.noImss}
               onChange={(e) => setFicha((f) => ({ ...f, noImss: e.target.value }))}
-              className="w-full px-3 py-2 border-gray-100 rounded-lg text-xs shadow-xs focus:ring-1 text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 rounded-lg text-xs shadow-xs focus:ring-1 text-gray-800 font-medium outline-none"
               placeholder="No. IMSS (11 caracteres)"
             />
           </div>
@@ -2021,7 +2062,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => nuevoIngreso && setFicha(f => ({ ...f, puestoAspira: e.target.value }))}
               disabled={!nuevoIngreso}
               placeholder="Puesto al que aspira"
-              className={`w-full px-3 py-2 rounded-lg text-xs shadow-xs text-gray-800 font-medium outline-none transition-colors ${nuevoIngreso ? "border-gray-100 bg-white focus:ring-1 focus:ring-sea-blue" : "border-gray-100 bg-gray-50"}`}
+              className={`border w-full px-3 py-2 rounded-lg text-xs shadow-xs text-gray-800 font-medium outline-none transition-colors ${nuevoIngreso ? "border-gray-50 bg-white focus:ring-1 focus:ring-sea-blue" : "border-gray-50 bg-gray-50"}`}
             />
           </div>
           <div>
@@ -2033,7 +2074,7 @@ const Evaluacion: React.FC = () => {
               value={ficha.contactoEmergencia}
               onChange={(e) => setFicha((f) => ({ ...f, contactoEmergencia: e.target.value }))}
               placeholder="Nombre de contacto" 
-              className="w-full px-3 py-2 border-gray-100 rounded-lg text-xs shadow-xs focus:ring-1 text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 rounded-lg text-xs shadow-xs focus:ring-1 text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2046,10 +2087,11 @@ const Evaluacion: React.FC = () => {
               value={ficha.numeroContacto}
               onChange={(e) => { if (e.target.value.length > 12) return; setFicha((f) => ({ ...f, numeroContacto: e.target.value })); }}
               maxLength={12}
-              className="w-full px-3 py-2 border-gray-100 rounded-lg text-xs shadow-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+              className="w-full px-3 py-2 border border-gray-50 rounded-lg text-xs shadow-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
               placeholder="Número de contacto"
             />
           </div>
+        </div>
         </div>
         {/* <label className="block text-xs text-right font-medium text-gray-700 mr-6">
           <b className="text-red-400">*</b> Campo obligatorio
@@ -2074,7 +2116,7 @@ const Evaluacion: React.FC = () => {
                 maxLength={2}
                 value={edadInicioLaboral}
                 onChange={(e) => setEdadInicioLaboral(e.target.value)}
-                className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                 placeholder="18"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">
@@ -2084,14 +2126,14 @@ const Evaluacion: React.FC = () => {
           </div>
         </div>
 
-        <div className="overflow-hidden">
+        <div className="overflow-hidden border border-gray-50 rounded-lg p-2">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-linear-to-r from-white to-gray-100">
-                <th className="pl-6 py-2 text-left font-medium text-gray-700 w-1/4">
-                  Edad de inicio act. laboral <b className="text-red-400">*</b>
+              <tr>
+                <th className="px-3 py-2 text-left font-medium text-gray-700 w-1/4">
+                  Edad de inicio <b className="text-red-400">*</b>
                 </th>
-                <th className="px-6 py-2 text-left font-medium text-gray-700 w-1/4">
+                <th className="px-3 py-2 text-left font-medium text-gray-700 w-1/4">
                   Empresa
                 </th>
                 <th className="px-3 py-2 text-left font-medium text-gray-700 w-1/4">
@@ -2106,7 +2148,7 @@ const Evaluacion: React.FC = () => {
             <tbody>
               {antLaborales.map((row, i) => (
                 <tr key={i}>
-                  <td className="pl-6 py-2 align-top">
+                  <td className="px-3 py-2 align-top">
                     {i === 0 && (
                       <div className="relative flex items-center">
                         <input
@@ -2114,7 +2156,7 @@ const Evaluacion: React.FC = () => {
                           maxLength={2}
                           value={edadInicioLaboral}
                           onChange={(e) => setEdadInicioLaboral(e.target.value)}
-                          className="w-full px-3 py-2 border-gray-100 bg-white shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                          className="w-full px-3 py-2 border border-gray-50 bg-white shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                           placeholder="18"
                         />
                         <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">
@@ -2123,17 +2165,17 @@ const Evaluacion: React.FC = () => {
                       </div>
                     )}
                   </td>
-                  
-                  {(["empresa", "puesto", "tiempo"] as const).map((col, idx, arr) => (
+
+                  {(["empresa", "puesto", "tiempo"] as const).map((col) => (
                     <td
                       key={col}
-                      className={`py-2 ${idx === 0 ? "pl-6 pr-3" : ""} ${idx > 0 && idx < arr.length - 1 ? "px-3" : ""} ${idx === arr.length - 1 ? "pl-3 pr-6" : ""}`}
+                      className="px-3 py-2"
                     >
                       <input
                         type="text"
                         value={row[col]}
                         onChange={(e) => setAntLaborales((prev) => prev.map((r, index) => index === i ? { ...r, [col]: e.target.value } : r ) ) }
-                        className="w-full px-3 py-2 border-gray-100 bg-white shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                        className="w-full px-3 py-2 border border-gray-50 bg-white shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                         placeholder={col.charAt(0).toUpperCase() + col.slice(1)}
                       />
                     </td>
@@ -2145,20 +2187,20 @@ const Evaluacion: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-skull-crossbones mr-4"></i>
+            <i className="fa-solid fa-skull-crossbones text-sea-blue mr-3"></i>
             Exposición a Agentes en el Trabajo
           </h2>
         </div>
       </div>
 
-      <div className="overflow-hidden">
+      <div className="overflow-hidden border border-gray-50 rounded-lg p-2">
         <table className="w-full text-xs mb-4">
           <thead>
-            <tr className="bg-linear-to-r from-white to-gray-100">
-              <th className="px-6 py-2 text-left font-medium text-gray-700 mb-1 w-1/4">
+            <tr>
+              <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/4">
                 Agente
               </th>
               <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/4">
@@ -2175,7 +2217,7 @@ const Evaluacion: React.FC = () => {
           <tbody>
             {Object.entries(agentes).map(([agente, val]) => (
               <tr key={agente}>
-                <td className="pl-6 pr-3 py-2 font-medium text-gray-700 mb-1">
+                <td className="px-3 py-2 font-medium text-gray-700 mb-1">
                   {agente}
                 </td>
 
@@ -2187,7 +2229,7 @@ const Evaluacion: React.FC = () => {
                       type="text"
                       value={val[col]}
                       onChange={(e) => setAgentes((prev) => ({ ...prev, [agente]: { ...prev[agente], [col]: e.target.value, }, })) }
-                      className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                      className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                       placeholder={col.charAt(0).toUpperCase() + col.slice(1)}
                     />
                   </td>
@@ -2197,7 +2239,7 @@ const Evaluacion: React.FC = () => {
 
             {otrosAgentes.map((row, i) => (
               <tr key={`otros-${i}`}>
-                <td className="pl-6 pr-3 py-2 font-medium text-gray-700 mb-1">
+                <td className="px-3 py-2 font-medium text-gray-700 mb-1">
                   <div className="flex items-center justify-between">
                     <span>{i === 0 ? "Otros" : ""}</span>
                     <div className="flex items-center">
@@ -2205,20 +2247,20 @@ const Evaluacion: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => setOtrosAgentes((prev) => [...prev, { tipo: "", tiempo: "", puesto: "" }])}
-                          className="w-9 h-9 text-gray-400 hover:text-sky-blue bg-linear-to-b hover:from-sky-blue/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
+                          className="w-6 text-gray-400 hover:text-sky-blue transition-all cursor-pointer"
                           title="Agregar"
                         >
-                          <i className="mdi mdi-plus-thick text-lg"></i>
+                          <i className="fa-solid fa-plus text-xs"></i>
                         </button>
                       )}
                       {otrosAgentes.length > 1 && (
                         <button
                           type="button"
                           onClick={() => setOtrosAgentes((prev) => prev.filter((_, idx) => idx !== i))}
-                          className="w-9 h-9 text-gray-400 hover:text-red-500 bg-linear-to-b hover:from-red-100 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
+                          className="w-6 text-gray-400 hover:text-red-400 transition-all cursor-pointer"
                           title="Eliminar"
                         >
-                          <i className="mdi mdi-trash-can-outline text-lg"></i>
+                          <i className="fa-solid fa-trash-arrow-up text-xs"></i>
                         </button>
                       )}
                     </div>
@@ -2230,7 +2272,7 @@ const Evaluacion: React.FC = () => {
                     type="text"
                     value={row.tipo}
                     onChange={(e) => setOtrosAgentes((prev) => prev.map((r, idx) => idx === i ? { ...r, tipo: e.target.value } : r))}
-                    className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                    className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                     placeholder="Tipo"
                   />
                 </td>
@@ -2241,7 +2283,7 @@ const Evaluacion: React.FC = () => {
                       type="text"
                       value={row[col]}
                       onChange={(e) => setOtrosAgentes((prev) => prev.map((r, idx) => idx === i ? { ...r, [col]: e.target.value } : r))}
-                      className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
+                      className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 text-gray-800 font-medium outline-none"
                       placeholder={col.charAt(0).toUpperCase() + col.slice(1)}
                     />
                   </td>
@@ -2254,11 +2296,11 @@ const Evaluacion: React.FC = () => {
     </div>,
 
     <div key="familiares">
-      <div className="overflow-hidden">
+      <div className="overflow-hidden border border-gray-50 rounded-lg p-2">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-linear-to-r from-white to-gray-100">
-              <th className="px-6 py-2 text-left font-medium text-gray-700 mb-1">
+            <tr>
+              <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1">
                 Antecedente familiar
               </th>
               {["Abuelos", "Padres", "Hermanos", "Hijos", "Otros"].map((col) => (
@@ -2270,11 +2312,11 @@ const Evaluacion: React.FC = () => {
           </thead>
           <tbody>
             {Object.entries(antFamiliares).map(([ant, vals], i) => (
-              <tr 
-                key={ant} 
+              <tr
+                key={ant}
                 // className={i % 2 === 0 ? "bg-white" : "bg-gray-50"}
               >
-                <td className="px-6 py-3 font-medium text-gray-700 mb-1">
+                <td className="px-3 py-3 font-medium text-gray-700 mb-1">
                   {ant}
                 </td>
                 {(["abuelos", "padres", "hermanos", "hijos", "otros"] as const).map((col) => (
@@ -2292,11 +2334,11 @@ const Evaluacion: React.FC = () => {
     </div>,
 
     <div key="patologicos">
-      <div className="overflow-hidden mb-4">
+      <div className="overflow-hidden border border-gray-50 rounded-lg p-2 mb-4">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-linear-to-r from-white to-gray-100">
-              <th className="px-6 py-2 text-left font-medium text-gray-700 mb-1 w-1/5">
+            <tr>
+              <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/5">
                 Antecedente
               </th>
               <th className="px-3 py-2 text-center font-medium text-gray-700 mb-1 w-1/10">
@@ -2305,7 +2347,7 @@ const Evaluacion: React.FC = () => {
               <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/5">
                 Observación
               </th>
-              <th className="px-6 py-2 text-left font-medium text-gray-700 mb-1 w-1/5">
+              <th className="px-3 py-2 text-left font-medium text-gray-700 mb-1 w-1/5">
                 Antecedente
               </th>
               <th className="px-3 py-2 text-center font-medium text-gray-700 mb-1 w-1/10">
@@ -2328,7 +2370,7 @@ const Evaluacion: React.FC = () => {
             ].map(([left, right], i) => (
               <tr key={i}>
                 {/* className={i % 2 === 0 ? "bg-white" : "bg-gray-50/50"} */}
-                <td className="px-6 py-2 font-medium text-gray-700">
+                <td className="px-3 py-2 font-medium text-gray-700">
                   {left}
                 </td>
                 <td className="px-3 py-2 text-center">
@@ -2339,17 +2381,17 @@ const Evaluacion: React.FC = () => {
                     />
                   </div>
                 </td>
-                <td className="px-3 pr-6 py-2 text-center">
+                <td className="px-3 py-2 text-center">
                   <input
                     type="text"
                     value={antPatologicos[left]?.observacion ?? ""}
                     onChange={(e) => setAntPatologicos((p) => ({ ...p, [left]: { ...p[left], observacion: e.target.value } }))}
                     placeholder="Observación"
                     disabled={!antPatologicos[left]?.si}
-                    className={`w-full px-3 py-1.5 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none transition-colors ${ antPatologicos[left]?.si ? "text-gray-800 bg-white focus:ring-sea-blue" : " bg-gray-50 cursor-not-allowed" }`}
+                    className={`w-full px-3 py-1.5 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none transition-colors ${ antPatologicos[left]?.si ? "text-gray-800 bg-white focus:ring-sea-blue" : " bg-gray-50 cursor-not-allowed" }`}
                   />
                 </td>
-                <td className="px-6 py-2 font-medium text-gray-700">
+                <td className="px-3 py-2 font-medium text-gray-700">
                   {right}
                 </td>
                 <td className="px-3 py-2 text-center">
@@ -2360,14 +2402,14 @@ const Evaluacion: React.FC = () => {
                     />
                   </div>
                 </td>
-                <td className="px-3 pr-6 py-2 text-center">
+                <td className="px-3 py-2 text-center">
                   <input
                     type="text"
                     value={antPatologicos[right]?.observacion ?? ""}
                     onChange={(e) => setAntPatologicos((p) => ({ ...p, [right]: { ...p[right], observacion: e.target.value } }))}
                     placeholder="Observación"
                     disabled={!antPatologicos[right]?.si}
-                    className={`w-full px-3 py-1.5 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none transition-colors ${ antPatologicos[right]?.si ? "text-gray-800 bg-white focus:ring-sea-blue" : "bg-gray-50 cursor-not-allowed" }`}
+                    className={`w-full px-3 py-1.5 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none transition-colors ${ antPatologicos[right]?.si ? "text-gray-800 bg-white focus:ring-sea-blue" : "bg-gray-50 cursor-not-allowed" }`}
                   />
                 </td>
               </tr>
@@ -2376,20 +2418,20 @@ const Evaluacion: React.FC = () => {
         </table>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-needle mr-4"></i>
+            <i className="fa-solid fa-syringe text-sea-blue mr-3"></i>
             Esquema de Vacunación
           </h2>
         </div>
       </div>
-      
-      <div className="overflow-hidden mb-4">
+
+      <div className="overflow-hidden border border-gray-50 rounded-lg p-2 mb-4">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-linear-to-r from-white to-gray-100">
-              <th className="px-6 py-2 text-left font-medium text-gray-700 w-1/5">
+            <tr>
+              <th className="px-3 py-2 text-left font-medium text-gray-700 w-1/5">
                 Vacuna
               </th>
               <th className="px-3 py-2 text-center font-medium text-gray-700 w-1/10">
@@ -2427,7 +2469,7 @@ const Evaluacion: React.FC = () => {
               
               return (
                 <tr key={v}>
-                  <td className="px-6 py-2 font-medium text-gray-700">
+                  <td className="px-3 py-2 font-medium text-gray-700">
                     {label}
                   </td>
                   <td className="px-3 py-2 text-center">
@@ -2438,17 +2480,17 @@ const Evaluacion: React.FC = () => {
                       />
                     </div>
                   </td>
-                  <td className="px-3 pr-6 py-2 text-center">
+                  <td className="px-3 py-2 text-center">
                     <input
                       type="date"
                       value={vacunas[v]}
                       // new Date().toISOString().split("T")[0]
                       disabled={!checked}
                       onChange={(e) => setVacunas((p) => ({ ...p, [v]: e.target.value })) }
-                      className={`w-32 px-3 py-1.5 border-gray-100 shadow-xs rounded-lg text-xs outline-none transition-colors ${ checked ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-sea-blue/50 bg-gray-50 cursor-not-allowed" }`}
+                      className={`w-32 px-3 py-1.5 border border-gray-50 shadow-xs rounded-lg text-xs outline-none transition-colors ${ checked ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-sea-blue/50 bg-gray-50 cursor-not-allowed" }`}
                     />
                   </td>
-                  <td className="px-6 py-2 font-medium text-gray-700">
+                  <td className="px-3 py-2 font-medium text-gray-700">
                     {covid ? `Covid-19 (${covid.label})` : ""}
                   </td>
                   <td className="px-3 py-2 text-center">
@@ -2461,14 +2503,14 @@ const Evaluacion: React.FC = () => {
                       </div>
                     )}
                   </td>
-                  <td className="px-3 pr-6 py-2 text-center">
+                  <td className="px-3 py-2 text-center">
                     {covid && (
                       <input
                         type="date"
                         value={vacunas[covid.fechaKey]}
                         disabled={!vacunas[covid.key]}
                         onChange={(e) => setVacunas((p) => ({ ...p, [covid.fechaKey]: e.target.value, })) }
-                        className={`w-32 px-3 py-1.5 border-gray-100 shadow-xs rounded-lg text-xs outline-none transition-colors ${ vacunas[covid.key] ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-sea-blue/50 bg-gray-50 cursor-not-allowed" }`}
+                        className={`w-32 px-3 py-1.5 border border-gray-50 shadow-xs rounded-lg text-xs outline-none transition-colors ${ vacunas[covid.key] ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-sea-blue/50 bg-gray-50 cursor-not-allowed" }`}
                       />
                     )}
                   </td>
@@ -2481,15 +2523,11 @@ const Evaluacion: React.FC = () => {
     </div>,
 
     <div key="nopatologicos">
-      <div className="overflow-hidden mb-4">
-        {/* <div className="bg-gray-50 px-3 py-1 border-b border-gray-300"> */}
-        <div className="px-6 py-1 bg-linear-to-r from-white to-gray-100">
-          <span className="text-xs font-medium text-gray-700">
-            Antecedentes personales no patológicos
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-6 p-3">
+      <div className="border border-gray-50 rounded-lg px-6 py-4 mb-4">
+        {/* <span className="block text-xs font-medium text-gray-700 mb-3">
+          Antecedentes personales no patológicos
+        </span> */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-1">
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Toxicomanías
@@ -2501,7 +2539,7 @@ const Evaluacion: React.FC = () => {
                 toxicomanias: e.target.value === "SI",
                 toxicomaniasEsp: e.target.value === "SI" ? p.toxicomaniasEsp : "",
               }))}
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="SI">Sí</option>
@@ -2518,7 +2556,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => setAntNoPatologico((p) => ({ ...p, toxicomaniasEsp: e.target.value }))}
               placeholder="Seleccione una opción primero"
               disabled={!antNoPatologico.toxicomanias}
-              className={`w-full px-3 py-2 rounded-lg text-xs font-medium outline-none shadow-xs transition-colors ${ antNoPatologico.toxicomanias ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-100" : "text-gray-800 bg-gray-50 border-gray-100" }`}
+              className={`border w-full px-3 py-2 rounded-lg text-xs font-medium outline-none shadow-xs transition-colors ${ antNoPatologico.toxicomanias ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-50" : "text-gray-800 bg-gray-50 border-gray-50" }`}
             />
           </div>
           <div className="md:col-span-1">
@@ -2532,7 +2570,7 @@ const Evaluacion: React.FC = () => {
                 alcoholismo: e.target.value === "SI",
                 alcoholismoEsp: e.target.value === "SI" ? p.alcoholismoEsp : "",
               }))}
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="SI">Sí</option>
@@ -2549,7 +2587,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => setAntNoPatologico((p) => ({ ...p, alcoholismoEsp: e.target.value }))}
               placeholder="Seleccione una opción primero"
               disabled={!antNoPatologico.alcoholismo}
-              className={`w-full px-3 py-2 rounded-lg text-xs font-medium outline-none shadow-xs transition-colors ${ antNoPatologico.alcoholismo ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-100" : "text-gray-800 bg-gray-50 border-gray-100" }`}
+              className={`border w-full px-3 py-2 rounded-lg text-xs font-medium outline-none shadow-xs transition-colors ${ antNoPatologico.alcoholismo ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-50" : "text-gray-800 bg-gray-50 border-gray-50" }`}
             />
           </div>
           <div className="md:col-span-1">
@@ -2563,7 +2601,7 @@ const Evaluacion: React.FC = () => {
                 tabaquismo: e.target.value === "SI",
                 tabaquismoEsp: e.target.value === "SI" ? p.tabaquismoEsp : "",
               }))}
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="SI">Sí</option>
@@ -2580,7 +2618,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => setAntNoPatologico((p) => ({ ...p, tabaquismoEsp: e.target.value }))}
               placeholder="Seleccione una opción primero"
               disabled={!antNoPatologico.tabaquismo}
-              className={`w-full px-3 py-2 rounded-lg text-xs font-medium outline-none shadow-xs transition-colors ${ antNoPatologico.tabaquismo ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-100" : "text-gray-800 bg-gray-50 border-gray-100" }`}
+              className={`border w-full px-3 py-2 rounded-lg text-xs font-medium outline-none shadow-xs transition-colors ${ antNoPatologico.tabaquismo ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue border-gray-50" : "text-gray-800 bg-gray-50 border-gray-50" }`}
             />
           </div>
         </div>
@@ -2588,23 +2626,26 @@ const Evaluacion: React.FC = () => {
     </div>,
 
     <div key="gineco">
-      <div className={`relative overflow-hidden mb-4 transition-opacity ${ficha.genero !== "F" ? "opacity-50 pointer-events-none select-none" : ""}`}>
+      <div className="relative mb-4">
         {ficha.genero !== "F" && (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/60 rounded-lg">
- <span className="text-xs text-gray-700 font-semibold bg-white border-gray-100 rounded-lg px-4 py-2 shadow-xs">
-              <i className="mdi mdi-lock mr-1" />
-              {ficha.genero !== "F" && "Sección solo disponible para género femenino"}
-            </span>
+          <div className="absolute inset-0 z-10 pointer-events-none">
+            <div className="sticky top-1/2 -translate-y-1/2 flex justify-center">
+              <div className="flex flex-col items-center justify-center bg-white border border-gray-50 shadow-xs rounded-xl px-10 py-8 w-80 text-center">
+                <i className="fa-solid fa-circle-question mb-4" style={{ fontSize: 70, color: "#545454" }}></i>
+                <p style={{ fontSize: 16, color: "#545454" }}>
+                  Sección solo disponible para género femenino
+                </p>
+              </div>
+            </div>
           </div>
         )}
 
-        <div className="bg-linear-to-r from-white to-gray-100 px-6 py-1">
-          <span className="text-xs font-medium text-gray-700">
-            Antecedentes gineco-obstétricos
-          </span>
-        </div>
+        <div className={`border border-gray-50 rounded-lg px-6 py-4 transition-opacity ${ficha.genero !== "F" ? "opacity-15 pointer-events-none select-none" : ""}`}>
+        {/* <span className="block text-xs font-medium text-gray-700 mb-3">
+          Antecedentes gineco-obstétricos
+        </span> */}
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 pt-3">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Menarquia
@@ -2614,7 +2655,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.menarquia}
               onChange={(e) => setGineco((g) => ({ ...g, menarquia: e.target.value }))} 
               placeholder="Menarquia" 
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2626,7 +2667,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.ritmo} 
               onChange={(e) => setGineco((g) => ({ ...g, ritmo: e.target.value }))} 
               placeholder="Ritmo" 
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2638,7 +2679,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.papanicolau} 
               onChange={(e) => setGineco((g) => ({ ...g, papanicolau: e.target.value }))} 
               placeholder="Papanicolau" 
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2649,7 +2690,7 @@ const Evaluacion: React.FC = () => {
               type="date" 
               value={gineco.fum} 
               onChange={(e) => setGineco((g) => ({ ...g, fum: e.target.value }))} 
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
             <p className="text-xs text-gray-400 mt-1">Fecha de última menstruación</p>
           </div>
@@ -2662,7 +2703,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.dismenorrea} 
               onChange={(e) => setGineco((g) => ({ ...g, dismenorrea: e.target.value }))} 
               placeholder="Dismenorrea" 
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -2673,7 +2714,7 @@ const Evaluacion: React.FC = () => {
               <select
                 value={gineco.incapacitante} 
                 onChange={(e) => setGineco((g) => ({ ...g, incapacitante: e.target.value, diasDismenorrea: e.target.value !== "SI" ? "" : g.diasDismenorrea }))}
-                className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+                className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
               >
                 <option value="" disabled hidden>Seleccionar</option>
                 <option value="SI">Si</option>
@@ -2691,7 +2732,7 @@ const Evaluacion: React.FC = () => {
                   disabled={gineco.incapacitante !== "SI"}
                   onChange={(e) => { if (e.target.value.length > 3) return; setGineco((g) => ({ ...g, diasDismenorrea: e.target.value })); }}
                   placeholder="1" 
-                  className={`w-full px-3 py-2 ${gineco.incapacitante == "SI" ? "" : "bg-gray-50"} border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
+                  className={`w-full px-3 py-2 ${gineco.incapacitante == "SI" ? "" : "bg-gray-50"} border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none`}
                 />
                 <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">día(s)</span>
               </div>
@@ -2699,57 +2740,69 @@ const Evaluacion: React.FC = () => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 px-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Gestas
             </label>
-            <input 
-              type="text" 
-              value={gineco.gestas} 
-              onChange={(e) => setGineco((g) => ({ ...g, gestas: e.target.value }))} 
-              placeholder="Gestas" 
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+            <input
+              type="text"
+              value={gineco.gestas}
+              disabled
+              placeholder="Gestas"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Partos
             </label>
-            <input 
-              type="text" 
-              value={gineco.partos} 
-              onChange={(e) => setGineco((g) => ({ ...g, partos: e.target.value }))} 
-              placeholder="Partos" 
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+            <input
+              type="text"
+              value={gineco.partos}
+              onChange={(e) => setGineco((g) => {
+                const partos = e.target.value;
+                const gestas = String((parseInt(partos) || 0) + (parseInt(g.cesareas) || 0) + (parseInt(g.abortos) || 0));
+                return { ...g, partos, gestas };
+              })}
+              placeholder="Partos"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Cesáreas
             </label>
-            <input 
-              type="text" 
-              value={gineco.cesareas} 
-              onChange={(e) => setGineco((g) => ({ ...g, cesareas: e.target.value }))} 
-              placeholder="Cesáreas" 
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+            <input
+              type="text"
+              value={gineco.cesareas}
+              onChange={(e) => setGineco((g) => {
+                const cesareas = e.target.value;
+                const gestas = String((parseInt(g.partos) || 0) + (parseInt(cesareas) || 0) + (parseInt(g.abortos) || 0));
+                return { ...g, cesareas, gestas };
+              })}
+              placeholder="Cesáreas"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Abortos
             </label>
-            <input 
-              type="text" 
-              value={gineco.abortos} 
-              onChange={(e) => setGineco((g) => ({ ...g, abortos: e.target.value }))} 
-              placeholder="Abortos" 
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+            <input
+              type="text"
+              value={gineco.abortos}
+              onChange={(e) => setGineco((g) => {
+                const abortos = e.target.value;
+                const gestas = String((parseInt(g.partos) || 0) + (parseInt(g.cesareas) || 0) + (parseInt(abortos) || 0));
+                return { ...g, abortos, gestas };
+              })}
+              placeholder="Abortos"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-6 pb-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
           <div className="hidden">
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Mamas
@@ -2759,11 +2812,11 @@ const Evaluacion: React.FC = () => {
               value={gineco.mamas}
               onChange={(e) => setGineco((g) => ({ ...g, mamas: e.target.value }))}
               placeholder="Mamas" 
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4 px-6 pb-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mt-4">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               USG
@@ -2773,7 +2826,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.usg}
               onChange={(e) => setGineco((g) => ({ ...g, usg: e.target.value }))}
               placeholder="USG" 
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
             {/* <p className="text-xs text-gray-400 mt-1">Ultrasonido de mamas</p> */}
           </div>
@@ -2786,7 +2839,7 @@ const Evaluacion: React.FC = () => {
               value={gineco.mastografia} 
               onChange={(e) => setGineco((g) => ({ ...g, mastografia: e.target.value }))}
               placeholder="Mastografía" 
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             />
           </div>
           <div>
@@ -2796,7 +2849,7 @@ const Evaluacion: React.FC = () => {
             <select
               value={gineco.birads} 
               onChange={(e) => setGineco((g) => ({ ...g, birads: e.target.value }))}
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="B0">Bi-Rads 0</option>
@@ -2812,18 +2865,17 @@ const Evaluacion: React.FC = () => {
             </p>
           </div>
         </div>
+        </div>
       </div>
     </div>,
 
     <div key="salud">
-      <div className="overflow-hidden mb-4">
-        <div className="px-6 py-1 bg-linear-to-r from-white to-gray-100">
-          <span className="text-xs font-medium text-gray-700">
-            ¿Ha estado incapacitado?
-          </span>
-        </div>
-        
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-6 p-3">
+      <div className="border border-gray-50 rounded-lg px-6 py-4 mb-4">
+        {/* <span className="block text-xs font-medium text-gray-700 mb-3">
+          ¿Ha estado incapacitado?
+        </span> */}
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="md:col-span-1">
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Por riesgo de trabajo
@@ -2835,7 +2887,7 @@ const Evaluacion: React.FC = () => {
                 setIncapacidadRiesgo(val);
                 if (val !== "SI") setIncapacidadValuacion("");
               }}
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="SI">Sí</option>
@@ -2852,9 +2904,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => setIncapacidadValuacion(e.target.value)}
               placeholder="Seleccione una opción primero"
               disabled={incapacidadRiesgo !== "SI"}
-              className={`w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs font-medium outline-none transition-colors ${
-                incapacidadRiesgo === "SI" ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-gray-800 bg-gray-50"
-              }`}
+              className={`w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs font-medium outline-none transition-colors ${ incapacidadRiesgo === "SI" ? "text-gray-800 bg-white focus:ring-1 focus:ring-sea-blue" : "text-gray-800 bg-gray-50" }`}
             />
           </div>
           <div className="md:col-span-1">
@@ -2868,7 +2918,7 @@ const Evaluacion: React.FC = () => {
                 setIncapacidadEG(val);
                 if (val !== "SI") setIncapacidadComentario("");
               }}
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="SI">Sí</option>
@@ -2885,9 +2935,7 @@ const Evaluacion: React.FC = () => {
               onChange={(e) => setIncapacidadComentario(e.target.value)}
               placeholder="Seleccione una opción primero"
               disabled={incapacidadEG !== "SI"}
-              className={`w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs font-medium outline-none transition-colors ${
-                incapacidadEG === "SI" ? "text-gray-100 shadow-md bg-white focus:ring-1 focus:ring-sea-blue" : "text-gray-800 bg-gray-50"
-              }`}
+              className={`w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs font-medium outline-none transition-colors ${ incapacidadEG === "SI" ? "text-gray-100 shadow-md bg-white focus:ring-1 focus:ring-sea-blue" : "text-gray-800 bg-gray-50" }`}
             />
           </div>
           <div className="md:col-span-1">
@@ -2897,7 +2945,7 @@ const Evaluacion: React.FC = () => {
             <select
               value={manoDominante}
               onChange={(e) => setManoDominante(e.target.value)}
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
             >
               <option value="" disabled hidden>Seleccionar</option>
               <option value="DER">Derecha</option>
@@ -2913,7 +2961,7 @@ const Evaluacion: React.FC = () => {
               rows={1} 
               value={enfermedadActual} 
               onChange={(e) => setEnfermedadActual(e.target.value)}
-              className="w-full px-3 py-2 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none resize-none"
+              className="w-full px-3 py-2 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none resize-none"
               placeholder="Especifique la enfermedad que actualmente padece"
             />
           </div>
@@ -2922,15 +2970,12 @@ const Evaluacion: React.FC = () => {
     </div>,
 
     <div key="exploracion">
-      <div className="overflow-hidden mb-4">
-        <div className="px-6 py-1 bg-linear-to-r from-white to-gray-100">
-          <span className="text-xs font-medium text-gray-700">
-            Signos vitales
-            {/* Antecedentes personales no patológicos */}
-          </span>
-        </div>
-        
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-2 gap-x-4 px-6 p-3">
+      <div className="border border-gray-50 rounded-lg px-6 py-4 mb-4">
+        {/* <span className="block text-xs font-medium text-gray-700 mb-3">
+          Signos vitales
+        </span> */}
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-2 gap-x-4">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Peso (kg) <b className="text-red-400">*</b>
@@ -2942,7 +2987,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={vitalSigns.Peso} 
                 onChange={(e) => { if(e.target.value.length > 6) return;handleMeasureChange("Peso",e.target.value); }} 
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.0"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">kg</span>
@@ -2959,7 +3004,7 @@ const Evaluacion: React.FC = () => {
                 step="0.01" 
                 value={vitalSigns.Talla} 
                 onChange={(e) => { if(e.target.value.length > 4) return;handleMeasureChange("Talla",e.target.value); }} 
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                 placeholder="0.00" 
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">m</span>
@@ -2990,7 +3035,7 @@ const Evaluacion: React.FC = () => {
                 type="text"
                 value={vitalSigns.Abdomen}
                 onChange={(e) => { if (e.target.value.length > 6) return; setVitalSigns((v) => ({ ...v, Abdomen: e.target.value })); }}
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.00"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">cm</span>
@@ -3000,7 +3045,7 @@ const Evaluacion: React.FC = () => {
             <label className="block text-xs font-medium text-gray-700 mb-1">
              T/A (mmHg) <b className="text-red-400">*</b>
             </label>
- <div className="relative flex items-center border-gray-100 shadow-xs rounded-lg focus-within:ring-1 focus-within:ring-clinical-blue focus-within:border-clinical-blue bg-white">
+ <div className="relative flex items-center border border-gray-50 shadow-xs rounded-lg focus-within:ring-1 focus-within:ring-clinical-blue focus-within:border-clinical-blue bg-white">
               {/* <Activity className="h-3.5 w-3.5 absolute left-3 text-gray-400 pointer-events-none z-10" /> */}
               <div className="flex items-center w-full pl-2 pr-2 py-2">
                 <input 
@@ -3034,7 +3079,7 @@ const Evaluacion: React.FC = () => {
                 type="text" 
                 value={vitalSigns.TA} 
                 disabled 
-                className="w-full p-2 border-gray-100 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-700 font-medium outline-none" 
+                className="w-full p-2 border border-gray-50 shadow-xs rounded-lg text-xs bg-gray-50 text-gray-700 font-medium outline-none" 
                 placeholder="12 / 8"
               />
             </div>
@@ -3052,7 +3097,7 @@ const Evaluacion: React.FC = () => {
                 type="number" 
                 value={vitalSigns.FC} 
                 onChange={(e) => { if (e.target.value.length > 3) return; setVitalSigns((v) => ({ ...v, FC: e.target.value })); }}
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                 placeholder="70"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">lpm</span>
@@ -3072,7 +3117,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={vitalSigns.FR} 
                 onChange={(e) => { if (e.target.value.length > 4) return; setVitalSigns((v) => ({ ...v, FR: e.target.value })); }}
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="18"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">rpm</span>
@@ -3091,7 +3136,7 @@ const Evaluacion: React.FC = () => {
                 type="number" 
                 value={vitalSigns.SpO2} 
                 onChange={(e) => { const r = e.target.value; if (r === "") { setVitalSigns((v) => ({ ...v, SpO2: "" })); return; } if (parseInt(r) > 100 || r.length > 3) return; setVitalSigns((v) => ({ ...v, SpO2: r })); }}
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none" 
                 placeholder="98"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">%</span>
@@ -3103,10 +3148,10 @@ const Evaluacion: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-brain mr-4"></i>
+            <i className="fa-solid fa-brain text-sea-blue mr-3"></i>
             Cabeza
           </h2>
         </div>
@@ -3117,10 +3162,10 @@ const Evaluacion: React.FC = () => {
         leftSection={expCabeza} leftSetter={setExpCabeza}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-ear-hearing mr-4"></i>
+            <i className="fa-solid fa-ear-listen text-sea-blue mr-3"></i>
             Oídos
           </h2>
         </div>
@@ -3131,10 +3176,10 @@ const Evaluacion: React.FC = () => {
         leftSection={expOidos} leftSetter={setExpOidos}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-eye mr-4"></i>
+            <i className="fa-solid fa-eye text-sea-blue mr-3"></i>
             Ojos
           </h2>
         </div>
@@ -3145,20 +3190,20 @@ const Evaluacion: React.FC = () => {
         leftSection={expOjos} leftSetter={setExpOjos}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-bullseye-arrow mr-4"></i>
+            <i className="fa-solid fa-bullseye text-sea-blue mr-3"></i>
             Agudeza Visual
           </h2>
         </div>
       </div>
 
-      <div className="overflow-hidden mb-4">
+      <div className="overflow-hidden border border-gray-50 rounded-lg p-2 mb-4">
         <table className="w-full text-xs">
           <thead>
-            <tr className="bg-linear-to-r from-white to-gray-100">
-              <th className="px-6 py-2 text-left font-medium text-gray-700 w-[50%]">
+            <tr>
+              <th className="px-3 py-2 text-left font-medium text-gray-700 w-[50%]">
                 Agudeza visual
               </th>
               <th className="px-0 py-2 text-center font-medium text-gray-700 w-[25%]">
@@ -3172,7 +3217,7 @@ const Evaluacion: React.FC = () => {
 
           <tbody>
             <tr>
-              <td className="px-6 py-2 font-medium text-gray-700">
+              <td className="px-3 py-2 font-medium text-gray-700">
                 ¿Usa lentes?
               </td>
               <td colSpan={2} className="px-2 py-1 bg-gray-50/30">
@@ -3188,7 +3233,7 @@ const Evaluacion: React.FC = () => {
               { label: "Ojo izquierdo", st: agudezaOI, set: setAgudezaOI },
             ].map((av) => (
               <tr key={av.label}>
-                <td className="px-6 py-2 font-medium text-gray-700">
+                <td className="px-3 py-2 font-medium text-gray-700">
                   {av.label}
                 </td>
                 <td className="px-2 py-1.5">
@@ -3210,10 +3255,10 @@ const Evaluacion: React.FC = () => {
         </table>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-tooth mr-4"></i>
+            <i className="fa-solid fa-tooth text-sea-blue mr-3"></i>
             Boca
           </h2>
         </div>
@@ -3224,10 +3269,10 @@ const Evaluacion: React.FC = () => {
         leftSection={expBoca} leftSetter={setExpBoca}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-weather-windy mr-4"></i>
+            <i className="fa-solid fa-wind text-sea-blue mr-3"></i>
             Nariz
           </h2>
         </div>
@@ -3238,10 +3283,10 @@ const Evaluacion: React.FC = () => {
         leftSection={expNariz} leftSetter={setExpNariz}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-account mr-4"></i>
+            <i className="fa-solid fa-user text-sea-blue mr-3"></i>
             Cuello
           </h2>
         </div>
@@ -3252,10 +3297,10 @@ const Evaluacion: React.FC = () => {
         leftSection={expCuello} leftSetter={setExpCuello}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-lungs mr-4"></i>
+            <i className="fa-solid fa-lungs text-sea-blue mr-3"></i>
             Área Precordial
           </h2>
         </div>
@@ -3266,10 +3311,10 @@ const Evaluacion: React.FC = () => {
         leftSection={expPrecordial} leftSetter={setExpPrecordial}
       />
       
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-arm-flex mr-4"></i>
+            <i className="fa-solid fa-hand-fist text-sea-blue mr-3"></i>
             Miembros Torácicos
           </h2>
         </div>
@@ -3280,10 +3325,10 @@ const Evaluacion: React.FC = () => {
         leftSection={expMTor} leftSetter={setExpMTor}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-foot-print mr-4"></i>
+            <i className="fa-solid fa-shoe-prints text-sea-blue mr-3"></i>
             Miembros Pélvicos
           </h2>
         </div>
@@ -3300,10 +3345,10 @@ const Evaluacion: React.FC = () => {
         posLabel="Si" negLabel="No"
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-dumbbell mr-4"></i>
+            <i className="fa-solid fa-dumbbell text-sea-blue mr-3"></i>
             Abdomen
           </h2>
         </div>
@@ -3320,10 +3365,10 @@ const Evaluacion: React.FC = () => {
         posLabel="Si" negLabel="No"
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-gender-male-female mr-4"></i>
+            <i className="fa-solid fa-venus-mars text-sea-blue mr-3"></i>
             Genitales
           </h2>
         </div>
@@ -3334,10 +3379,10 @@ const Evaluacion: React.FC = () => {
         leftSection={expGenitales} leftSetter={setExpGenitales}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-fingerprint mr-4"></i>
+            <i className="fa-solid fa-fingerprint text-sea-blue mr-3"></i>
             Piel y Anexos
           </h2>
         </div>
@@ -3348,10 +3393,10 @@ const Evaluacion: React.FC = () => {
         leftSection={expPiel} leftSetter={setExpPiel}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-bone mdi-rotate-90 mr-4"></i>
+            <i className="fa-solid fa-bone fa-rotate-90 text-sea-blue mr-3"></i>
             Columna Cervical y Dorsal
           </h2>
         </div>
@@ -3362,10 +3407,10 @@ const Evaluacion: React.FC = () => {
         leftSection={expColCervical} leftSetter={setExpColCervical}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-bone mr-4"></i>
+            <i className="fa-solid fa-bone text-sea-blue mr-3"></i>
             Columna Lumbar
           </h2>
         </div>
@@ -3378,14 +3423,12 @@ const Evaluacion: React.FC = () => {
     </div>,
 
     <div key="laboratorio">
-      <div className="overflow-hidden mb-4">
-        <div className="px-6 py-1 bg-linear-to-r from-white to-gray-100">
-          <span className="text-xs font-medium text-gray-700">
-            Laboratorio
-          </span>
-        </div>
+      <div className="border border-gray-50 rounded-lg px-6 py-4 mb-4">
+        {/* <span className="block text-xs font-medium text-gray-700 mb-3">
+          Laboratorio
+        </span> */}
 
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-y-2 gap-x-4 px-6 p-3">
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-y-2 gap-x-4">
           <div className="hidden">
             <label className="block text-xs font-medium text-gray-700 mb-1">
               BH
@@ -3396,7 +3439,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.bh} 
                 onChange={(e) => setLabs((p) => ({ ...p, bh: e.target.value }))}
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="0.0"
               />
             </div>
@@ -3404,54 +3447,51 @@ const Evaluacion: React.FC = () => {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              HTO <b className="text-red-400">*</b>
+              Hematocrito <b className="text-red-400">*</b>
             </label>
             <div className="relative flex items-center">
-              <input 
-                type="number" 
-                step="0.1" 
-                value={labs.hto} 
+              <input
+                type="number"
+                step="0.1"
+                value={labs.hto}
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, hto: e.target.value })); } }}
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="45"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">%</span>
             </div>
-            <p className="text-xs text-gray-400 mt-1">Hematocrito</p>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              GR <b className="text-red-400">*</b>
+              Glóbulos rojos <b className="text-red-400">*</b>
             </label>
             <div className="relative flex items-center">
-              <input 
-                type="number" 
-                step="0.1" 
-                value={labs.gr} 
+              <input
+                type="number"
+                step="0.1"
+                value={labs.gr}
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, gr: e.target.value })); } }}
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="5.0"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mill/µL</span>
             </div>
-            <p className="text-xs text-gray-400 mt-1">Glóbulos rojos</p>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              GB <b className="text-red-400">*</b>
+              Glóbulos blancos <b className="text-red-400">*</b>
             </label>
             <div className="relative flex items-center">
-              <input 
-                type="number" 
-                step="0.1" 
-                value={labs.gb} 
+              <input
+                type="number"
+                step="0.1"
+                value={labs.gb}
                 onChange={(e) => { const val = e.target.value; if (val.length <= 5) { setLabs((p) => ({ ...p, gb: e.target.value })); } }}
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="7000"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">/µL</span>
             </div>
-            <p className="text-xs text-gray-400 mt-1">Glóbulos blancos</p>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -3463,15 +3503,13 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.plaq} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 6) { setLabs((p) => ({ ...p, plaq: e.target.value })); } }}
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="250000"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">/µL</span>
             </div>
             {/* <p className="text-xs text-gray-400 mt-1">Plaquetas</p> */}
           </div>
-        </div>
-        <div className="grid grid-cols-2 md:grid-cols-5 gap-y-2 gap-x-4 px-6 p-3">
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
               Glucosa <b className="text-red-400">*</b>
@@ -3482,7 +3520,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.glucosa} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, glucosa: e.target.value })); } }}
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="90"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
@@ -3498,7 +3536,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.colesterol} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, colesterol: e.target.value })); } }}
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="180"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
@@ -3506,20 +3544,19 @@ const Evaluacion: React.FC = () => {
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
-              TG <b className="text-red-400">*</b>
+              Triglicéridos <b className="text-red-400">*</b>
             </label>
             <div className="relative flex items-center">
-              <input 
-                type="number" 
-                step="0.1" 
-                value={labs.trigliceridos} 
+              <input
+                type="number"
+                step="0.1"
+                value={labs.trigliceridos}
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, trigliceridos: e.target.value })); } }}
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="120"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
             </div>
-            <p className="text-xs text-gray-400 mt-1">Triglicéridos</p>
           </div>
           <div>
             <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -3531,7 +3568,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.urea} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 2) { setLabs((p) => ({ ...p, urea: e.target.value })); } }}
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="25"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
@@ -3547,7 +3584,7 @@ const Evaluacion: React.FC = () => {
                 step="0.1" 
                 value={labs.acUrico} 
                 onChange={(e) => { const val = e.target.value; if (val.length <= 3) { setLabs((p) => ({ ...p, acUrico: e.target.value })); } }}
-                className="w-full p-2 pr-10 border-gray-100 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                className="w-full p-2 pr-10 border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                 placeholder="5.5"
               />
               <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
@@ -3556,10 +3593,10 @@ const Evaluacion: React.FC = () => {
         </div>
       </div>
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-radiology-box mr-4"></i>
+            <i className="fa-solid fa-x-ray text-sea-blue mr-3"></i>
             Radiografía
           </h2>
         </div>
@@ -3570,10 +3607,10 @@ const Evaluacion: React.FC = () => {
         leftSection={expRadiografia} leftSetter={setExpRadiografia}
       />
 
-      <div className="grid grid-cols-2 md:grid-cols-2 gap-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-2 md:grid-cols-2 gap-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-thermometer-low mr-4"></i>
+            <i className="fa-solid fa-flask-vial text-sea-blue mr-3"></i>
             Hallazgos y Pruebas
           </h2>
         </div>
@@ -3584,10 +3621,10 @@ const Evaluacion: React.FC = () => {
         leftSection={expHallazgos} leftSetter={setExpHallazgos}
       />
 
-      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4 bg-linear-to-r from-white to-gray-100">
-        <div className="pl-6 my-4 flex items-center justify-between">
+      <div className="grid grid-cols-1 md:grid-cols-1 gap-4 mt-4">
+        <div className="my-4 flex items-center justify-between">
           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-            <i className="mdi mdi-test-tube mr-4"></i>
+            <i className="fa-solid fa-vial text-sea-blue mr-3"></i>
             Gabinete
           </h2>
         </div>
@@ -3597,14 +3634,12 @@ const Evaluacion: React.FC = () => {
     </div>,
 
     <div key="conclusiones">
-      <div className="overflow-hidden mb-4">
-        <div className="px-6 py-1 bg-linear-to-r from-white to-gray-100">
-          <span className="text-xs font-medium text-gray-700">
-            Diagnósticos <b className="text-red-400">*</b>
-          </span>
-        </div>
+      <div className="border border-gray-50 rounded-lg px-6 py-4 mb-4">
+        <span className="block text-xs font-medium text-gray-700 mb-3">
+          Diagnósticos <b className="text-red-400">*</b>
+        </span>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 px-6 p-3 mb-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {([1, 2, 3, 4] as const).map((n) => {
             const key = `diagnostico${n}` as keyof Conclusiones;
             const prevKey = `diagnostico${n - 1}` as keyof Conclusiones;
@@ -3619,10 +3654,7 @@ const Evaluacion: React.FC = () => {
                     onChange={(e) => setConclusiones((g) => ({ ...g, [key]: e.target.value }))}
                     placeholder="Diagnóstico"
                     disabled={!isEnabled}
-                    className={`w-full px-3 py-2 pl-9 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue font-medium outline-none transition-colors shadow-xs ${
-                      isEnabled
-                        ? "border-gray-100 text-gray-800 bg-white" : "border-gray-100 text-gray-800 bg-gray-50"
-                    }`}
+                    className={`border w-full px-3 py-2 pl-9 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue font-medium outline-none transition-colors shadow-xs ${ isEnabled ? "border-gray-50 text-gray-800 bg-white" : "border-gray-50 text-gray-800 bg-gray-50" }`}
                   />
                   <span className="absolute left-4 text-gray-800 text-xs pointer-events-none">{n}.</span>
                 </div>
@@ -3630,14 +3662,14 @@ const Evaluacion: React.FC = () => {
             );
           })}
         </div>
+      </div>
 
-        <div className="px-6 py-1 bg-linear-to-r from-white to-gray-100">
-          <span className="text-xs font-medium text-gray-700">
-            Recomendaciones <b className="text-red-400">*</b>
-          </span>
-        </div>
-        
-        <div className="grid grid-cols-1 gap-4 px-6 p-3 mb-4">
+      <div className="border border-gray-50 rounded-lg px-6 py-4 mb-4">
+        <span className="block text-xs font-medium text-gray-700 mb-3">
+          Recomendaciones <b className="text-red-400">*</b>
+        </span>
+
+        <div className="grid grid-cols-1 gap-4">
           {([1, 2, 3] as const).map((n) => {
             const key = `recomendacion${n}` as keyof Conclusiones;
             const prevKey = `recomendacion${n - 1}` as keyof Conclusiones;
@@ -3651,23 +3683,20 @@ const Evaluacion: React.FC = () => {
                   onChange={(e) => setConclusiones((c) => ({ ...c, [key]: e.target.value }))}
                   placeholder={`Recomendación`}
                   disabled={!isEnabled}
-                  className={`w-full px-3 py-2 pl-9 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue font-medium outline-none transition-colors shadow-xs ${
-                    isEnabled
-                      ? "border-gray-100 text-gray-800 bg-white"
-                      : "border-gray-100 text-gray-800 bg-gray-50"
-                  }`}
+                  className={`border w-full px-3 py-2 pl-9 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue font-medium outline-none transition-colors shadow-xs ${ isEnabled ? "border-gray-50 text-gray-800 bg-white" : "border-gray-50 text-gray-800 bg-gray-50" }`}
                 />
                 <span className="absolute left-4 text-gray-800 text-xs pointer-events-none">{n}.</span>
               </div>
             );
           })}
         </div>
+      </div>
 
-        <div>
+      <div className="overflow-hidden border border-gray-50 rounded-lg p-2 mb-4">
           <table className="w-full text-xs">
             <thead>
-              <tr className="bg-linear-to-r from-white to-gray-100">
-                <th className="px-6 py-2 text-left font-medium text-gray-700 w-1/3">
+              <tr>
+                <th className="px-3 py-2 text-left font-medium text-gray-700 w-1/3">
                   Resultado <b className="text-red-400">*</b>
                 </th>
                 <th className="px-3 py-2 text-left font-medium text-gray-700 w-1/3">
@@ -3680,7 +3709,7 @@ const Evaluacion: React.FC = () => {
             </thead>
             <tbody>
               <tr>
-                <td className="px-6 py-2 font-medium text-gray-700 space-y-2 align-top">
+                <td className="px-3 py-2 font-medium text-gray-700 space-y-2 align-top">
                   {(["Bueno", "Regular", "Malo"] as const).map((opcion) => (
                     <div key={opcion} className="flex items-center gap-2">
                       <CkCell
@@ -3716,8 +3745,8 @@ const Evaluacion: React.FC = () => {
               </tr>
             </tbody>
           </table>
-        </div>
-      
+      </div>
+
       {/* <div className="grid grid-cols-1 md:grid-cols-4 gap-4 p-3">
         <div className="md:col-span-4">
           <label className="block text-xs font-medium text-gray-700 mb-1">
@@ -3726,7 +3755,7 @@ const Evaluacion: React.FC = () => {
           <select
             value={conclusiones.resultado}
             onChange={(e) => setConclusiones((c) => ({ ...c, resultado: e.target.value as Conclusiones["resultado"] }))}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
+            className="w-full px-3 py-2 border border-gray-50 rounded-lg text-xs focus:ring-1 focus:ring-sea-blue text-gray-800 font-medium outline-none"
           >
             <option value="" disabled hidden>Seleccionar</option>
             <option value="Satisfactorio">Satisfactorio</option>
@@ -3736,8 +3765,6 @@ const Evaluacion: React.FC = () => {
         </div>
 
       </div> */}
-
-      </div>
     </div>,
   // eslint-disable-next-line react-hooks/exhaustive-deps
   ], [currentStep, patientData, ficha, loadingMat, matriculaNotFound, matriculaNotRegis, edadInicioLaboral, antLaborales, agentes, otrosAgentes, antFamiliares, antPatologicos, vacunas, antNoPatologico, gineco, incapacidadRiesgo, incapacidadValuacion, incapacidadEG, incapacidadComentario, enfermedadActual, manoDominante, vitalSigns, expCabeza, expOidos, expOjos, agudezaOD, agudezaOI, usaLentes, expBoca, expNariz, expCuello, expPrecordial, expMTor, expMPel, expAbdomen, expGenitales, expPiel, expColCervical, expColLumbar, labs, expRadiografia, expHallazgos, expGabinete, conclusiones]);
@@ -3778,7 +3805,7 @@ const Evaluacion: React.FC = () => {
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
-              className="self-start hidden lg:block overflow-y-auto max-h-full"
+              className="hidden lg:flex lg:flex-col self-stretch overflow-y-auto mb-1"
             >
               <VerticalStepper currentStep={currentStep} onStepClick={handleStepClick} />
             </motion.div>
@@ -3789,11 +3816,11 @@ const Evaluacion: React.FC = () => {
               // className="flex-1 bg-white rounded-xl shadow-xl shadow-sm h-154.5 flex flex-col overflow-y-auto"
               className="flex-1 bg-white rounded-xl shadow-xs overflow-hidden p-6 mb-1 flex flex-col min-h-0"
             >
-              <div 
+              <div
                 // className="flex items-center justify-between p-6 border-b border-gray-100"
-                className="flex items-center justify-between shrink-0 rounded-t-xl"
+                className="flex items-center justify-between mb-4 shrink-0 rounded-t-xl"
               >
-                <h2 className="text-sm font-bold text-gray-800 flex items-center mb-4 shrink-0">
+                <h2 className="text-sm font-bold text-gray-800 flex items-center shrink-0">
                   <i className={`${STEPS[currentStep].icon} text-sea-blue mr-3`}></i>
                   {STEPS[currentStep].label}
                 </h2>

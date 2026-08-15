@@ -7,7 +7,19 @@ const OverlayTransicionAnalisis: React.FC = () => createPortal(
     <div className="ai-aurora-transicion ai-aurora-transicion-2"></div>
 
     <div className="relative z-10 flex items-center justify-center w-32 h-32 mb-1">
-      <i className="fa-solid fa-atom ai-icon-pulse-transicion animate-spin-periodic" style={{ fontSize: 84 }}></i>
+      {[0, 0.5, 1, 1.5, 2].map((d, i) => (
+        <i
+          key={i}
+          className="fa-solid fa-atom absolute text-horz-blue/30"
+          style={{
+            fontSize: 84,
+            animation: "aiSparkRippleTransicion 2.6s ease-out infinite",
+            animationDelay: `${d}s`,
+          }}
+        />
+      ))}
+
+      <i className="fa-solid fa-atom relative ai-icon-pulse-transicion animate-spin-periodic" style={{ fontSize: 84 }}></i>
     </div>
     <p className="relative z-10 text-sea-blue font-bold text-sm tracking-wide">Generando análisis con IA</p>
 
@@ -23,6 +35,16 @@ const OverlayTransicionAnalisis: React.FC = () => createPortal(
       @keyframes aiIconShimmerTransicion {
         0%   { background-position: 0% center; }
         100% { background-position: -250% center; }
+      }
+      @keyframes aiSparkRippleTransicion {
+        0% {
+          transform: scale(0.3) rotate(0deg);
+          opacity: 0.6;
+        }
+        100% {
+          transform: scale(6.5);
+          opacity: 0;
+        }
       }
       .ai-aurora-transicion {
         position: absolute;
