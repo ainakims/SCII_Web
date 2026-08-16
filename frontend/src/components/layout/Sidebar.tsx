@@ -54,7 +54,7 @@ const ROLES_PRIVILEGIADOS = ["admin", "médico", "medico"];
 const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
   const menuEntries: MenuEntry[] = [
     // { name: "Dashboard",     icon: "view-dashboard",          path: "/Dashboard",     roles: ["admin", "médico"] }, //compass
-    { type: "item", name: "Dashboard", icon: "compass", path: "/Expediente", roles: ["admin", "médico"] },
+    { type: "item", name: "Dashboard", icon: "compass", path: "/Dashboard", roles: ["admin", "médico"] },
     {
       type: "group",
       name: "Personal",

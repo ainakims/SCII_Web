@@ -24,7 +24,7 @@ interface MatricesPoblacionalSectionProps {
 // Departamento (histórico, navegable por año) — mismo patrón de "una
 // SectionCard, dos gráficas a la mitad" que MatricesSection.tsx en
 // AnalisisIndividual, pero exclusivo de la vista poblacional completa: no se
-// monta en ExpedienteDepartamento.tsx (ExpedienteContenido, que sí es
+// monta en DashboardDepartamento.tsx (DashboardContenido, que sí es
 // compartido), porque "por departamento" no tiene sentido ya filtrado a uno solo.
 const MatricesPoblacionalSection: React.FC<MatricesPoblacionalSectionProps> = ({ estadoActual, historico, consultas }) => {
   const riesgoPorDepto = useMemo(() => distribucionRiesgoPorDepartamento(estadoActual), [estadoActual]);

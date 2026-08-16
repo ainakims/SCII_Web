@@ -24,7 +24,7 @@ const COLOR_UMBRAL: Record<string, string> = {
   trigliceridos: "#FFC627",
 };
 
-// Mismo estilo de tooltip que las gráficas de Expediente (Somatometría, Cardiovascular, etc.).
+// Mismo estilo de tooltip que las gráficas de Dashboard (Somatometría, Cardiovascular, etc.).
 const tooltipCls = "bg-white shadow-lg rounded-lg p-2.5 text-[11px]";
 
 const TooltipPerfil: React.FC<any> = ({ active, payload, label }) => {

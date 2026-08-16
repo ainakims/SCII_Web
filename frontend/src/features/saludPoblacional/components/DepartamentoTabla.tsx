@@ -126,8 +126,10 @@ type SortDir = "asc" | "desc" | "none";
 
 // Tabla de departamentos: mismos agregados deterministas que "Resumen médico
 // (IA)" (resumenMedicoIA.ts), en formato tabular. Cada fila navega a la ventana
-// específica de ese departamento. Columnas ordenables (clic en encabezado) +
-// panel de filtros (búsqueda + Alerta + Tipo), mismo patrón que Pacientes.tsx.
+// específica de ese departamento. Mismo diseño visual (encabezado, buscador,
+// íconos) que PacientesTabla.tsx (Pacientes/Reingresos), para que todas las
+// tablas del sistema se vean igual — sin paginado: la cantidad de
+// departamentos es acotada, así que siempre se listan todos de una vez.
 const DepartamentoTabla: React.FC<DepartamentoTablaProps> = ({ departamentos, onSeleccionar }) => {
   const [busqueda, setBusqueda] = useState("");
   const [showFiltros, setShowFiltros] = useState(true);
@@ -146,11 +148,11 @@ const DepartamentoTabla: React.FC<DepartamentoTablaProps> = ({ departamentos, on
   };
 
   const sortIcon = (col: SortCol) => {
-    if (sortCol !== col || sortDir === "none") return "mdi-sort";
-    return sortDir === "asc" ? "mdi-sort-ascending" : "mdi-sort-descending";
+    if (sortCol !== col || sortDir === "none") return "fa-sort";
+    return sortDir === "asc" ? "fa-sort-up" : "fa-sort-down";
   };
 
-  const hayFiltrosActivos = Boolean(filtroAlerta || filtroTipo);
+  const hayFiltrosActivos = Boolean(busqueda || filtroAlerta || filtroTipo);
 
   const filtrados = useMemo(() => {
     const q = busqueda.trim().toLowerCase();
@@ -182,11 +184,12 @@ const DepartamentoTabla: React.FC<DepartamentoTablaProps> = ({ departamentos, on
     return <p className="text-xs text-gray-400 text-center py-8">No hay departamentos registrados en la población.</p>;
   }
 
-  const encabezado = (col: SortCol, label: string, extraCls: string) => (
+  const encabezado = (col: SortCol, label: string, extraCls: string, icon: string = "") => (
     <th onClick={() => cycleSort(col)} className={`px-5 py-3 font-semibold cursor-pointer select-none group ${extraCls}`}>
       <span className={`flex items-center gap-1 ${extraCls.includes("text-right") ? "justify-end" : extraCls.includes("text-center") ? "justify-center" : ""}`}>
+        {icon && <i className={`${icon} text-[10px] text-gray-400 group-hover:text-gray-500 mr-1`}></i>}
         {label}
-        <i className={`mdi ${sortIcon(col)} text-sm transition-colors ${sortCol === col && sortDir !== "none" ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`}></i>
+        <i className={`fa-solid ${sortIcon(col)} text-[10px] transition-colors ${sortCol === col && sortDir !== "none" ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`}></i>
       </span>
     </th>
   );
@@ -197,48 +200,54 @@ const DepartamentoTabla: React.FC<DepartamentoTablaProps> = ({ departamentos, on
           filas después de buscar/filtrar — solo cuando hay más de ~10 aparece
           scroll, en vez de que la tabla crezca/encoja según el resultado. */}
       <div className="h-[420px] overflow-auto rounded-lg">
-        {/* table-fixed: con layout automático, `w-[100px]` es solo una
-            sugerencia que el contenido puede empujar (p. ej. el select de
-            "Tipo"); fixed lo vuelve un ancho real, y "Nombre" (sin ancho
-            explícito) se queda con el espacio restante. */}
         <table className="w-full text-xs table-fixed">
-          <thead className="sticky top-0 z-10 bg-linear-to-r from-white to-gray-100">
+          <thead className="sticky top-0 z-10 bg-gray-50">
             <tr className="text-gray-700 text-left">
-              {encabezado("nombre", "Nombre", "")}
-              {encabezado("total", "Total", "text-left w-[100px]")}
-              {encabezado("imc", "IMC promedio", "text-left w-[150px] pr-6")}
-              {encabezado("riesgo", "Riesgo", "text-right w-[100px]")}
+              {encabezado("nombre", "Nombre", "", "fa-solid fa-building")}
+              {encabezado("total", "Total", "text-left w-[100px]", "fa-solid fa-users")}
+              {encabezado("imc", "IMC promedio", "text-left w-[200px] pr-6", "fa-solid fa-weight-scale")}
+              {encabezado("riesgo", "Riesgo", "text-right w-[100px]", "fa-solid fa-radiation")}
               <th className="pl-5 pr-1 py-3 font-semibold text-left w-[180px]">Clasificación</th>
               <th className="w-8 pl-1 pr-3 py-3 text-center">
                 <i
                   onClick={(e) => { e.stopPropagation(); setShowFiltros((v) => !v); }}
                   title={showFiltros ? "Ocultar filtros" : "Mostrar filtros"}
-                  className={`mdi ${showFiltros ? "mdi-filter-off" : "mdi-filter"} cursor-pointer text-xs transition-colors ${showFiltros || hayFiltrosActivos ? "text-sea-blue" : "text-gray-300 hover:text-gray-400"}`}
+                  className={`fa-solid ${showFiltros ? "fa-filter-circle-xmark" : "fa-filter"} cursor-pointer text-xs transition-colors ${showFiltros || hayFiltrosActivos ? "text-sea-blue" : "text-gray-300 hover:text-gray-400"}`}
                 ></i>
               </th>
             </tr>
             {showFiltros && (
-              <tr className="bg-linear-to-r from-white to-gray-100 text-left">
+              <tr className="bg-gray-50 text-left h-11">
                 <td className="px-5 py-2">
-                  <div className="relative max-w-[200px]">
-                    <i className="mdi mdi-magnify absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-sm"></i>
+                  <div className="relative w-94">
+                    <i className="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
                     <input
                       type="text"
                       value={busqueda}
                       onChange={(e) => setBusqueda(e.target.value)}
                       placeholder="Buscar departamento"
-                      className="w-94 pl-8 pr-2 py-1 rounded-md text-xs border border-gray-200 bg-white outline-none focus:ring-1 focus:ring-sea-blue"
+                      className="w-full h-7 pl-8 pr-7 py-1 rounded-md text-xs shadow-xs bg-white outline-none focus:ring-1 focus:ring-sea-blue"
                     />
+                    {busqueda && (
+                      <button
+                        type="button"
+                        onClick={() => setBusqueda("")}
+                        title="Limpiar"
+                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-400 transition-colors cursor-pointer"
+                      >
+                        <i className="fa-solid fa-circle-xmark text-xs"></i>
+                      </button>
+                    )}
                   </div>
                 </td>
                 <td colSpan={3} className="px-5 py-2"></td>
-                <td colSpan={2} className="px-5 py-2 text-right hidden">
-                  <div className="flex items-center justify-start gap-1.5">
+                <td className="px-5 py-2 text-right hidden">
+                  <div className="flex items-center justify-end gap-1.5">
                     <span className="text-[11px] font-medium text-gray-500">Tipo</span>
                     <select
                       value={filtroTipo}
                       onChange={(e) => setFiltroTipo(e.target.value as "" | TipoEmpleado)}
-                      className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
+                      className="text-xs h-7 rounded-md shadow-xs px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
                     >
                       <option value="">Todos</option>
                       {TIPOS_EMPLEADO.map((t) => <option key={t.value} value={t.value}>{t.label}</option>)}
@@ -251,24 +260,14 @@ const DepartamentoTabla: React.FC<DepartamentoTablaProps> = ({ departamentos, on
                     <select
                       value={filtroAlerta}
                       onChange={(e) => setFiltroAlerta(e.target.value as "" | NivelAlerta)}
-                      className="text-xs border border-gray-200 rounded-md px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
+                      className="text-xs h-7 rounded-md shadow-xs px-2 py-1 bg-white outline-none focus:ring-1 focus:ring-sea-blue cursor-pointer"
                     >
                       <option value="">Todas</option>
                       {NIVELES_ALERTA.map((n) => <option key={n.value} value={n.value}>{n.label}</option>)}
                     </select>
                   </div>
                 </td>
-                <td className="w-8 pl-1 pr-3 py-2 text-center">
-                  {/* Mismo ancho fijo que el ícono de embudo del encabezado:
-                      queda justo debajo, y solo cambia visible/invisible. */}
-                  <button
-                    onClick={() => { setFiltroAlerta(""); setFiltroTipo(""); }}
-                    disabled={!hayFiltrosActivos}
-                    className={`text-xs font-medium text-gray-400 hover:text-red-500 transition-colors cursor-pointer ${hayFiltrosActivos ? "" : "invisible pointer-events-none"}`}
-                  >
-                    <i className="mdi mdi-close-circle"></i>
-                  </button>
-                </td>
+                <td className="w-8 pl-1 pr-3 py-2"></td>
               </tr>
             )}
           </thead>
@@ -279,9 +278,9 @@ const DepartamentoTabla: React.FC<DepartamentoTablaProps> = ({ departamentos, on
                 onClick={() => onSeleccionar(d.nombre)}
                 className="group border-b border-gray-50 last:border-0 hover:bg-gray-50/60 cursor-pointer transition-colors"
               >
-                <td className="px-5 py-2 font-semibold text-gray-700 group-hover:text-sea-blue transition-colors">{d.nombre}</td>
-                <td className="w-[100px] px-5 py-2 text-left text-gray-500">{d.poblacion.toLocaleString("es-MX")}</td>
-                <td className="w-[100px] px-5 py-2 text-left text-gray-500">
+                <td className="px-5 py-2 font-bold text-gray-700 truncate group-hover:text-sea-blue transition-colors">{d.nombre}</td>
+                <td className="px-5 py-2 text-left text-gray-500 group-hover:font-semibold transition-all">{d.poblacion.toLocaleString("es-MX")}</td>
+                <td className="px-5 py-2 text-left text-gray-500 group-hover:font-semibold transition-all">
                   {/* Sin ícono/tooltip cuando no hay tendencia confiable
                       (n insuficiente): no hay nada útil que mostrar. */}
                   {d.tendencias.imc ? (
@@ -295,14 +294,14 @@ const DepartamentoTabla: React.FC<DepartamentoTablaProps> = ({ departamentos, on
                     fmt(d.vsPromedio.imc.valor)
                   )}
                 </td>
-                <td className="w-[100px] px-5 py-2 text-left text-gray-500">{fmt(d.vsPromedio.riesgoAltoPct.valor, "%")}</td>
+                <td className="px-5 py-2 text-right text-gray-500 group-hover:font-semibold transition-all">{fmt(d.vsPromedio.riesgoAltoPct.valor, "%")}</td>
                 <td className="pl-5 pr-1 py-2 text-left">
                   <Tooltip texto={textoClasificacionImc(d)} sinLimiteAncho ocuparAncho>
                     <ClasificacionImcBar departamento={d} />
                   </Tooltip>
                 </td>
                 <td className="w-8 pl-1 pr-3 py-2 text-right text-gray-400 group-hover:text-sea-blue transition-colors">
-                  <i className="mdi mdi-chevron-right"></i>
+                  <i className="fa-solid fa-chevron-right text-[10px]"></i>
                 </td>
               </tr>
             ))}
@@ -315,15 +314,10 @@ const DepartamentoTabla: React.FC<DepartamentoTablaProps> = ({ departamentos, on
         </table>
       </div>
 
-      {/* Mismo renglón que el pie de Activos/Reingresos (texto + reservado
-          para paginación), aunque aquí no pagine: así la card no cambia de
-          alto al cambiar de tab. */}
-          <div className="grid grid-cols-2 gap-4 items-center mt-3">
-          <div className="col-span-1 flex items-center">
-      <span className="text-xs font-bold text-gray-400">
-        {ordenados.length.toLocaleString("es-MX")} departamento{ordenados.length === 1 ? "" : "s"}
-      </span>
-      </div>
+      <div className="flex items-center px-5 py-3 shrink-0">
+        <span className="text-xs font-bold text-gray-400">
+          {ordenados.length.toLocaleString("es-MX")} departamento{ordenados.length === 1 ? "" : "s"}
+        </span>
       </div>
     </div>
   );

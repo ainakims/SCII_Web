@@ -33,41 +33,48 @@ const PAGE_TITLES: PageTitles = {
   '/Reingresos':    { label: 'Reingresos',    icon: 'mdi-account-switch-outline' },
   '/Agenda':        { label: 'Agenda',        icon: 'mdi-calendar-blank' },
   '/Consultas':     { label: 'Consultas',     icon: 'mdi-clipboard-pulse-outline' },
+  '/Indicadores':   { label: 'Indicadores',   icon: 'mdi-heart-pulse' },
   '/Evaluacion':    { label: 'Evaluación',    icon: 'mdi-clipboard-check-outline' },
   '/Recetas':       { label: 'Recetas',       icon: 'mdi-pill' },
   '/Inventario':    { label: 'Inventario',    icon: 'mdi-package-variant-closed' },
   '/Documentos':    { label: 'Documentos',    icon: 'mdi-file-document-outline' },
   '/Configuracion': { label: 'Configuración', icon: 'mdi-cog-outline' },
-  '/Expediente': { label: 'Expediente', icon: 'mdi-folder-account-outline' },
+  '/Dashboard': { label: 'Dashboard', icon: 'mdi-folder-account-outline' },
 };
 
-// Ruta dinámica /Expediente/Departamento/:nombre: no tiene una entrada propia
+// Ruta dinámica /Dashboard/Departamento/:nombre: no tiene una entrada propia
 // en PAGE_TITLES (el valor es variable), así que se detecta aparte para
-// mostrar el breadcrumb "Expediente > ..." con "Expediente" como link de
+// mostrar el breadcrumb "Dashboard > ..." con "Dashboard" como link de
 // regreso.
-const RUTA_EXPEDIENTE_DEPTO = /^\/Expediente\/Departamento\/(.+)$/;
+const RUTA_DASHBOARD_DEPTO = /^\/Dashboard\/Departamento\/(.+)$/;
 // El análisis individual entrado desde Pacientes.tsx vive bajo su propia
 // sección (/Pacientes/:matricula, ver basePath en PacientesTabla.tsx), con
-// el mismo criterio de breadcrumb que Expediente pero regresando a
-// /Pacientes en vez de /Expediente.
+// el mismo criterio de breadcrumb que Dashboard pero regresando a
+// /Pacientes en vez de /Dashboard.
 const RUTA_PACIENTES_PACIENTE = /^\/Pacientes\/([^/]+)$/;
 // El análisis individual entrado desde Reingresos.tsx vive bajo su propia
 // sección (/Reingresos/:matricula, ver basePath en PacientesTabla.tsx), con
-// el mismo criterio de breadcrumb que Expediente pero regresando a
-// /Reingresos en vez de /Expediente.
+// el mismo criterio de breadcrumb que Dashboard pero regresando a
+// /Reingresos en vez de /Dashboard.
 const RUTA_REINGRESOS_PACIENTE = /^\/Reingresos\/([^/]+)$/;
+// El detalle de un trabajador entrado desde Indicadores.tsx vive bajo su
+// propia sección (/Indicadores/:matricula), mismo criterio de breadcrumb que
+// Pacientes/Reingresos pero regresando a /Indicadores.
+const RUTA_INDICADORES_PACIENTE = /^\/Indicadores\/([^/]+)$/;
 
 const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
   const location = useLocation();
-  const matchDepto = location.pathname.match(RUTA_EXPEDIENTE_DEPTO);
+  const matchDepto = location.pathname.match(RUTA_DASHBOARD_DEPTO);
   const nombreDepto = matchDepto ? decodeURIComponent(matchDepto[1]) : null;
   const matchPaciente = !matchDepto ? location.pathname.match(RUTA_PACIENTES_PACIENTE) : null;
   const matriculaPaciente = matchPaciente ? decodeURIComponent(matchPaciente[1]) : null;
   const matchReingreso = (!matchDepto && !matchPaciente) ? location.pathname.match(RUTA_REINGRESOS_PACIENTE) : null;
   const matriculaReingreso = matchReingreso ? decodeURIComponent(matchReingreso[1]) : null;
+  const matchIndicadores = (!matchDepto && !matchPaciente && !matchReingreso) ? location.pathname.match(RUTA_INDICADORES_PACIENTE) : null;
+  const matriculaIndicadores = matchIndicadores ? decodeURIComponent(matchIndicadores[1]) : null;
   const nombrePaciente = (location.state as any)?.nombre as string | undefined;
-  const seccionBase = matriculaReingreso ? "/Reingresos" : matriculaPaciente ? "/Pacientes" : "/Expediente";
-  const page = (nombreDepto || matriculaPaciente || matriculaReingreso) ? PAGE_TITLES[seccionBase] : PAGE_TITLES[location.pathname];
+  const seccionBase = matriculaReingreso ? "/Reingresos" : matriculaPaciente ? "/Pacientes" : matriculaIndicadores ? "/Indicadores" : "/Dashboard";
+  const page = (nombreDepto || matriculaPaciente || matriculaReingreso || matriculaIndicadores) ? PAGE_TITLES[seccionBase] : PAGE_TITLES[location.pathname];
 
   const { user, logout } = useAuth() as { user: User; logout: () => void };
 
@@ -107,7 +114,7 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
                   <i className="mdi mdi-chevron-right text-gray-300"></i>
                   <span className="truncate text-sea-blue">{nombreDepto}</span>
                 </>
-              ) : (matriculaPaciente || matriculaReingreso) ? (
+              ) : (matriculaPaciente || matriculaReingreso || matriculaIndicadores) ? (
                 <>
                   <button
                     onClick={() => navigate(seccionBase)}
@@ -118,7 +125,7 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
                   <i className="mdi mdi-chevron-right text-gray-300"></i>
                   <span className="truncate text-sea-blue">
                     {(() => {
-                      const matricula = matriculaPaciente || matriculaReingreso;
+                      const matricula = matriculaPaciente || matriculaReingreso || matriculaIndicadores;
                       return nombrePaciente ? `${matricula} - ${nombrePaciente}` : matricula;
                     })()}
                   </span>

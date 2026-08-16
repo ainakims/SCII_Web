@@ -1,7 +1,7 @@
 import React from "react";
 
 interface ShimmerOverlayProps {
-  // Expediente tiene muchas gráficas pequeñas una junto a otra: el barrido al
+  // Dashboard tiene muchas gráficas pequeñas una junto a otra: el barrido al
   // 60% de opacidad se sentía demasiado llamativo ahí. `subtle` baja
   // opacidad/ancho para ese caso sin perder el efecto en Análisis Individual
   // (una gráfica grande por card), donde sí se quiere bien visible.
@@ -14,7 +14,7 @@ interface ShimmerOverlayProps {
 // Puramente decorativo: pointer-events-none para no interferir con el
 // tooltip/hover de la gráfica debajo; el padre debe ser `relative
 // overflow-hidden` para recortarlo a los límites del bloque. Compartido entre
-// Expediente (saludPoblacional) y Análisis Individual.
+// Dashboard (saludPoblacional) y Análisis Individual.
 const ShimmerOverlay: React.FC<ShimmerOverlayProps> = ({ subtle = false }) => (
   <div className="pointer-events-none absolute inset-0 overflow-hidden">
     <div

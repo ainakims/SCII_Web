@@ -5,7 +5,7 @@ import { useParams } from "react-router-dom";
 import Swal from "sweetalert2";
 
 import { RegistroValidado } from "../features/saludPoblacional/types";
-import ExpedienteContenido from "../features/saludPoblacional/components/ExpedienteContenido";
+import DashboardContenido from "../features/saludPoblacional/components/DashboardContenido";
 
 const errorModal = (title: string, message: string) => {
   Swal.fire({
@@ -19,9 +19,9 @@ const errorModal = (title: string, message: string) => {
   });
 };
 
-// Ventana específica de un departamento: mismas secciones del expediente
+// Ventana específica de un departamento: mismas secciones del dashboard
 // general, filtradas por el nombre de departamento recibido en la URL.
-const ExpedienteDepartamento: React.FC = () => {
+const DashboardDepartamento: React.FC = () => {
   const { nombre } = useParams<{ nombre: string }>();
   const nombreDepto = nombre ? decodeURIComponent(nombre) : "";
 
@@ -67,7 +67,7 @@ const ExpedienteDepartamento: React.FC = () => {
               Cargando información del departamento...
             </div>
           ) : (
-            <ExpedienteContenido historico={registrosDepto} mensajeVacio="No hay información disponible para este departamento." />
+            <DashboardContenido historico={registrosDepto} mensajeVacio="No hay información disponible para este departamento." />
           )}
         </div>
       </div>
@@ -75,4 +75,4 @@ const ExpedienteDepartamento: React.FC = () => {
   );
 };
 
-export default ExpedienteDepartamento;
+export default DashboardDepartamento;

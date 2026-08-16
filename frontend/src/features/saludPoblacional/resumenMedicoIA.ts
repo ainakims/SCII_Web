@@ -114,7 +114,7 @@ function tendenciaDe(historicoDepto: RegistroValidado[], campo: IndicadorClave):
 
 // `minPoblacion` es el umbral de "departamento reportable" para el resumen de
 // IA (por defecto MIN_POBLACION_DEPTO, sección de arriba): con N muy chico las
-// proporciones son ruido, no señal. La tabla de Departamentos del Expediente
+// proporciones son ruido, no señal. La tabla de Departamentos del Dashboard
 // quiere ver TODOS los departamentos reales aunque tengan pocas personas, así
 // que llama a esta función con minPoblacion=1 en vez de usar el default.
 export function construirPayloadResumenIA(

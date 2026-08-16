@@ -4,7 +4,6 @@ import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Link, useLocation, matchPath, Navigate, } from "react-router-dom";
 // import { HashRouter as Router, Routes, Route, Link, useLocation, matchPath, Navigate, } from "react-router-dom";
 import MainLayout from './components/layout/MainLayout';
-import Dashboard from './pages/Dashboard';
 
 import Perfil from './pages/Perfil';
 import Agenda from './pages/Agenda';
@@ -18,8 +17,8 @@ import Pacientes from './pages/Pacientes';
 import Reingresos from './pages/Reingresos';
 import Configuracion from './pages/Configuracion';
 import SaludPoblacional from './pages/SaludPoblacional';
-import Expediente from './pages/Expediente';
-import ExpedienteDepartamento from './pages/ExpedienteDepartamento';
+import Dashboard from './pages/Dashboard';
+import DashboardDepartamento from './pages/DashboardDepartamento';
 import AnalisisIndividual from './pages/AnalisisIndividual';
 
 import { AuthProvider } from './context/AuthToken';
@@ -42,19 +41,19 @@ function App() {
               <MainLayout />
             </ProtectedRoute>
           }>
-            {/* Ruta vacía ("/") -> Expediente, la ventana principal de la app.
-                Redirect explícito (no solo renderizar Expediente aquí) para que
-                la URL se normalice a /Expediente y el breadcrumb/nav activo del
+            {/* Ruta vacía ("/") -> Dashboard, la ventana principal de la app.
+                Redirect explícito (no solo renderizar Dashboard aquí) para que
+                la URL se normalice a /Dashboard y el breadcrumb/nav activo del
                 Topbar/Sidebar la reconozcan igual que si se hubiera navegado ahí
                 directamente. Placeholder para permisos: cuando se defina la
                 pantalla principal para roles no admin/médico, este es el único
                 lugar que hay que tocar (condicionar el "to" según el rol). */}
-            <Route index element={<Navigate to="/Expediente" replace />} />
-            <Route path="Dashboard" element={<Dashboard />} />
+            <Route index element={<Navigate to="/Dashboard" replace />} />
             <Route path="Perfil" element={<Perfil />} />
             <Route path="Agenda" element={<Agenda />} />
             <Route path="Consultas" element={<Consultas />} />
             <Route path="Indicadores" element={<Indicadores />} />
+            <Route path="Indicadores/:matricula" element={<Indicadores />} />
             <Route path="Evaluacion" element={<Evaluacion />} />
             <Route path="Recetas" element={<Recetas />} />
             <Route path="Inventario" element={<Inventario />} />
@@ -65,8 +64,8 @@ function App() {
             <Route path="Reingresos/:matricula" element={<AnalisisIndividual />} />
             <Route path="Configuracion" element={<Configuracion />} />
             <Route path="SaludPoblacional" element={<SaludPoblacional />} />
-            <Route path="Expediente" element={<Expediente />} />
-            <Route path="Expediente/Departamento/:nombre" element={<ExpedienteDepartamento />} />
+            <Route path="Dashboard" element={<Dashboard />} />
+            <Route path="Dashboard/Departamento/:nombre" element={<DashboardDepartamento />} />
             <Route path="*" element={<div className="p-8 text-center text-gray-500">Módulo en construcción</div>} />
           </Route>
         </Routes>

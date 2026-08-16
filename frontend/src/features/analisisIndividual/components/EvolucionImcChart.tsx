@@ -13,7 +13,7 @@ interface EvolucionImcChartProps {
 
 const COLOR_IMC = "#002E6D";
 
-// Mismo estilo de tooltip que las gráficas de Expediente (Somatometría, Cardiovascular, etc.).
+// Mismo estilo de tooltip que las gráficas de Dashboard (Somatometría, Cardiovascular, etc.).
 const tooltipCls = "bg-white shadow-lg rounded-lg p-2.5 text-[11px]";
 
 const TooltipImc: React.FC<any> = ({ active, payload, label }) => {

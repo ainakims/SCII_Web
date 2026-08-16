@@ -1,11 +1,43 @@
 import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
 import React, { useState, useEffect, useRef } from "react";
+import { useParams, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { Search } from "lucide-react";
 import Swal from "sweetalert2";
 import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import Carnet from "../components/Carnet";
+import KpiCard from "../features/saludPoblacional/components/shared/KpiCard";
+
+// Ocultas temporalmente a pedido: solo debe verse la vista de Check-up.
+// Poner en true para volver a mostrar el selector Check-up/Gráficas/Tendencia.
+const MOSTRAR_TABS_VISTA = false;
+
+// Oculto temporalmente a pedido.
+const MOSTRAR_BOTON_CARNET = false;
+
+// Mismo patrón visual que PacientesTablaSkeleton (Pacientes.tsx): filas grises
+// pulsantes en vez de un spinner sobrepuesto, mientras carga el check-up.
+const IndicadoresTablaSkeleton: React.FC = () => (
+  <div className="h-full rounded-lg bg-white overflow-hidden animate-pulse">
+    <div className="h-11 bg-gray-50"></div>
+    {Array.from({ length: 9 }).map((_, i) => (
+      <div key={i} className="flex items-center gap-4 px-5 py-3 border-b border-gray-50 last:border-0">
+        <div className="h-3 w-16 rounded bg-gray-200"></div>
+        <div className="flex-1 space-y-1.5">
+          <div className="h-3 w-40 rounded bg-gray-200"></div>
+          <div className="h-2.5 w-24 rounded bg-gray-100"></div>
+        </div>
+        <div className="h-3 w-8 rounded bg-gray-200"></div>
+        <div className="h-3 w-8 rounded bg-gray-200"></div>
+        <div className="h-3 w-8 rounded bg-gray-200"></div>
+        <div className="h-3 w-8 rounded bg-gray-200"></div>
+        <div className="h-3 w-8 rounded bg-gray-200"></div>
+        <div className="h-3 w-28 rounded bg-gray-200"></div>
+      </div>
+    ))}
+  </div>
+);
 
 const todayStr = () => new Date().toISOString().split("T")[0];
 
@@ -59,6 +91,21 @@ const calcEdadEnAnio = (fechaNacimiento: string | null, anio: number): number | 
   }
 };
 
+// Meta de peso a partir de talla/sexo/peso actual — se usa tanto al renderizar
+// cada fila de la tabla como al reconstruir el detalle de un trabajador desde
+// la URL (/Indicadores/:matricula), para no duplicar el cálculo.
+const calcMetaPeso = (row: any) => {
+  const constSexo = row.Sexo == "M" ? 23 : row.Sexo == "F" ? 21.5 : 0;
+  const pesoIdeal = row.Altura ? ((row.Altura * row.Altura) * constSexo) * 0.13 + ((row.Altura * row.Altura) * constSexo) : null;
+  // Negativo => debe bajar de peso; positivo => debe subir de peso
+  const pesoPerderRaw = (row.Peso && pesoIdeal != null) ? pesoIdeal - row.Peso : null;
+  const pesoPerder = pesoPerderRaw != null ? parseFloat(pesoPerderRaw.toFixed(2)).toString() : null;
+  // El periodo (meses) se calcula con la magnitud, sin importar la dirección
+  const magPerder = pesoPerderRaw != null ? Math.abs(pesoPerderRaw) : null;
+  const perderMes = magPerder != null ? (magPerder === 0 ? 0 : magPerder <= 3.5 ? 1 : magPerder <= 5 ? 3 : magPerder <= 10 ? 6 : magPerder <= 16 ? 12 : 18) : null;
+  return { pesoIdeal, pesoPerder, perderMes };
+};
+
 interface ActividadRow {
   fecha: string; actividad: string; frecuencia: string; duracion: string; estatus: string;
 }
@@ -68,12 +115,18 @@ const emptyActividad = (): ActividadRow => ({
 });
 
 const Indicadores: React.FC = () => {
+  const { matricula: matriculaParam } = useParams<{ matricula?: string }>();
+  const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
   const [registros, setRegistros] = useState<any[]>([]);
   const [mensuales, setMensuales] = useState<any[]>([]);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [selectedView, setSelectedView] = useState("checkUp");
-  const [isDetailOpen, setIsDetailOpen] = useState(false);
+  // Si ya venimos de /Indicadores/:matricula (clic en una fila o recarga
+  // directa de la URL), arrancamos en modo detalle desde el primer render
+  // para no mostrar ni un instante la vista de lista antes del detalle.
+  const [isDetailOpen, setIsDetailOpen] = useState<boolean>(() => Boolean(matriculaParam));
   const [isPanelOpen, setIsPanelOpen] = useState(false);
   const [selectedRow, setSelectedRow] = useState<any>(null);
   const [isCarnetOpen, setIsCarnetOpen] = useState(false);
@@ -83,10 +136,20 @@ const Indicadores: React.FC = () => {
   const [saving, setSaving] = useState(false);
   const [isEditingMensual, setIsEditingMensual] = useState(false);
   const [busqueda, setBusqueda] = useState("");
+  const [showFiltros, setShowFiltros] = useState(true);
   const [tendencias, setTendencias] = useState<any[]>([]);
   const [mensualTotales, setMensualTotales] = useState<any[]>([]);
   const [poblacion, setPoblacion] = useState<any[]>([]);
   const [exportando, setExportando] = useState(false);
+
+  // Igual que Pacientes.tsx: se recalcula con el resize/zoom para que la card
+  // principal siempre llene el espacio disponible del viewport.
+  const [pageHeight, setPageHeight] = useState<number>(() => Math.max(window.innerHeight - 150, 400));
+  useEffect(() => {
+    const updateHeight = () => setPageHeight(Math.max(window.innerHeight - 150, 400));
+    window.addEventListener("resize", updateHeight);
+    return () => window.removeEventListener("resize", updateHeight);
+  }, []);
 
   const sistolicaRef  = useRef<HTMLInputElement>(null);
   const diastolicaRef = useRef<HTMLInputElement>(null);
@@ -118,8 +181,8 @@ const Indicadores: React.FC = () => {
   };
 
   const sortIcon = (col: SortCol) => {
-    if (sortCol !== col || sortDir === "none") return "mdi-sort";
-    return sortDir === "asc" ? "mdi-sort-ascending" : "mdi-sort-descending";
+    if (sortCol !== col || sortDir === "none") return "fa-sort";
+    return sortDir === "asc" ? "fa-sort-up" : "fa-sort-down";
   };
 
   const calcImcStr = (peso: string, talla: string) => {
@@ -382,6 +445,24 @@ const Indicadores: React.FC = () => {
     fetchData();
   }
 
+  // Reconstruye el detalle (misma vista que se abre al hacer clic en una fila)
+  // a partir de la matrícula en la URL (/Indicadores/:matricula), para que sea
+  // una ventana con su propia ruta y aparezca en el breadcrumb del Topbar.
+  useEffect(() => {
+    if (!matriculaParam) {
+      setIsDetailOpen(false);
+      setSelectedRow(null);
+      return;
+    }
+    if (!registros.length) return;
+    const row = registros.find((r) => String(r.Matricula) === matriculaParam || String(r.Empl_matricula) === matriculaParam);
+    if (!row) return;
+    const { pesoIdeal, pesoPerder, perderMes } = calcMetaPeso(row);
+    setSelectedRow({ ...row, pesoIdeal, pesoPerder, perderMes });
+    setIsDetailOpen(true);
+    getMensual(selectedYear, row.Empl_matricula);
+  }, [matriculaParam, registros, selectedYear]);
+
   const mensualPorMes = Array.from({ length: 12 }, (_, index) => {
     const registro = mensuales.find((m) => {
       const fecha = new Date(m.Fecha);
@@ -425,10 +506,10 @@ const Indicadores: React.FC = () => {
     Swal.fire({
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">${title}</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">${message}</p>`,
-      iconHtml: `<i class="mdi mdi-check-circle-outline" style="color: #54BBAB; font-size: 90px"></i>`,
+      iconHtml: `<i class="fa-solid fa-check success-icon"></i><style> .success-icon { color: #545454; font-size: 90px; animation: pop 0.4s ease-out forwards, popPeriodic 4s ease-in-out 1.5s infinite; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } @keyframes popPeriodic { 0%, 85%, 100% { transform: scale(1); } 90% { transform: scale(1.15); } 95% { transform: scale(0.95); } } </style>`,
       didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" }); },
       buttonsStyling: false,
-      confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
+      confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> OK`,
       customClass: { confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer" },
     });
   };
@@ -437,10 +518,36 @@ const Indicadores: React.FC = () => {
     Swal.fire({
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">${title}</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">${message}</p>`,
-      iconHtml: `<i class="mdi mdi-alert-circle-outline" style="font-size: 90px"></i>`,
+      iconHtml: `
+      <i class="fa-solid fa-exclamation aviso-exclamation"></i>
+      <style>
+        .aviso-exclamation {
+          font-size: 90px;
+          animation: shakeInitial 0.6s ease-in-out,
+                     shakePeriodic 4s ease-in-out 1.5s infinite;
+        }
+        @keyframes shakeInitial {
+          0%   { transform: scale(0.5) rotate(0deg); opacity: 0; }
+          20%  { transform: scale(1.15) rotate(-12deg); opacity: 1; }
+          40%  { transform: scale(1.05) rotate(10deg); }
+          60%  { transform: scale(1.05) rotate(-7deg); }
+          80%  { transform: scale(1) rotate(5deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes shakePeriodic {
+          0%, 85%, 100% { transform: rotate(0deg); }
+          87% { transform: rotate(-10deg); }
+          89% { transform: rotate(10deg); }
+          91% { transform: rotate(-8deg); }
+          93% { transform: rotate(8deg); }
+          95% { transform: rotate(-4deg); }
+          97% { transform: rotate(4deg); }
+        }
+      </style>
+      `,
       didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" }); },
       buttonsStyling: false,
-      confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
+      confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> OK`,
       customClass: { confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer" },
     });
   };
@@ -560,39 +667,28 @@ const Indicadores: React.FC = () => {
   return (
     <div className="relative flex w-full overflow-hidden">
       <div className="flex-1 mt-14 transition-all duration-300 ease-in-out">
-        <div className="max-w-7xl mx-auto px-4 space-y-6 pb-5.5">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white/70 backdrop-blur-xl p-4 sm:p-6 rounded-xl shadow-xl gap-4">
+        <div className="max-w-7xl mx-auto px-4 pb-0 flex flex-col gap-6" style={isDetailOpen ? undefined : { height: pageHeight }}>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-xl shadow-xs shadow-restore gap-4 shrink-0">
             <div>
-              {isDetailOpen && selectedRow ? (
+              {isDetailOpen ? (
                 <>
-                  {/* <div className="flex items-center gap-2 min-w-0">
-                    {(() => {
-                      const nombre = String(selectedRow.Empl_Nombres ?? "");
-                      const partes = nombre.trim().split(/\s+/);
-                      const ini = partes.length >= 2 ? (partes[0][0] + partes[1][0]).toUpperCase() : nombre.slice(0,2).toUpperCase();
-                      return <div className="shrink-0 w-7 h-7 rounded-full bg-linear-to-br from-sea-blue to-sky-blue flex items-center justify-center text-white text-[10px] font-bold">{ini}</div>;
-                    })()}
-                  </div> */}
-                  <div className="flex items-center gap-2">
-                    <button
-                      title="Regresar"
-                      onClick={() => { setIsDetailOpen(false); setIsProgramarOpen(false); setIsPanelOpen(false); }}
-                      className="absolute w-9 h-9 text-gray-400 hover:text-sky-blue bg-linear-to-b hover:from-sky-blue/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
-                    >
-                      <i className="mdi mdi-chevron-left text-xl group-hover:-translate-x-0.5 transition-transform"></i>
-                    </button>
-                    <h1 className="ml-12 text-2xl font-bold text-sea-blue flex items-center">
-                      {selectedRow.Empl_Nombres}
-                    </h1>
-                  </div>
+                  <h1 className="text-2xl font-bold bg-linear-to-r from-sea-blue to-sky-blue bg-clip-text text-transparent flex items-center">
+                    {selectedRow ? selectedRow.Empl_Nombres : (
+                      <span className="inline-block h-7 w-56 rounded-md bg-gray-200 animate-pulse"></span>
+                    )}
+                  </h1>
                   <p className="text-sm text-gray-500 mt-1">
-                    Matrícula: <b>{selectedRow.Matricula}</b> | Contrato: <b>{selectedRow.Contrato}</b> | Depto.: <b>{selectedRow.Departamento}</b>
+                    {selectedRow ? (
+                      <>Matrícula: <b>{selectedRow.Matricula}</b> | Contrato: <b>{selectedRow.Contrato}</b> | Depto.: <b>{selectedRow.Departamento}</b></>
+                    ) : (
+                      <span className="inline-block h-4 w-72 rounded bg-gray-100 animate-pulse"></span>
+                    )}
                   </p>
-                </>              
+                </>
               ) : (
                 <>
                   <div>
-                    <h1 className="text-2xl font-bold text-sea-blue flex items-center">
+                    <h1 className="text-2xl font-bold bg-linear-to-r from-sea-blue to-sky-blue bg-clip-text text-transparent flex items-center">
                       Indicadores TNG Sano
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">
@@ -602,7 +698,7 @@ const Indicadores: React.FC = () => {
                 </>
               )}
             </div>
-            {isDetailOpen && selectedRow ? (
+            {isDetailOpen ? (
               <></>
             ) : (
               <div className="flex items-center gap-3">
@@ -612,11 +708,11 @@ const Indicadores: React.FC = () => {
                   // title="Exportar a Excel"
                   className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0 hidden"
                 >
-                  <i className={`mdi ${exportando ? "mdi-loading mdi-spin" : "mdi-file-excel"} mr-2`}></i>
+                  <i className={`fa-solid ${exportando ? "fa-spinner fa-spin" : "fa-file-excel"} mr-2`}></i>
                   {exportando ? "Generando..." : "Exportar"}
                 </button>
                 <div className="relative w-35">
-                  <i className="mdi mdi-calendar-blank absolute left-3 top-1/2 -translate-y-1/2 text-sea-blue text-base pointer-events-none" />
+                  <i className="fa-solid fa-calendar-days absolute left-3 top-1/2 -translate-y-1/2 text-sea-blue text-base pointer-events-none" />
                   <select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
@@ -628,104 +724,72 @@ const Indicadores: React.FC = () => {
                       </option>
                     ))}
                   </select>
-                  <i className="mdi mdi-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-sea-blue pointer-events-none"></i>
+                  <i className="fa-solid fa-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-sea-blue pointer-events-none"></i>
                 </div>
               </div>
             )}
-            {isDetailOpen && selectedRow && (
+            {MOSTRAR_BOTON_CARNET && isDetailOpen && selectedRow && (
               <button
                 onClick={() => setIsCarnetOpen(true)}
                 className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
               >
-                <i className="mdi mdi-magnify mr-2"></i>
+                <i className="fa-solid fa-magnifying-glass mr-2"></i>
                 Ver Carnet
               </button>
             )}
           </div>
 
-          {(isDetailOpen && selectedRow) && (
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-6 gap-y-6">
+          {isDetailOpen && (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-x-6 gap-y-6 shrink-0">
               <div className={`lg:col-span-1`}>
                 <motion.div
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 }}
-                  className={`bg-linear-to-b from-white to-gray-50 rounded-xl h-full shadow-xl p-6`}
+                  className={`bg-linear-to-b from-white to-gray-50 rounded-xl h-full shadow-xs p-6`}
                 >
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm font-bold text-gray-800 flex items-center">
-                      <i className="mdi mdi-human text-sea-blue mr-4"></i>
+                      <i className="fa-solid fa-person text-sea-blue mr-4"></i>
                       Índice Corporal Inicial
                     </h2>
                   </div>
 
                   <div className="grid grid-cols-2 gap-2">
-                    <div className={`relative bg-linear-to-b from-white to-gray-50 rounded-xl overflow-hidden flex items-center px-5 py-4 cursor-default group shadow-xl`}>
-                      <div className={`relative z-1 size-12 rounded-md bg-linear-to-b from-sea-blue to-sky-blue to-90% flex items-center justify-center flex-shrink-0 shadow-md transition-transform duration-300`}>
-                        <i className={`mdi mdi-gender-male-female text-white text-xl`}></i>
-                      </div>
-                      <div className="ml-4 flex-1 relative z-1 min-w-0">
-                        <p className="text-[10px] font-semibold text-gray-400 tracking-wide truncate">
-                          Edad / Sexo
-                        </p>
-                        <h2 className="text-xl font-bold text-gray-800 leading-tight">
-                          {selectedRow.Sexo ? ((calcEdadEnAnio(selectedRow.FechaNacimiento, selectedYear) ?? selectedRow.Edad) + ` / ` + selectedRow.Sexo) : "N/A"}
-                        </h2>
-                      </div>
-                    </div>
-                    <div className={`relative bg-linear-to-b from-white to-gray-50 rounded-xl overflow-hidden flex items-center px-5 py-4 cursor-default group shadow-xl`}>
-                      <div className={`relative z-1 size-12 rounded-md bg-linear-to-b from-sea-blue to-sky-blue to-90% flex items-center justify-center flex-shrink-0 shadow-md transition-transform duration-300`}>
-                        <i className={`mdi mdi-human-male-height text-white text-xl`}></i>
-                      </div>
-                      <div className="ml-4 flex-1 relative z-1 min-w-0">
-                        <p className="text-[10px] font-semibold text-gray-400 tracking-wide truncate">
-                          Talla
-                        </p>
-                        <h2 className="text-xl font-bold text-gray-800 leading-tight">
-                          {selectedRow.Altura ?? "N/A"}
-                        </h2>
-                      </div>
-                    </div>
-                    <div className={`relative bg-linear-to-b from-white to-gray-50 rounded-xl overflow-hidden flex items-center px-5 py-4 cursor-default group shadow-xl`}>
-                      <div className={`relative z-1 size-12 rounded-md bg-linear-to-b from-sea-blue to-sky-blue to-90% flex items-center justify-center flex-shrink-0 shadow-md transition-transform duration-300`}>
-                        <i className={`mdi mdi-scale text-white text-xl`}></i>
-                      </div>
-                      <div className="ml-4 flex-1 relative z-1 min-w-0">
-                        <p className="text-[10px] font-semibold text-gray-400 tracking-wide truncate">
-                          Peso Inicial
-                        </p>
-                        <h2 className="text-xl font-bold text-gray-800 leading-tight">
-                          {selectedRow.Peso ?? "N/A"}
-                        </h2>
-                      </div>
-                    </div>
-                    <div className={`relative bg-linear-to-b from-white to-gray-50 rounded-xl overflow-hidden flex items-center px-5 py-4 cursor-default group shadow-xl`}>
-                      <div className={`relative z-1 size-12 rounded-md bg-linear-to-b from-sea-blue to-sky-blue to-90% flex items-center justify-center flex-shrink-0 shadow-md transition-transform duration-300`}>
-                        <i className={`mdi mdi-scale-balance text-white text-xl`}></i>
-                      </div>
-                      <div className="ml-4 flex-1 relative z-1 min-w-0">
-                        <p className="text-[10px] font-semibold text-gray-400 tracking-wide truncate">
-                          IMC
-                        </p>
-                        <h2 className="text-xl font-bold text-gray-800 leading-tight">
-                          {selectedRow.IMC ?? "N/A"}
-                        </h2>
-                      </div>
-                    </div>
+                    <KpiCard
+                      icon="venus-mars"
+                      label="Edad / Sexo"
+                      value={selectedRow ? (selectedRow.Sexo ? ((calcEdadEnAnio(selectedRow.FechaNacimiento, selectedYear) ?? selectedRow.Edad) + ` / ` + selectedRow.Sexo) : "N/A") : <span className="inline-block h-5 w-16 rounded bg-gray-200 animate-pulse"></span>}
+                    />
+                    <KpiCard
+                      icon="ruler-vertical"
+                      label="Talla"
+                      value={selectedRow ? (selectedRow.Altura ?? "N/A") : <span className="inline-block h-5 w-12 rounded bg-gray-200 animate-pulse"></span>}
+                    />
+                    <KpiCard
+                      icon="weight-scale"
+                      label="Peso Inicial"
+                      value={selectedRow ? (selectedRow.Peso ?? "N/A") : <span className="inline-block h-5 w-12 rounded bg-gray-200 animate-pulse"></span>}
+                    />
+                    <KpiCard
+                      icon="scale-balanced"
+                      label="IMC"
+                      value={selectedRow ? (selectedRow.IMC ?? "N/A") : <span className="inline-block h-5 w-12 rounded bg-gray-200 animate-pulse"></span>}
+                    />
                   </div>
 
-                  <div className={`bg-linear-to-b from-blue-50 to-white rounded-xl border-horz-blue shadow-lg shadow-horz-blue mt-4 p-4`}>
+                  <div className={`bg-linear-to-b from-blue-50 to-white rounded-xl border border-horz-blue/20 shadow-xs mt-4 p-4`}>
                     <h2 className="text-sm font-bold flex items-center">
-                      <i className="mdi mdi-bullseye-arrow mr-3"></i>
+                      <i className="fa-solid fa-bullseye mr-3"></i>
                       Para cumplimiento de meta
                     </h2>
                     <div className="grid grid-cols-3 mt-1 gap-2">
                       <div className="text-center">
                         <p className="text-[10px] font-medium tracking-wide truncate">
-                          {Number(selectedRow.pesoPerder) > 0 ? "Total a ganar" : "Total a perder"}
+                          {selectedRow ? (Number(selectedRow.pesoPerder) > 0 ? "Total a ganar" : "Total a perder") : <span className="inline-block h-2.5 w-16 rounded bg-gray-200 animate-pulse"></span>}
                         </p>
                         <h2 className="text-xl font-bold leading-tight">
-                          {selectedRow.pesoPerder ? <>{selectedRow.pesoPerder} <span className="text-sm">kg</span></> : "N/A"}
+                          {selectedRow ? (selectedRow.pesoPerder ? <>{selectedRow.pesoPerder} <span className="text-sm">kg</span></> : "N/A") : <span className="inline-block h-5 w-12 rounded bg-gray-200 animate-pulse mt-1"></span>}
                         </h2>
                       </div>
                       <div className="px-2 text-center border-l border-r border-sky-blue/40">
@@ -733,7 +797,7 @@ const Indicadores: React.FC = () => {
                           Meta por mes
                         </p>
                         <h2 className="text-xl font-bold leading-tight">
-                          {selectedRow.perderMes && selectedRow.pesoPerder ? <>{selectedRow.perderMes && Number(selectedRow.perderMes) > 0 ? (Number(selectedRow.pesoPerder) / Number(selectedRow.perderMes)).toFixed(2) : "—"} <span className="text-sm">kg</span></> : "N/A"}
+                          {selectedRow ? (selectedRow.perderMes && selectedRow.pesoPerder ? <>{selectedRow.perderMes && Number(selectedRow.perderMes) > 0 ? (Number(selectedRow.pesoPerder) / Number(selectedRow.perderMes)).toFixed(2) : "—"} <span className="text-sm">kg</span></> : "N/A") : <span className="inline-block h-5 w-12 rounded bg-gray-200 animate-pulse mt-1"></span>}
                         </h2>
                       </div>
                       <div className="text-center">
@@ -741,7 +805,7 @@ const Indicadores: React.FC = () => {
                           Meta final
                         </p>
                         <h2 className="text-xl font-bold leading-tight">
-                          {selectedRow.pesoIdeal ? <>{selectedRow.pesoIdeal.toFixed(2)} <span className="text-sm">kg</span></> : "N/A"}
+                          {selectedRow ? (selectedRow.pesoIdeal ? <>{selectedRow.pesoIdeal.toFixed(2)} <span className="text-sm">kg</span></> : "N/A") : <span className="inline-block h-5 w-12 rounded bg-gray-200 animate-pulse mt-1"></span>}
                         </h2>
                       </div>
                     </div>
@@ -754,81 +818,91 @@ const Indicadores: React.FC = () => {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 }}
-                  className={`bg-linear-to-b from-white to-gray-50 rounded-xl h-full shadow-xl p-6`}
+                  className={`bg-linear-to-b from-white to-gray-50 rounded-xl h-full shadow-xs p-6`}
                 >
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm font-bold text-gray-800 flex items-center">
-                      <i className="mdi mdi-account-heart text-sea-blue mr-4"></i>
+                      <i className="fa-solid fa-hand-holding-medical text-sea-blue mr-4"></i>
                       Toma Inicial de Indicadores
                     </h2>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 mt-2 py-2.5 px-3 text-gray-700 rounded-xl shadow-md transition-colors duration-200">
+                  <div className="grid grid-cols-3 gap-2 mt-2 py-2.5 px-3 text-gray-700 rounded-xl shadow-xs transition-colors duration-200">
                     <div className={`lg:col-span-2`}>
                       <h2 className="text-sm mr-3 font-bold flex items-center min-w-0 w-full">
-                        <i className="mdi mdi-ruler-square bg-linear-to-b from-sea-blue to-sky-blue text-white px-2 py-1 rounded-md mr-3"></i>
+                        <div className="size-6 rounded-md bg-linear-to-b from-sea-blue to-sky-blue flex items-center justify-center shrink-0 mr-3">
+                          <i className="fa-solid fa-ruler-horizontal text-white text-[10px]"></i>
+                        </div>
                         Perímetro Abdominal
                       </h2>
                     </div>
                     <div className={`lg:col-span-1 text-right`}>
                       <h2 className="text-sm text-right mr-3 font-bold min-w-0 w-full">
-                        {selectedRow.PA ? selectedRow.PA + ' cm' : "N/A"}
+                        {selectedRow ? (selectedRow.PA ? selectedRow.PA + ' cm' : "N/A") : <span className="inline-block h-4 w-12 rounded bg-gray-200 animate-pulse"></span>}
                       </h2>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 mt-2 py-2.5 px-3 text-gray-700 rounded-xl shadow-md transition-colors duration-200">
+                  <div className="grid grid-cols-3 gap-2 mt-2 py-2.5 px-3 text-gray-700 rounded-xl shadow-xs transition-colors duration-200">
                     <div className={`lg:col-span-2`}>
                       <h2 className="text-sm mr-3 font-bold flex items-center min-w-0 w-full">
-                        <i className="mdi mdi-water bg-linear-to-b from-sea-blue to-sky-blue text-white px-2 py-1 rounded-md mr-3"></i>
+                        <div className="size-6 rounded-md bg-linear-to-b from-sea-blue to-sky-blue flex items-center justify-center shrink-0 mr-3">
+                          <i className="fa-solid fa-droplet text-white text-[10px]"></i>
+                        </div>
                         Glucosa
                       </h2>
                     </div>
                     <div className={`lg:col-span-1 text-right`}>
                       <h2 className="text-sm text-right mr-3 font-bold min-w-0 w-full">
-                        {selectedRow.Glucosa ? selectedRow.Glucosa + ' mg/dL' : "N/A"}
+                        {selectedRow ? (selectedRow.Glucosa ? selectedRow.Glucosa + ' mg/dL' : "N/A") : <span className="inline-block h-4 w-12 rounded bg-gray-200 animate-pulse"></span>}
                       </h2>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 mt-2 py-2.5 px-3 text-gray-700 rounded-xl shadow-md transition-colors duration-200">
+                  <div className="grid grid-cols-3 gap-2 mt-2 py-2.5 px-3 text-gray-700 rounded-xl shadow-xs transition-colors duration-200">
                     <div className={`lg:col-span-2`}>
                       <h2 className="text-sm mr-3 font-bold flex items-center min-w-0 w-full">
-                        <i className="mdi mdi-virus bg-linear-to-b from-sea-blue to-sky-blue text-white px-2 py-1 rounded-md mr-3"></i>
+                        <div className="size-6 rounded-md bg-linear-to-b from-sea-blue to-sky-blue flex items-center justify-center shrink-0 mr-3">
+                          <i className="fa-solid fa-flask text-white text-[10px]"></i>
+                        </div>
                         Colesterol
                       </h2>
                     </div>
                     <div className={`lg:col-span-1 text-right`}>
                       <h2 className="text-sm text-right mr-3 font-bold min-w-0 w-full">
-                        {selectedRow.Colesterol ? (/[a-zA-Z]/.test(String(selectedRow.Colesterol)) ? selectedRow.Colesterol : selectedRow.Colesterol + ' mg/dL') : "N/A"}
+                        {selectedRow ? (selectedRow.Colesterol ? (/[a-zA-Z]/.test(String(selectedRow.Colesterol)) ? selectedRow.Colesterol : selectedRow.Colesterol + ' mg/dL') : "N/A") : <span className="inline-block h-4 w-12 rounded bg-gray-200 animate-pulse"></span>}
                       </h2>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 mt-2 py-2.5 px-3 text-gray-700 rounded-xl shadow-md transition-colors duration-200">
+                  <div className="grid grid-cols-3 gap-2 mt-2 py-2.5 px-3 text-gray-700 rounded-xl shadow-xs transition-colors duration-200">
                     <div className={`lg:col-span-2`}>
                       <h2 className="text-sm mr-3 font-bold flex items-center min-w-0 w-full">
-                        <i className="mdi mdi-atom-variant bg-linear-to-b from-sea-blue to-sky-blue text-white px-2 py-1 rounded-md mr-3"></i>
+                        <div className="size-6 rounded-md bg-linear-to-b from-sea-blue to-sky-blue flex items-center justify-center shrink-0 mr-3">
+                          <i className="fa-solid fa-atom text-white text-[10px]"></i>
+                        </div>
                         Triglicéridos
                       </h2>
                     </div>
                     <div className={`lg:col-span-1 text-right`}>
                       <h2 className="text-sm text-right mr-3 font-bold min-w-0 w-full">
-                        {selectedRow.Trigliceridos ? selectedRow.Trigliceridos + ' mg/dL' : "N/A"}
+                        {selectedRow ? (selectedRow.Trigliceridos ? selectedRow.Trigliceridos + ' mg/dL' : "N/A") : <span className="inline-block h-4 w-12 rounded bg-gray-200 animate-pulse"></span>}
                       </h2>
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-3 gap-2 mt-2 py-2.5 px-3 text-gray-700 rounded-xl shadow-md transition-colors duration-200">
+                  <div className="grid grid-cols-3 gap-2 mt-2 py-2.5 px-3 text-gray-700 rounded-xl shadow-xs transition-colors duration-200">
                     <div className={`lg:col-span-2`}>
                       <h2 className="text-sm mr-3 font-bold flex items-center min-w-0 w-full">
-                        <i className="mdi mdi-heart-pulse bg-linear-to-b from-sea-blue to-sky-blue text-white px-2 py-1 rounded-md mr-3"></i>
+                        <div className="size-6 rounded-md bg-linear-to-b from-sea-blue to-sky-blue flex items-center justify-center shrink-0 mr-3">
+                          <i className="fa-solid fa-heart-pulse text-white text-[10px]"></i>
+                        </div>
                         Tensión Arterial (TA)
                       </h2>
                     </div>
                     <div className={`lg:col-span-1 text-right`}>
                       <h2 className="text-sm text-right mr-3 font-bold min-w-0 w-full">
-                        {selectedRow.Sistolica && selectedRow.Diastolica ? selectedRow.Sistolica + " / " + selectedRow.Diastolica : ""}
+                        {selectedRow ? (selectedRow.Sistolica && selectedRow.Diastolica ? selectedRow.Sistolica + " / " + selectedRow.Diastolica : "") : <span className="inline-block h-4 w-12 rounded bg-gray-200 animate-pulse"></span>}
                       </h2>
                     </div>
                   </div>
@@ -840,16 +914,30 @@ const Indicadores: React.FC = () => {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.3 }}
-                  className={`bg-linear-to-b from-white to-gray-50 rounded-xl h-full shadow-xl p-6 flex flex-col`}
+                  className={`bg-linear-to-b from-white to-gray-50 rounded-xl h-full shadow-xs p-6 flex flex-col`}
                 >
                   <div className="flex items-center justify-between">
                     <h2 className="text-sm font-bold text-gray-800 flex items-center">
-                      <i className="mdi mdi-chart-donut text-sea-blue mr-4"></i>
+                      <i className="fa-solid fa-chart-pie text-sea-blue mr-4"></i>
                       Progreso Real Acumulado
                     </h2>
                   </div>
 
-                  {(() => {
+                  {!selectedRow ? (
+                    <div className="flex-1 flex flex-col items-center justify-center mt-4">
+                      <div className="relative w-40 h-40 rounded-full bg-gray-100 animate-pulse"></div>
+                      <div className="grid grid-cols-2 gap-2 w-full mt-4">
+                        <div className="text-center space-y-1.5">
+                          <div className="h-2.5 w-20 mx-auto rounded bg-gray-200 animate-pulse"></div>
+                          <div className="h-5 w-14 mx-auto rounded bg-gray-200 animate-pulse"></div>
+                        </div>
+                        <div className="text-center space-y-1.5 border-l border-gray-100">
+                          <div className="h-2.5 w-20 mx-auto rounded bg-gray-200 animate-pulse"></div>
+                          <div className="h-5 w-14 mx-auto rounded bg-gray-200 animate-pulse"></div>
+                        </div>
+                      </div>
+                    </div>
+                  ) : (() => {
                     const pesoInicial = selectedRow.Peso ? Number(selectedRow.Peso) : null;
                     const metaPerder = selectedRow.pesoPerder ? Number(selectedRow.pesoPerder) : null;
 
@@ -927,32 +1015,31 @@ const Indicadores: React.FC = () => {
               </div>
             </div>
           )}
-          
+
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="bg-linear-to-b from-white to-gray-50 rounded-xl shadow-xl overflow-hidden flex flex-col min-h-125"
+            className={`bg-white rounded-xl shadow-xs p-6 mb-1 flex flex-col ${isDetailOpen ? "" : "overflow-hidden flex-1 min-h-0"}`}
           >
-            {isDetailOpen && selectedRow ? (
-              <div className="flex flex-col flex-1 min-h-0">
-                <div className="flex items-center justify-between gap-3 mt-3 px-6 py-4">
-                  {/* bg-linear-to-r from-white to-gray-100 */}
+            {isDetailOpen ? (
+              selectedRow ? (
+              <div className="flex flex-col">
+                <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
                   <h2 className="text-sm font-bold text-gray-800 flex items-center">
-                    <i className="mdi mdi-chart-timeline-variant text-sea-blue mr-4"></i>
+                    <i className="fa-solid fa-clock-rotate-left text-sea-blue mr-3"></i>
                     Seguimiento Mensual
                   </h2>
                   {(() => {
                     const cumplidos = mensualPorMes.filter(({ data }) => data && data.Riesgo !== "Falta").length;
                     return (
-                      <span className="flex items-center gap-1.5 px-3 py-1 rounded-lg text-xs font-semibold bg-linear-to-r from-sea-blue/10 to-sky-blue/10 text-sea-blue shadow-sm">
-                        <i className="mdi mdi-check-decagram"></i>
-                        Cumplimiento: {cumplidos} / 12
+                      <span className="text-xs font-bold text-gray-400">
+                        {cumplidos} / 12 cumplidos
                       </span>
                     );
                   })()}
                 </div>
 
-                <div className="grid grid-cols-4 gap-2 p-6">
+                <div className="grid grid-cols-4 gap-2">
                   {mensualPorMes.map(({ mes, data }, idx) => {
                     // Plan de pérdida de peso
                     const pesoInicialPlan = selectedRow?.Peso ? Number(selectedRow.Peso) : null;
@@ -985,7 +1072,7 @@ const Indicadores: React.FC = () => {
                     return (
                     <div
                       key={idx}
-                      className="lg:col-span-1 rounded-md shadow-xl p-6"
+                      className="lg:col-span-1 rounded-md shadow-xs p-6"
                     >
                       <div className="flex items-center justify-between">
                         <h2 className="text-sm font-bold">
@@ -1015,12 +1102,12 @@ const Indicadores: React.FC = () => {
                               className="flex items-center gap-2 px-2 p-1.5 rounded-xl text-gray-600 hover:text-sea-blue hover:bg-sea-blue/10 transition-colors cursor-pointer"
                               title="Editar"
                             >
-                              <i className="mdi mdi-pencil text-sm"></i>
+                              <i className="fa-solid fa-pencil text-sm"></i>
                               <span className="text-sm">{mes.nombre}</span>
                             </button>
                           ) : (
                             <>
-                              <i className="mdi mdi-calendar-today mr-2"></i>
+                              <i className="fa-solid fa-calendar-days mr-2"></i>
                               {mes.nombre}
                             </>
                           )}
@@ -1046,7 +1133,7 @@ const Indicadores: React.FC = () => {
                             <p>Peso del mes</p>
                             <strong className="flex items-center gap-1">
                               {(bajo || subio) && (
-                                <i className={`mdi ${bajo ? "mdi-trending-down" : "mdi-trending-up"} ${mejoro ? "text-aqua-green" : "text-red-500"}`}></i>
+                                <i className={`fa-solid ${bajo ? "fa-arrow-trend-down" : "fa-arrow-trend-up"} ${mejoro ? "text-aqua-green" : "text-red-500"}`}></i>
                               )}
                               {data.Peso ? `${data.Peso} kg` : "N/A"}
                             </strong>
@@ -1075,12 +1162,12 @@ const Indicadores: React.FC = () => {
                           const boxCls = estado === "mejoro" ? "bg-aqua-green/10 text-aqua-green" : estado === "empeoro" ? "bg-red-50 text-red-500" : "bg-gray-100 text-gray-500";
                           const circleCls = estado === "mejoro" ? "bg-aqua-green text-white" : estado === "empeoro" ? "bg-red-500 text-white" : "bg-gray-400 text-white";
                           // La flecha indica el movimiento real del peso (bajó/subió); el color indica si mejoró o empeoró
-                          const arrow = bajo ? "mdi-arrow-down-bold" : subio ? "mdi-arrow-up-bold" : "mdi-equal";
+                          const arrow = bajo ? "fa-arrow-down" : subio ? "fa-arrow-up" : "fa-equals";
                           return (
                             <div className={`flex items-center justify-between mt-3 px-3 py-2 rounded-lg ${boxCls}`}>
                               <div className="flex items-center gap-2">
                                 <span className={`w-4 h-4 pl-[1px] rounded-full flex items-center justify-center ${circleCls}`}>
-                                  <i className={`mdi ${arrow} text-[11px]`}></i>
+                                  <i className={`fa-solid ${arrow} text-[11px]`}></i>
                                 </span>
                                 <span className="text-[11px] font-medium">
                                   Avance mensual
@@ -1137,7 +1224,7 @@ const Indicadores: React.FC = () => {
                             }}
                             className="text-xs font-semibold hover:text-sea-blue cursor-pointer"
                           >
-                            <i className="mdi mdi-plus-thick mr-2"></i>
+                            <i className="fa-solid fa-plus mr-2"></i>
                             Registrar toma
                           </button>
                           
@@ -1148,37 +1235,43 @@ const Indicadores: React.FC = () => {
                   })}
                 </div>
               </div>
+              ) : (
+                <div className="flex flex-col">
+                  <div className="flex items-center justify-between gap-3 mb-4 shrink-0">
+                    <div className="h-4 w-48 rounded bg-gray-200 animate-pulse"></div>
+                    <div className="h-3 w-20 rounded bg-gray-200 animate-pulse"></div>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {Array.from({ length: 12 }).map((_, i) => (
+                      <div key={i} className="lg:col-span-1 rounded-md shadow-xs p-6 animate-pulse">
+                        <div className="h-4 w-20 rounded bg-gray-200 mb-3"></div>
+                        <div className="space-y-2">
+                          <div className="h-3 rounded bg-gray-100"></div>
+                          <div className="h-3 rounded bg-gray-100"></div>
+                          <div className="h-3 rounded bg-gray-100"></div>
+                        </div>
+                        <div className="h-8 rounded-lg bg-gray-100 mt-3"></div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )
             ) : (
               <>
-                <div className="flex items-center justify-between px-6 py-3 bg-linear-to-r from-white to-gray-100 rounded-t-xl">
-                  <div className="relative w-92">
-                    <Search className="h-3.5 w-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-                    <input
-                      type="text"
-                      value={busqueda}
-                      onChange={(e) => setBusqueda(e.target.value)}
-                      placeholder="Buscar por nombre o matrícula"
-                      className={`w-full bg-white border rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none transition-colors border-gray-100 shadow-md focus:border-clinical-blue focus:ring-1`}
-                    />
-                    {busqueda && (
-                      <button
-                        onClick={() => setBusqueda("")}
-                        title="Limpiar"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-400 hover:text-sea-blue cursor-pointer"
-                      >
-                        <i className="mdi mdi-close-circle text-base"></i>
-                      </button>
-                    )}
-                  </div>
+                <div className="flex items-center justify-between gap-3 mb-4 shrink-0 flex-wrap">
+                  <h2 className="text-sm font-bold text-gray-800 flex items-center">
+                    <i className={`fa-solid ${selectedView === "checkUp" ? "fa-heart-pulse" : selectedView === "graficas" ? "fa-chart-line" : "fa-clock-rotate-left"} text-sea-blue mr-3`}></i>
+                    {selectedView === "checkUp" ? "Indicadores" : selectedView === "graficas" ? "Gráficas Poblacionales" : "Tendencia de Salud Anual"}
+                  </h2>
 
-                  <div className="flex items-center gap-3">
-                    <div className="flex items-center gap-1 bg-white border border-gray-100 shadow-md rounded-lg p-1">
+                  {MOSTRAR_TABS_VISTA && (
+                    <div className="flex items-center gap-1 bg-white border border-gray-50 shadow-xs rounded-lg p-1">
                       <button
                         onClick={() => setSelectedView("checkUp")}
                         // title="Vista Check-up"
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${selectedView === "checkUp" ? "bg-linear-to-r from-sea-blue to-sky-blue text-white shadow-md" : "text-gray-500 hover:text-sea-blue"}`}
                       >
-                        <i className="mdi mdi-pulse"></i>
+                        <i className="fa-solid fa-heart-pulse"></i>
                         Check-up
                       </button>
                       <button
@@ -1186,7 +1279,7 @@ const Indicadores: React.FC = () => {
                         // title="Gráficas"
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${selectedView === "graficas" ? "bg-linear-to-r from-sea-blue to-sky-blue text-white shadow-md" : "text-gray-500 hover:text-sea-blue"}`}
                       >
-                        <i className="mdi mdi-chart-line"></i>
+                        <i className="fa-solid fa-chart-line"></i>
                         Gráficas
                       </button>
                       <button
@@ -1194,104 +1287,114 @@ const Indicadores: React.FC = () => {
                         // title="Tendencia de salud anual"
                         className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-medium transition-all cursor-pointer ${selectedView === "anual" ? "bg-linear-to-r from-sea-blue to-sky-blue text-white shadow-md" : "text-gray-500 hover:text-sea-blue"}`}
                       >
-                        <i className="mdi mdi-chart-timeline-variant"></i>
+                        <i className="fa-solid fa-clock-rotate-left"></i>
                         Tendencia
                       </button>
                     </div>
-                    {/* {selectedView === "checkUp" && (
-                      
-                    )} */}
-                  </div>
+                  )}
                 </div>
-                
+
                 {selectedView === "checkUp" ? (
-                  <div className="space-y-4">
-                    <div className="relative rounded-lg h-[555px] flex flex-col">
-                      {loading && (
-                        <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/70 backdrop-blur-sm rounded-lg">
-                          <i className="mdi mdi-loading mdi-spin text-sea-blue text-4xl"></i>
-                          <span className="mt-2 text-xs font-medium text-gray-500">Cargando indicadores...</span>
+                  <div className="flex-1 min-h-0 flex flex-col">
+                    <div className="relative bg-white rounded-lg shadow-xs flex-1 min-h-0 flex flex-col overflow-hidden">
+                      {loading ? (
+                        <div className="flex-1 min-h-0 overflow-auto rounded-lg">
+                          <IndicadoresTablaSkeleton />
                         </div>
-                      )}
-                      <div className="flex-1 overflow-y-auto">
+                      ) : (
+                      <div className="flex-1 min-h-0 overflow-auto rounded-lg">
                         <table className="table-fixed w-full text-xs">
-                          <thead className="sticky top-0 z-10">
-                            {/* <tr className="bg-linear-to-r from-white to-gray-100">
-                              <th colSpan={7} className="text-xs font-semibold text-gray-400 truncate tracking-wider uppercase">
-                                Check up - Personal confianza {currentYear}
-                              </th>
-                              <th colSpan={7} className="text-xs font-semibold text-gray-400 truncate tracking-wider uppercase">
-                                Seguimiento peso inicial - peso meta
-                              </th>
-                            </tr> */}
-                            <tr className="bg-linear-to-r from-white to-gray-100">
-                              <th className="px-2 py-2 pl-6 text-left font-medium text-gray-600 whitespace-nowrap hidden">
+                          <thead className="sticky top-0 z-10 bg-gray-50">
+                            <tr className="text-gray-700 text-left">
+                              <th className="px-2 py-3 pl-6 text-left font-semibold text-gray-600 whitespace-nowrap hidden">
                                 Contrato
                               </th>
-                              {/* <th style={{ width: "60px" }} className="px-2 py-2 pl-6 text-left font-medium text-gray-600 whitespace-nowrap">
-                                Departamento
-                              </th> */}
                               {([
-                                { col: "Matricula",       label: "Mat.",              cls: "py-2 pl-2 text-left w-20",   align: "justify-center", sortable: true  },
-                                { col: "Empl_Nombres",    label: "Nombre",            cls: "px-3 py-2 text-left w-90",   align: "justify-start",  sortable: true  },
-                                { col: null,              label: "Fecha\nnacimiento", cls: "py-2 text-center w-24",        align: "justify-center", sortable: false },
-                                { col: "Edad",            label: "Edad",              cls: "py-2 text-left w-16",        align: "justify-center", sortable: true  },
-                                { col: "Sexo",            label: "Sexo",              cls: "py-2 text-left w-16",        align: "justify-center", sortable: true  },
-                                { col: "Altura",          label: "Talla",             cls: "py-2 text-left w-16",        align: "justify-center", sortable: true  },
-                                { col: "Peso",            label: "Peso",              cls: "py-2 text-left w-14",        align: "justify-center", sortable: true  },
-                                { col: "IMC",             label: "IMC",               cls: "py-2 text-left w-18",        align: "justify-center", sortable: true  },
-                              ] as { col: SortCol; label: string; cls: string; align: string; sortable: boolean }[]).map(({ col, label, cls, align, sortable }) => {
+                                { col: "Matricula",       label: "Matrícula",         icon: "fa-brands fa-slack", cls: "px-5 py-3 text-left w-[110px]", align: "justify-start", sortable: true  },
+                                { col: "Empl_Nombres",    label: "Nombre",            icon: "fa-solid fa-user",   cls: "px-5 py-3 text-left",         align: "justify-start",  sortable: true  },
+                                { col: "FechaNacimiento", label: "Fecha\nnacimiento", icon: "fa-cake-candles",    cls: "py-3 text-center w-24 hidden", align: "justify-center", sortable: true },
+                                { col: "Edad",            label: "Edad",              icon: "fa-cake-candles",    cls: "px-3 py-3 text-center w-24", align: "justify-center", sortable: true  },
+                                { col: "Sexo",            label: "Sexo",              icon: "fa-venus-mars",      cls: "px-3 py-3 text-center w-20", align: "justify-center", sortable: true  },
+                                { col: "Altura",          label: "Talla",             icon: "fa-ruler-vertical",  cls: "px-3 py-3 text-center w-24", align: "justify-center", sortable: true  },
+                                { col: "Peso",            label: "Peso",              icon: "fa-weight-scale",    cls: "px-3 py-3 text-center w-24", align: "justify-center", sortable: true  },
+                                { col: "IMC",             label: "IMC",               icon: "fa-scale-balanced",  cls: "px-3 py-3 text-center w-24", align: "justify-center", sortable: true  },
+                              ] as { col: SortCol; label: string; icon: string; cls: string; align: string; sortable: boolean }[]).map(({ col, label, icon, cls, align, sortable }) => {
                                 const active = sortable && sortCol === col && sortDir !== "none";
                                 return (
                                   <th key={label}
                                     onClick={sortable && col ? () => cycleSort(col) : undefined}
-                                    className={`${cls} font-medium text-gray-700 ${sortable ? "cursor-pointer select-none group" : ""}`}>
+                                    className={`${cls} font-semibold text-gray-700 ${sortable ? "cursor-pointer select-none group" : ""}`}>
                                     <span className={`flex items-center ${align} gap-1`}>
+                                      <i className={`${icon.includes(" ") ? icon : `fa-solid ${icon}`} text-[10px] text-gray-400 group-hover:text-gray-500 mr-1`}></i>
                                       <span>{label.includes("\n") ? <>{label.split("\n")[0]}<br/>{label.split("\n")[1]}</> : label}</span>
-                                      {sortable && <i className={`mdi ${sortIcon(col)} text-sm transition-colors ${active ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`} />}
+                                      {sortable && <i className={`fa-solid ${sortIcon(col)} text-[10px] transition-colors ${active ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`} />}
                                     </span>
                                   </th>
                                 );
                               })}
-                              <th className="py-2 text-left font-medium text-gray-700 mb-1">
+                              <th className="py-3 text-left font-semibold text-gray-700 hidden">
                                 Meta final<br></br>(peso)
                               </th>
-                              <th className="py-2 text-left font-medium text-gray-700 mb-1">
+                              <th className="py-3 text-left font-semibold text-gray-700 hidden">
                                 Total kg<br></br>a perder
                               </th>
-                              <th className="py-2 text-left font-medium text-gray-700 mb-1 w-16 hidden">
+                              <th className="py-3 text-left font-semibold text-gray-700 w-16 hidden">
                                 Periodo<br></br>(meses)
                               </th>
-                              <th className="py-2 text-left font-medium text-gray-700 mb-1 w-18 hidden">
+                              <th className="py-3 text-left font-semibold text-gray-700 w-18 hidden">
                                 Kg perder<br></br>por mes
                               </th>
                               <th
-                                // onClick={() => cycleSort("categoria")}
-                                className="py-2 text-left font-medium text-gray-700 mb-1"
+                                onClick={() => cycleSort("categoria")}
+                                className="px-3 py-3 text-left w-48 font-semibold text-gray-700 cursor-pointer select-none group"
                               >
-                                Categoría<br></br>(OMS)
+                                <span className="flex items-center justify-start gap-1">
+                                  <i className="fa-solid fa-tags text-[10px] text-gray-400 group-hover:text-gray-500 mr-1"></i>
+                                  <span>Categoría (OMS)</span>
+                                  <i className={`fa-solid ${sortIcon("categoria")} text-[10px] transition-colors ${sortCol === "categoria" && sortDir !== "none" ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`} />
+                                </span>
                               </th>
-                              <th className="py-2 text-center font-medium text-gray-700 mb-1">
-                                Acciones
+                              <th className="w-10 pr-3 py-3 text-right">
+                                <i
+                                  onClick={(e) => { e.stopPropagation(); setShowFiltros((v) => !v); }}
+                                  title={showFiltros ? "Ocultar filtros" : "Mostrar filtros"}
+                                  className={`fa-solid ${showFiltros ? "fa-filter-circle-xmark" : "fa-filter"} cursor-pointer text-xs transition-colors ${showFiltros || busqueda ? "text-sea-blue" : "text-gray-300 hover:text-gray-400"}`}
+                                ></i>
                               </th>
-                              {/* {views[selectedView].headers.map((h, i) => (
-                                <th key={h} className={`px-2 py-2 text-left font-medium text-gray-600 whitespace-nowrap ${views[selectedView].widths[i]}`}>
-                                  {h}
-                                </th>
-                              ))} */}
                             </tr>
+                            {showFiltros && (
+                              <tr className="bg-gray-50 text-left h-11">
+                                <td colSpan={2} className="px-5 py-2">
+                                  <div className="relative w-72">
+                                    <i className="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                    <input
+                                      type="text"
+                                      value={busqueda}
+                                      onChange={(e) => setBusqueda(e.target.value)}
+                                      placeholder="Buscar por nombre o matrícula"
+                                      className="w-full h-7 pl-8 pr-7 py-1 rounded-md text-xs shadow-xs bg-white outline-none focus:ring-1 focus:ring-sea-blue"
+                                    />
+                                    {busqueda && (
+                                      <button
+                                        type="button"
+                                        onClick={() => setBusqueda("")}
+                                        title="Limpiar"
+                                        className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-400 transition-colors cursor-pointer"
+                                      >
+                                        <i className="fa-solid fa-circle-xmark text-xs"></i>
+                                      </button>
+                                    )}
+                                  </div>
+                                </td>
+                                <td colSpan={6}></td>
+                                <td className="w-10 pr-3"></td>
+                              </tr>
+                            )}
                           </thead>
                           <tbody>
                             {sortedRegistros.map((row, idx) => {
-                              const constSexo = row.Sexo == "M" ? 23 : row.Sexo == "F" ? 21.5 : 0;
-                              const pesoIdeal = row.Altura ? ((row.Altura * row.Altura) * constSexo) * 0.13 + ((row.Altura * row.Altura) * constSexo) : null;
-                              // Negativo => debe bajar de peso; positivo => debe subir de peso
-                              const pesoPerderRaw = (row.Peso && pesoIdeal != null) ? pesoIdeal - row.Peso : null;
-                              const pesoPerder = pesoPerderRaw != null ? parseFloat(pesoPerderRaw.toFixed(2)).toString() : null;
-                              // El periodo (meses) se calcula con la magnitud, sin importar la dirección
-                              const magPerder = pesoPerderRaw != null ? Math.abs(pesoPerderRaw) : null;
-                              const perderMes = magPerder != null ? (magPerder === 0 ? 0 : magPerder <= 3.5 ? 1 : magPerder <= 5 ? 3 : magPerder <= 10 ? 6 : magPerder <= 16 ? 12 : 18) : null;
-                              
+                              const { pesoIdeal, pesoPerder, perderMes } = calcMetaPeso(row);
+
                               return (
                                 <motion.tr
                                   initial={{ opacity: 0, y: -1 }}
@@ -1299,7 +1402,8 @@ const Indicadores: React.FC = () => {
                                   exit={{ opacity: 0, x: -20 }}
                                   transition={{ duration: 0.2 }}
                                   key={idx}
-                                  className="group hover:bg-gray-50/80 transition-colors"
+                                  onClick={() => navigate(`/Indicadores/${encodeURIComponent(row.Matricula)}`, { state: { nombre: row.Empl_Nombres } })}
+                                  className="group border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors cursor-pointer"
                                 >
                                   <td className="px-2 pl-6 py-1.5 text-gray-700 break-words hidden">
                                     {row.Contrato}
@@ -1307,61 +1411,44 @@ const Indicadores: React.FC = () => {
                                   {/* <td className="px-2 pl-6 py-1.5 text-gray-700 break-words">
                                     {row.Departamento}
                                   </td> */}
-                                  <td className="px-2 pl-6 text-left font-medium text-gray-700 mb-1">
-                                    <p className="text-[12px] font-bold uppercase text-gray-600 block truncate">
+                                  <td className="px-5 py-0 text-left font-medium text-gray-700">
+                                    <p className="text-[12px] font-bold uppercase text-gray-600 block truncate group-hover:text-sea-blue transition-colors">
                                       {row.Matricula}
                                     </p>
-                                    <p className="text-[11px] text-gray-400 font-medium uppercase truncate">
+                                    <p className="text-[10px] text-gray-400 uppercase truncate group-hover:font-semibold transition-all">
                                       {row.Contrato == "CORPORATIVO" ? "" : row.Contrato}
                                     </p>
                                   </td>
-                                  <td className="px-2 py-1.5">
-                                    <div className="flex items-center gap-2">
-                                      {/* Círculo con iniciales */}
-                                      {(() => {
-                                        const nombre = String(row.Empl_Nombres ?? "");
-                                        const partes = nombre.trim().split(/\s+/);
-                                        const iniciales = partes.length >= 2 ? (partes[0][0] + partes[1][0]).toUpperCase() : nombre.slice(0, 2).toUpperCase();
-                                        return (
-                                          <div className="shrink-0 w-8 h-8 rounded-full bg-linear-to-br from-sea-blue to-sky-blue flex items-center justify-center text-white text-[10px] font-bold select-none">
-                                            {iniciales}
-                                          </div>
-                                        );
-                                      })()}
-                                      <div className="overflow-hidden min-w-0">
-                                        <p className="text-[12px] font-bold uppercase text-gray-600 block truncate">
-                                          {row.Empl_Nombres}
-                                        </p>
-                                        <p className="text-[11px] text-gray-400 font-medium uppercase truncate">
-                                          {/* {(row.CURP && row.CURP != null) ? String(row.CURP) : ""} */}
-                                          {row.Departamento}
-                                        </p>
-                                      </div>
-                                    </div>
+                                  <td className="px-5 py-0">
+                                    <p className="text-[12px] font-bold uppercase text-gray-600 truncate group-hover:text-sea-blue transition-colors">
+                                      {row.Empl_Nombres}
+                                    </p>
+                                    <p className="text-[10px] text-gray-400 uppercase truncate group-hover:font-semibold transition-all">
+                                      {row.Departamento}
+                                    </p>
                                   </td>
-                                  <td className="px-2 py-1.5 text-center font-medium text-gray-700 mb-1">
+                                  <td className="px-2 py-1.5 text-center font-medium text-gray-700 mb-1 hidden">
                                     {row.FechaNacimiento ? (() => { const [y,m,d] = String(row.FechaNacimiento).split("T")[0].split("-"); return `${d}-${m}-${y}`; })() : ""}
                                   </td>
-                                  <td className="px-3 py-1.5 text-left font-medium text-gray-700 mb-1">
+                                  <td className="px-3 py-2 text-center text-gray-700 mb-1 group-hover:font-semibold transition-all">
                                     {calcEdadEnAnio(row.FechaNacimiento, selectedYear) ?? row.Edad}
                                   </td>
-                                  <td className="px-3 py-1.5 text-left font-medium text-gray-700 mb-1">
+                                  <td className="px-3 py-2 text-center text-gray-700 mb-1 group-hover:font-semibold transition-all">
                                     {row.Sexo}
                                   </td>
-                                  <td className="px-3 py-1.5 text-left font-semibold text-gray-700 mb-1">
+                                  <td className="px-3 py-2 text-center text-gray-700 mb-1 group-hover:font-semibold transition-all">
                                     {row.Altura}
                                   </td>
-                                  <td className="px-1 py-1.5 text-left font-semibold text-gray-700 mb-1">
+                                  <td className="px-3 py-2 text-center text-gray-700 mb-1 group-hover:font-semibold transition-all">
                                     {row.Peso}
                                   </td>
-                                  <td className="px-4 py-1.5 text-left font-medium text-gray-700 mb-1">
+                                  <td className="px-3 py-2 text-center text-gray-700 mb-1 group-hover:font-semibold transition-all">
                                     {row.Peso && row.Altura ? row.IMC ?? (row.Peso / (row.Altura * row.Altura)) : ""}
                                   </td>
-                                  <td className="px-1 py-1.5 text-left font-medium text-gray-700 italic mb-1">
+                                  <td className="px-1 py-1.5 text-left font-medium text-gray-700 italic mb-1 hidden">
                                     {pesoIdeal?.toFixed(2)}
                                   </td>
-                                  <td className="px-1 py-1.5 text-left font-semibold whitespace-nowrap">
-                                    {/* <i className={`${pesoPerder ? Number(pesoPerder) > 0 ? "text-red-400" : "" : ""} mdi mdi-${pesoPerder ? Number(pesoPerder) > 0 ? "arrow-down-thick" : "arrow-up-thick" : ""} mr-2`}></i> */}
+                                  <td className="px-1 py-1.5 text-left font-semibold whitespace-nowrap hidden">
                                     <span className={`${pesoPerder ? Number(pesoPerder) < 0 ? "text-red-400" : "text-gray-700" : ""}`}>
                                       {pesoPerder}
                                     </span>
@@ -1372,33 +1459,26 @@ const Indicadores: React.FC = () => {
                                   <td className="px-1 py-1.5 text-left font-medium text-gray-700 mb-1 hidden">
                                     {pesoPerder && perderMes && Number(perderMes) > 0 ? (Number(pesoPerder) / Number(perderMes)).toFixed(2) : ""}
                                   </td>
-                                  <td className="py-1.5 text-left">
+                                  <td className="px-3 py-2 text-left font-bold text-gray-700">
                                     {(() => {
                                       const imc = parseFloat(row.IMC);
                                       if (!imc || imc <= 0) return null;
-                                      const [label, cls] = 
-                                        imc <= 24.99 ? ["Normal", "bg-aqua-green/20 text-aqua-green"]
-                                        : imc <= 29.99 ? ["Sobrepeso", "bg-sunray-yellow/20 text-yellow-600"]
-                                        : imc <= 34.99 ? ["Obesidad Gr. I", "bg-sunset-orange/20 text-sunset-orange"]
-                                        : imc <= 39.99 ? ["Obesidad Gr. II","bg-red-100 text-red-600"]
-                                        : ["Obesidad Gr. III","bg-red-100 text-red-600"];
+                                      const [label, icon, color] =
+                                        imc <= 24.99 ? ["Normal", "circle-check", "text-aqua-green"]
+                                        : imc <= 29.99 ? ["Sobrepeso", "circle-exclamation", "text-yellow-600"]
+                                        : imc <= 34.99 ? ["Obesidad Gr. I", "triangle-exclamation", "text-sunset-orange"]
+                                        : imc <= 39.99 ? ["Obesidad Gr. II", "triangle-exclamation", "text-red-600"]
+                                        : ["Obesidad Gr. III", "triangle-exclamation", "text-red-600"];
                                       return (
-                                        <span className={`inline-block px-2 py-0.5 rounded-lg text-[10px] font-semibold whitespace-nowrap ${cls}`}>
+                                        <span className="inline-flex items-center gap-1.5 whitespace-nowrap">
+                                          <i className={`fa-solid fa-${icon} ${color} text-xs shrink-0`}></i>
                                           {label}
                                         </span>
                                       );
                                     })()}
                                   </td>
-                                  <td className="pr-0 whitespace-nowrap text-center">
-                                    <div className="flex items-center justify-center">
-                                      <button
-                                        onClick={() => { setSelectedRow({ ...row, pesoIdeal, pesoPerder, perderMes }); setIsDetailOpen(true); getMensual(selectedYear, row.Empl_matricula); }}
-                                        className="w-9 h-9 text-gray-400 hover:text-sky-blue bg-linear-to-b hover:from-sky-blue/20 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
-                                        title="Ver Más"
-                                      >
-                                        <i className="mdi mdi-chevron-right text-lg"></i>
-                                      </button>
-                                    </div>
+                                  <td className="w-10 pr-3 py-2 whitespace-nowrap text-right text-gray-400 group-hover:text-sea-blue transition-colors">
+                                    <i className="fa-solid fa-chevron-right text-[10px]"></i>
                                   </td>
                                 </motion.tr>
                               )
@@ -1406,20 +1486,21 @@ const Indicadores: React.FC = () => {
                           </tbody>
                         </table>
                       </div>
+                      )}
                     </div>
                   </div>
                 ) : selectedView === "graficas" ? (
-                  <div className="h-[555px] overflow-y-auto px-5 space-y-5">
+                  <div className="flex-1 min-h-0 overflow-y-auto space-y-5">
                     <div className={`lg:col-span-2`}>
                       <motion.div
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.3 }}
-                        className={`bg-linear-to-b from-white to-gray-50 mt-4 rounded-xl h-full shadow-xl p-6 pb-0`}
+                        className={`bg-linear-to-b from-white to-gray-50 mt-4 rounded-xl h-full shadow-xs p-6 pb-0`}
                       >
                         <div className="flex items-center justify-between">
                           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-                            <i className="mdi mdi-chart-sankey text-sea-blue mr-4"></i>
+                            <i className="fa-solid fa-users text-sea-blue mr-4"></i>
                             Población TNG Sano
                           </h2>
                         </div>
@@ -1519,11 +1600,11 @@ const Indicadores: React.FC = () => {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.3 }}
-                            className={`bg-linear-to-b from-white to-gray-50 rounded-xl h-full shadow-xl p-6 pb-0`}
+                            className={`bg-linear-to-b from-white to-gray-50 rounded-xl h-full shadow-xs p-6 pb-0`}
                           >
                             <div className="flex items-center justify-between">
                               <h2 className="text-sm font-bold text-gray-800 flex items-center">
-                                <i className="mdi mdi-chart-bell-curve text-sea-blue mr-4"></i>
+                                <i className="fa-solid fa-chart-line text-sea-blue mr-4"></i>
                                 Tendencia estatus de salud TNG Sano {titulo}
                               </h2>
                             </div>
@@ -1619,11 +1700,11 @@ const Indicadores: React.FC = () => {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             transition={{ delay: 0.3 }}
-                            className={`bg-linear-to-b from-white to-gray-50 rounded-xl h-full shadow-xl p-6 pb-0`}
+                            className={`bg-linear-to-b from-white to-gray-50 rounded-xl h-full shadow-xs p-6 pb-0`}
                           >
                             <div className="flex items-center justify-between">
                               <h2 className="text-sm font-bold text-gray-800 flex items-center">
-                                <i className="mdi mdi-chart-bell-curve-cumulative text-sea-blue mr-2"></i>
+                                <i className="fa-solid fa-calendar-xmark text-sea-blue mr-2"></i>
                                 Ausencias {titulo} TNG Sano
                               </h2>
                             </div>
@@ -1721,11 +1802,11 @@ const Indicadores: React.FC = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.3 }}
-                        className={`bg-linear-to-b from-white to-gray-50 rounded-xl h-full shadow-xl p-6 pb-0`}
+                        className={`bg-linear-to-b from-white to-gray-50 rounded-xl h-full shadow-xs p-6 pb-0`}
                       >
                         <div className="flex items-center justify-between">
                           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-                            <i className="mdi mdi-chart-line text-sea-blue mr-4"></i>
+                            <i className="fa-solid fa-chart-line text-sea-blue mr-4"></i>
                             Tendencia estatus de salud TNG Sano (Planta + DOE)
                           </h2>
                         </div>
@@ -1821,11 +1902,11 @@ const Indicadores: React.FC = () => {
                         initial={{ opacity: 0, scale: 0.95 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: 0.3 }}
-                        className={`bg-linear-to-b from-white to-gray-50 rounded-xl h-full shadow-xl p-6 pb-0`}
+                        className={`bg-linear-to-b from-white to-gray-50 rounded-xl h-full shadow-xs p-6 pb-0`}
                       >
                         <div className="flex items-center justify-between">
                           <h2 className="text-sm font-bold text-gray-800 flex items-center">
-                            <i className="mdi mdi-chart-bar text-sea-blue mr-2"></i>
+                            <i className="fa-solid fa-chart-column text-sea-blue mr-2"></i>
                             Estatus de salud por mes
                           </h2>
                         </div>
@@ -1924,22 +2005,57 @@ const Indicadores: React.FC = () => {
                     </div>
                   </div>
                 ) : (
-                  <div className="space-y-4">
-                    <div className="rounded-lg h-[555px] flex flex-col">
-                      <div className="flex-1 overflow-auto">
+                  <div className="flex-1 min-h-0 flex flex-col">
+                    <div className="bg-white rounded-lg shadow-xs flex-1 min-h-0 flex flex-col overflow-hidden">
+                      <div className="flex-1 min-h-0 overflow-auto rounded-lg">
                         <table className="table-fixed w-full text-xs">
-                          <thead className="sticky top-0 z-10">
-                            <tr className="bg-linear-to-r from-white to-gray-100">
-                              <th className="px-2 py-2 pl-6 text-left font-medium text-gray-600 whitespace-nowrap hidden">Contrato</th>
-                              <th className="py-2 pl-6 text-left w-20 justify-center font-medium text-gray-700 ">Mat.</th>
-                              <th className="px-3 py-2 text-left font-medium text-gray-700 w-90">Nombre</th>
-                              <th className="py-2 text-center font-medium text-gray-700 hidden">Fecha<br/>nacimiento</th>
-                              <th className="py-2 text-center font-medium text-gray-700 hidden">Edad</th>
+                          <thead className="sticky top-0 z-10 bg-gray-50">
+                            <tr className="text-gray-700 text-left">
+                              <th className="px-2 py-3 pl-6 text-left font-semibold text-gray-600 whitespace-nowrap hidden">Contrato</th>
+                              <th onClick={() => cycleSort("Matricula")} className="py-3 pl-6 text-left w-20 font-semibold text-gray-700 cursor-pointer select-none group">
+                                <span className="flex items-center justify-center gap-1">
+                                  <span>Mat.</span>
+                                  <i className={`fa-solid ${sortIcon("Matricula")} text-[10px] transition-colors ${sortCol === "Matricula" && sortDir !== "none" ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`} />
+                                </span>
+                              </th>
+                              <th onClick={() => cycleSort("Empl_Nombres")} className="px-3 py-3 text-left font-semibold text-gray-700 w-90 cursor-pointer select-none group">
+                                <span className="flex items-center justify-start gap-1">
+                                  <span>Nombre</span>
+                                  <i className={`fa-solid ${sortIcon("Empl_Nombres")} text-[10px] transition-colors ${sortCol === "Empl_Nombres" && sortDir !== "none" ? "text-sea-blue" : "text-gray-300 group-hover:text-gray-400"}`} />
+                                </span>
+                              </th>
+                              <th className="py-3 text-center font-semibold text-gray-700 hidden">Fecha<br/>nacimiento</th>
+                              <th className="py-3 text-center font-semibold text-gray-700 hidden">Edad</th>
                               {aniosTendencia.map((y) => (
-                                <th key={y} className="py-2 text-center font-medium text-gray-700 min-w-[88px]">
+                                <th key={y} className="py-3 text-center font-semibold text-gray-700 min-w-[88px]">
                                   {y}
                                 </th>
                               ))}
+                            </tr>
+                            <tr className="bg-gray-50 text-left h-11">
+                              <td colSpan={2} className="pl-6 py-2">
+                                <div className="relative w-72">
+                                  <i className="fa-solid fa-magnifying-glass absolute left-2.5 top-1/2 -translate-y-1/2 text-gray-400 text-xs"></i>
+                                  <input
+                                    type="text"
+                                    value={busqueda}
+                                    onChange={(e) => setBusqueda(e.target.value)}
+                                    placeholder="Buscar por nombre o matrícula"
+                                    className="w-full h-7 pl-8 pr-7 py-1 rounded-md text-xs shadow-xs bg-white outline-none focus:ring-1 focus:ring-sea-blue"
+                                  />
+                                  {busqueda && (
+                                    <button
+                                      type="button"
+                                      onClick={() => setBusqueda("")}
+                                      title="Limpiar"
+                                      className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-red-400 transition-colors cursor-pointer"
+                                    >
+                                      <i className="fa-solid fa-circle-xmark text-xs"></i>
+                                    </button>
+                                  )}
+                                </div>
+                              </td>
+                              <td colSpan={aniosTendencia.length}></td>
                             </tr>
                           </thead>
                           <tbody>
@@ -1950,7 +2066,7 @@ const Indicadores: React.FC = () => {
                                 exit={{ opacity: 0, x: -20 }}
                                 transition={{ duration: 0.2 }}
                                 key={idx}
-                                className="group hover:bg-gray-50/80 transition-colors"
+                                className="group border-b border-gray-50 last:border-0 hover:bg-gray-50/60 transition-colors"
                               >
                                 <td className="px-2 pl-6 py-1.5 text-gray-700 break-words hidden">{row.Contrato}</td>
                                 <td className="px-2 pl-6 text-left font-medium text-gray-700 mb-1">
@@ -2056,7 +2172,7 @@ const Indicadores: React.FC = () => {
                         // value={patientForm.nombre}
                         readOnly
                         placeholder="Nombre completo"
-                        className="w-full rounded-lg px-3 py-2 text-xs outline-none shadow-md border border-gray-100 bg-gray-50 text-gray-600 placeholder:text-gray-300 cursor-not-allowed"
+                        className="w-full rounded-lg px-3 py-2 text-xs outline-none shadow-xs border border-gray-50 bg-gray-50 text-gray-600 placeholder:text-gray-300 cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -2068,7 +2184,7 @@ const Indicadores: React.FC = () => {
                         type="date"
                         // value={patientForm.fechaNacimiento}
                         readOnly
-                        className="w-full rounded-lg px-3 py-2 text-xs outline-none shadow-md border border-gray-100 bg-gray-50 text-gray-600 cursor-not-allowed"
+                        className="w-full rounded-lg px-3 py-2 text-xs outline-none shadow-xs border border-gray-50 bg-gray-50 text-gray-600 cursor-not-allowed"
                       />
                     </div>
 
@@ -2079,7 +2195,7 @@ const Indicadores: React.FC = () => {
                         // value={patientForm.edad}
                         readOnly
                         placeholder="Edad"
-                        className="w-full rounded-lg px-3 py-2 text-xs outline-none shadow-md border border-gray-100 bg-gray-50 text-gray-600 placeholder:text-gray-300 cursor-not-allowed"
+                        className="w-full rounded-lg px-3 py-2 text-xs outline-none shadow-xs border border-gray-50 bg-gray-50 text-gray-600 placeholder:text-gray-300 cursor-not-allowed"
                       />
                     </div>
 
@@ -2102,7 +2218,7 @@ const Indicadores: React.FC = () => {
                         // value={patientForm.sexo === "F" ? "Mujer" : patientForm.sexo === "M" ? "Hombre" : ""}
                         readOnly
                         placeholder="Sexo"
-                        className="w-full rounded-lg px-3 py-2 text-xs outline-none shadow-md border border-gray-100 bg-gray-50 text-gray-600 placeholder:text-gray-300 cursor-not-allowed"
+                        className="w-full rounded-lg px-3 py-2 text-xs outline-none shadow-xs border border-gray-50 bg-gray-50 text-gray-600 placeholder:text-gray-300 cursor-not-allowed"
                       />
                     </div>
                   </div>
@@ -2481,34 +2597,26 @@ const Indicadores: React.FC = () => {
 
       
     
-      <aside
-        className={`fixed top-[64px] right-0 h-[calc(100vh-64px)] bg-white border-l border-gray-200 transition-all duration-300 ease-in-out z-40 ${isProgramarOpen ? "" : "translate-x-full"}`}
-        style={{ width: 420 }}
-      >
-
-        <div className="flex h-full w-full">
-          <div className="flex flex-col border-r border-gray-100 h-full shrink-0" style={{ width: 420 }}>
-            <div className="px-3 py-4 shrink-0 bg-linear-to-r from-white to-gray-100">
-              <div className="flex items-center gap-2 justify-between">
-                <div className="flex items-center gap-2">
-                  <button
-                    title={"Regresar"}
-                    onClick={() => { setIsProgramarOpen(false); setIsPanelOpen(false); }}
-                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-sea-blue bg-linear-to-b hover:from-sea-blue/10 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
-                  >
-                    <i className={`mdi mdi-chevron-right text-2xl`}></i>
-                  </button>
-                  <div>
-                    <p className="text-[14px] font-bold text-sea-blue truncate max-w-[320px]">
-                      {/* <i className={`mdi mdi-calendar-blank mr-1.5`}></i> */}
-                      Toma de Indicador
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      Check-up de paciente
-                    </p>
-                  </div>
-                </div>
+      {isProgramarOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => { setIsProgramarOpen(false); setIsPanelOpen(false); }}></div>
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 shrink-0">
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-sea-blue truncate">
+                  Toma de Indicador
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  Check-up de paciente
+                </p>
               </div>
+              <button
+                title="Cerrar"
+                onClick={() => { setIsProgramarOpen(false); setIsPanelOpen(false); }}
+                className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-sea-blue hover:bg-gray-100 rounded-lg transition-all cursor-pointer shrink-0"
+              >
+                <i className="fa-solid fa-xmark text-lg"></i>
+              </button>
             </div>
 
             <form
@@ -2518,7 +2626,7 @@ const Indicadores: React.FC = () => {
             >
               <div className="flex-1 overflow-y-auto p-2 space-y-3">
                 <h3 className="text-xs font-bold text-gray-800 mb-2 flex items-center">
-                  <i className="mdi mdi-account-circle mr-2"></i>
+                  <i className="fa-solid fa-circle-user mr-2"></i>
                   Información de Personal
                 </h3>
                 <div>
@@ -2526,7 +2634,7 @@ const Indicadores: React.FC = () => {
                     Matrícula
                   </label>
                   <div
-                    className={`w-full border border-gray-100 rounded-lg shadow-md bg-gray-50`}
+                    className={`w-full border border-gray-50 rounded-lg shadow-xs bg-gray-50`}
                   >
                     <div className="relative flex items-center gap-2 px-2 h-8 cursor-text">
                       <Search className="h-3.5 w-3.5 text-gray-400 shrink-0" />
@@ -2546,7 +2654,7 @@ const Indicadores: React.FC = () => {
                     Mes de toma
                   </label>
                   <div
-                    className={`w-full border border-gray-100 rounded-lg shadow-md bg-white focus-within:border-clinical-blue focus-within:ring-1 focus-within:ring-clinical-blue`}
+                    className={`w-full border border-gray-50 rounded-lg shadow-xs bg-white focus-within:border-clinical-blue focus-within:ring-1 focus-within:ring-clinical-blue`}
                   >
                     <div className="relative flex items-center gap-2 px-2 h-8 cursor-text">
                       {/* <input
@@ -2576,7 +2684,7 @@ const Indicadores: React.FC = () => {
                 </div>
 
                 <h3 className="text-xs font-bold text-gray-800 mt-6 mb-2 flex items-center">
-                  <i className="mdi mdi-calendar-blank mr-2"></i>
+                  <i className="fa-solid fa-clipboard-list mr-2"></i>
                   Registro de Indicadores
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
@@ -2590,7 +2698,7 @@ const Indicadores: React.FC = () => {
                         value={formData.talla}
                         onChange={(e) => { const v = e.target.value; if(v.length > 4) return; setFormData(f => ({ ...f, talla: v, imc: calcImcStr(f.peso, v), ict: calcIctStr(f.pa, v) })); }}
                         placeholder="0.00"
-                        className="w-full px-3 py-2 pr-10 bg-white border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-full px-3 py-2 pr-10 bg-white border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                         // pl-9
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">m</span>
@@ -2606,7 +2714,7 @@ const Indicadores: React.FC = () => {
                         value={formData.peso}
                         onChange={(e) => { const v = e.target.value; if(v.length > 6) return; setFormData(f => ({ ...f, peso: v, imc: calcImcStr(v, f.talla) })); }}
                         placeholder="0.00"
-                        className="w-full px-3 py-2 pr-10 bg-white border border-gray-100 shadow-md rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        className="w-full px-3 py-2 pr-10 bg-white border border-gray-50 shadow-xs rounded-lg text-xs focus:ring-1 outline-none [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">kg</span>
                     </div>
@@ -2621,7 +2729,7 @@ const Indicadores: React.FC = () => {
                       readOnly
                       disabled
                       placeholder="0.00"
-                      className={`w-full border shadow-md rounded-lg px-2 py-2 text-xs outline-none transition-colors ${imcInfo(formData.imc ? parseFloat(formData.imc) : null).cls}`}
+                      className={`w-full border shadow-xs rounded-lg px-2 py-2 text-xs outline-none transition-colors ${imcInfo(formData.imc ? parseFloat(formData.imc) : null).cls}`}
                     />
                   </div>
                   <div>
@@ -2634,7 +2742,7 @@ const Indicadores: React.FC = () => {
                         value={formData.pa}
                         onChange={(e) => { const v = e.target.value; if(v.length > 6) return; setFormData(f => ({ ...f, pa: v, ict: calcIctStr(v, f.talla) })); }}
                         placeholder="0.00"
-                        className={`w-full border border-gray-100 shadow-md rounded-lg px-2 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none`}
+                        className={`w-full border border-gray-50 shadow-xs rounded-lg px-2 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none`}
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">cm</span>
                     </div>
@@ -2649,7 +2757,7 @@ const Indicadores: React.FC = () => {
                       readOnly
                       disabled
                       placeholder="0.00"
-                      className={`w-full border shadow-md rounded-lg px-2 py-2 text-xs outline-none transition-colors ${ictInfo(formData.ict ? parseFloat(formData.ict) : null).cls}`}
+                      className={`w-full border shadow-xs rounded-lg px-2 py-2 text-xs outline-none transition-colors ${ictInfo(formData.ict ? parseFloat(formData.ict) : null).cls}`}
                     />
                   </div>
                   <div>
@@ -2659,7 +2767,7 @@ const Indicadores: React.FC = () => {
                     <select
                       value={formData.riesgo}
                       onChange={(e) => setFormData(f => ({ ...f, riesgo: e.target.value })) }
-                      className={`w-full border border-gray-100 shadow-md rounded-lg px-2 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none`}
+                      className={`w-full border border-gray-50 shadow-xs rounded-lg px-2 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none`}
                     >
                       <option value="" disabled hidden>Seleccionar</option>
                       <option value="0">Falta</option>
@@ -2670,7 +2778,7 @@ const Indicadores: React.FC = () => {
                   </div>
                 </div>
                 <h3 className="text-xs font-bold text-gray-800 mt-6 mb-2 flex items-center">
-                  <i className="mdi mdi-calendar-blank mr-2"></i>
+                  <i className="fa-solid fa-flask-vial mr-2"></i>
                   Estudios de Laboratorio
                 </h3>
                 <div className="grid grid-cols-2 gap-3">
@@ -2678,7 +2786,7 @@ const Indicadores: React.FC = () => {
                     <label className="block text-xs font-medium text-gray-700 mb-1">
                       T/A
                     </label>
-                    <div className="w-full border border-gray-100 shadow-md rounded-lg focus-within:ring-1 focus-within:ring-sea-blue">
+                    <div className="w-full border border-gray-50 shadow-xs rounded-lg focus-within:ring-1 focus-within:ring-sea-blue">
                       <div className="flex items-center w-full px-2 py-2">
                         <input
                           ref={sistolicaRef}
@@ -2724,7 +2832,7 @@ const Indicadores: React.FC = () => {
                         value={formData.glucosa}
                         onChange={(e) => setFormData(f => ({ ...f, glucosa: e.target.value })) }
                         placeholder="90"
-                        className={`w-full border border-gray-100 shadow-md rounded-lg px-2 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none`}
+                        className={`w-full border border-gray-50 shadow-xs rounded-lg px-2 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none`}
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
                     </div>
@@ -2739,7 +2847,7 @@ const Indicadores: React.FC = () => {
                         value={formData.colesterol}
                         onChange={(e) => setFormData(f => ({ ...f, colesterol: e.target.value })) }
                         placeholder="180"
-                        className={`w-full border border-gray-100 shadow-md rounded-lg px-2 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none`}
+                        className={`w-full border border-gray-50 shadow-xs rounded-lg px-2 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none`}
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
                     </div>
@@ -2754,7 +2862,7 @@ const Indicadores: React.FC = () => {
                         value={formData.trigliceridos}
                         onChange={(e) => setFormData(f => ({ ...f, trigliceridos: e.target.value })) }
                         placeholder="120"
-                        className={`w-full border border-gray-100 shadow-md rounded-lg px-2 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none`}
+                        className={`w-full border border-gray-50 shadow-xs rounded-lg px-2 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none`}
                       />
                       <span className="absolute right-3 text-gray-400 text-xs pointer-events-none">mg/dL</span>
                     </div>
@@ -2764,21 +2872,20 @@ const Indicadores: React.FC = () => {
                 
               </div>
             </form>
-            <div className={`px-5 py-4 shrink-0 flex justify-between items-center`}>
+            <div className="px-5 py-4 border-t border-gray-100 shrink-0 flex justify-end">
               <button
                 form="indicadorForm"
                 type="submit"
                 disabled={saving}
                 className="w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:translate-y-0"
               >
-                <i className={`mdi ${saving ? "mdi-loading mdi-spin" : "mdi-check-bold"} mr-2`}></i>
+                <i className={`fa-solid ${saving ? "fa-spinner fa-spin" : "fa-check"} mr-2`}></i>
                 {saving ? (isEditingMensual ? "Actualizando..." : "Guardando...") : (isEditingMensual ? "Actualizar Registro" : "Guardar Registro")}
               </button>
             </div>
           </div>
         </div>
-
-      </aside>
+      )}
 
       <Carnet
         open={isCarnetOpen}

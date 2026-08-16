@@ -5,16 +5,16 @@ import { construirEstadoActual } from "../analytics";
 import AntropometriaCardiovascularMetabolicoSection from "./AntropometriaCardiovascularMetabolicoSection";
 import IndicadoresConsultasSection from "./IndicadoresConsultasSection";
 
-interface ExpedienteContenidoProps {
+interface DashboardContenidoProps {
   historico: RegistroValidado[];
   mensajeVacio: string;
 }
 
-// Bloque de secciones reutilizado por las distintas vistas del Expediente
+// Bloque de secciones reutilizado por las distintas vistas del Dashboard
 // (población completa o un departamento): siempre las mismas gráficas,
 // alimentadas con el subconjunto de registros que corresponda. Los KPI cards
 // no viven aquí: cada página los coloca donde le corresponda (ver KpiCards).
-const ExpedienteContenido: React.FC<ExpedienteContenidoProps> = ({ historico, mensajeVacio }) => {
+const DashboardContenido: React.FC<DashboardContenidoProps> = ({ historico, mensajeVacio }) => {
   const estadoActual = useMemo(() => construirEstadoActual(historico), [historico]);
 
   if (historico.length === 0) {
@@ -35,4 +35,4 @@ const ExpedienteContenido: React.FC<ExpedienteContenidoProps> = ({ historico, me
   );
 };
 
-export default ExpedienteContenido;
+export default DashboardContenido;

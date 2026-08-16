@@ -15,7 +15,7 @@ const SERIES_PESO = [
   { key: "ideal", label: "Peso ideal (kg)", color: "#009BDE" },
 ] as const;
 
-// Mismo estilo de tooltip que las gráficas de Expediente (Somatometría, Cardiovascular, etc.).
+// Mismo estilo de tooltip que las gráficas de Dashboard (Somatometría, Cardiovascular, etc.).
 const tooltipCls = "bg-white shadow-lg rounded-lg p-2.5 text-[11px]";
 
 // "01/Mar/2025" -> "Mar 2025": el día no aporta nada aquí (un punto por mes).
@@ -83,7 +83,7 @@ const EvolucionPesoChart: React.FC<EvolucionPesoChartProps> = ({ datos }) => {
   }, [serie]);
 
   // Series ocultas por clic en la leyenda (mismo toggle mostrar/ocultar que
-  // las leyendas de Somatometría/Cardiovascular en Expediente): en vez de un
+  // las leyendas de Somatometría/Cardiovascular en Dashboard): en vez de un
   // <Legend/> de recharts, se omite el <Line/> correspondiente.
   const [seriesOcultas, setSeriesOcultas] = useState<Set<string>>(new Set());
   const toggleSerie = (key: string) => {

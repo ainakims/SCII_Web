@@ -1,10 +1,12 @@
 import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
 import React, { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import PacientesTabla, { PacienteResumen } from "../features/saludPoblacional/components/PacientesTabla";
+import PacienteRegistroModal, { Paciente } from "../features/saludPoblacional/components/PacienteRegistroModal";
 
-// Mismo skeleton que usa la tabla de Reingresos dentro de Expediente.tsx,
+// Mismo skeleton que usa la tabla de Reingresos dentro de Dashboard.tsx,
 // mientras se carga el directorio completo por primera vez. h-full (no
 // h-[420px]): dentro de esta página la tabla ocupa todo el alto disponible.
 const PacientesTablaSkeleton: React.FC = () => (
@@ -24,16 +26,20 @@ const PacientesTablaSkeleton: React.FC = () => (
   </div>
 );
 
-// Misma tabla que antes vivía en el tab "Reingresos" de Expediente.tsx, ahora
+// Misma tabla que antes vivía en el tab "Reingresos" de Dashboard.tsx, ahora
 // como página independiente accesible desde el sidebar. El análisis
 // individual (clic en un renglón) vive bajo esta misma sección
 // (/Reingresos/:matricula, ver basePath en PacientesTabla) en vez de
-// /Expediente/:matricula. El alto de la tabla se mide igual que en
+// /Dashboard/:matricula. El alto de la tabla se mide igual que en
 // Pacientes.tsx: ocupa todo el espacio disponible hasta el borde inferior de
 // la ventana, en vez de un alto fijo.
 const Reingresos: React.FC = () => {
+  const navigate = useNavigate();
   const [pacientes, setPacientes] = useState<PacienteResumen[]>([]);
   const [loading, setLoading] = useState(true);
+
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalPaciente, setModalPaciente] = useState<Paciente | null>(null);
 
   // Se recalcula con el zoom/resize para que la card siempre llene el
   // espacio disponible, en vez de quedar congelada hasta la próxima recarga.
@@ -45,6 +51,17 @@ const Reingresos: React.FC = () => {
     return () => window.removeEventListener("resize", updateHeight);
   }, []);
 
+  const ObtenerReingresos = (): void => {
+    fetchWithAuth(`${API_BASE_URL}/Pacientes/ObtenerPacientes`, {
+      method: "POST",
+      body: JSON.stringify({ esActivo: "0" }),
+    })
+      .then((res) => res.json())
+      .then((json) => setPacientes(Array.isArray(json?.data) ? json.data : []))
+      .catch((err) => console.error("Error al obtener reingresos:", err))
+      .finally(() => setLoading(false));
+  };
+
   // Evita que la consulta se dispare más de una vez (React.StrictMode en
   // desarrollo monta/desmonta/vuelve a montar los efectos a propósito). El
   // ref persiste entre ese montaje/desmontaje simulado, así que la segunda
@@ -55,15 +72,7 @@ const Reingresos: React.FC = () => {
   useEffect(() => {
     if (yaSolicitadoRef.current) return;
     yaSolicitadoRef.current = true;
-
-    fetchWithAuth(`${API_BASE_URL}/Pacientes/ObtenerPacientes`, {
-      method: "POST",
-      body: JSON.stringify({ esActivo: "0" }),
-    })
-      .then((res) => res.json())
-      .then((json) => setPacientes(Array.isArray(json?.data) ? json.data : []))
-      .catch((err) => console.error("Error al obtener reingresos:", err))
-      .finally(() => setLoading(false));
+    ObtenerReingresos();
   }, []);
 
   return (
@@ -94,11 +103,29 @@ const Reingresos: React.FC = () => {
               Reingresos
             </h2>
             <div className="flex-1 min-h-0 flex flex-col">
-              {loading ? <PacientesTablaSkeleton /> : <PacientesTabla activo={false} pacientes={pacientes} fillHeight basePath="/Reingresos" />}
+              {loading ? (
+                <PacientesTablaSkeleton />
+              ) : (
+                <PacientesTabla
+                  activo={false}
+                  pacientes={pacientes}
+                  fillHeight
+                  basePath="/Reingresos"
+                  onEdit={(p) => { setModalPaciente(p as unknown as Paciente); setModalOpen(true); }}
+                  onVerDocumentos={(p) => navigate("/Documentos", { state: { matricula: String(p.Empl_matricula ?? "") } })}
+                />
+              )}
             </div>
           </motion.div>
         </div>
       </div>
+
+      <PacienteRegistroModal
+        open={modalOpen}
+        paciente={modalPaciente}
+        onClose={() => setModalOpen(false)}
+        onSaved={ObtenerReingresos}
+      />
     </div>
   );
 };

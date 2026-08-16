@@ -398,7 +398,7 @@ const Configuracion: React.FC = () => {
   };
 
   const handleDelete = async (estado: number | null, id: number | null, nombre: string) => {
-    const result = await confirmModal(`${estado == 0 ? "alert-circle-outline" : "help-circle-outline"}`, `${estado == 0 ? "¿Eliminar usuario?" : "¿Reactivar usuario?"}`, `Si confirma esta acción se ${estado == 0 ? "dará de baja" : "reactivará"} el usuario </br><b>${nombre}</b>.`);
+    const result = await confirmModal(estado == 0 ? "exclamation" : "question", `${estado == 0 ? "¿Eliminar usuario?" : "¿Reactivar usuario?"}`, `Si confirma esta acción se ${estado == 0 ? "dará de baja" : "reactivará"} el usuario </br><b>${nombre}</b>.`);
 
     if (!result.isConfirmed) {
       return;
@@ -423,24 +423,10 @@ const Configuracion: React.FC = () => {
     Swal.fire({
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">${title}</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">${message}</p>`,
-      iconHtml: `
-      <i class="mdi mdi-check-circle-outline success-icon"></i>
-      <style>
-        .success-icon {
-          color: #54BBAB;
-          font-size: 90px;
-          animation: pop 0.4s ease-out forwards;
-        }
-        @keyframes pop {
-          0% { transform: scale(0.5); opacity: 0; }
-          70% { transform: scale(1.15); opacity: 1; }
-          100% { transform: scale(1); }
-        }
-      </style>
-      `,
+      iconHtml: `<i class="fa-solid fa-check success-icon"></i><style> .success-icon { color: #545454; font-size: 90px; animation: pop 0.4s ease-out forwards, popPeriodic 4s ease-in-out 1.5s infinite; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } @keyframes popPeriodic { 0%, 85%, 100% { transform: scale(1); } 90% { transform: scale(1.15); } 95% { transform: scale(0.95); } } </style>`,
       didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" }); },
-      buttonsStyling: false, 
-      confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
+      buttonsStyling: false,
+      confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> OK`,
       customClass:
       { 
         confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
@@ -453,24 +439,37 @@ const Configuracion: React.FC = () => {
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">${title}</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">${message}</p>`,
       iconHtml: `
-      <i class="mdi mdi-alert-circle-outline success-icon"></i>
+      <i class="fa-solid fa-exclamation aviso-exclamation"></i>
       <style>
-        .success-icon {
+        .aviso-exclamation {
           font-size: 90px;
-          animation: pop 0.4s ease-out forwards;
+          animation: shakeInitial 0.6s ease-in-out,
+                     shakePeriodic 4s ease-in-out 1.5s infinite;
         }
-        @keyframes pop {
-          0% { transform: scale(0.5); opacity: 0; }
-          70% { transform: scale(1.15); opacity: 1; }
-          100% { transform: scale(1); }
+        @keyframes shakeInitial {
+          0%   { transform: scale(0.5) rotate(0deg); opacity: 0; }
+          20%  { transform: scale(1.15) rotate(-12deg); opacity: 1; }
+          40%  { transform: scale(1.05) rotate(10deg); }
+          60%  { transform: scale(1.05) rotate(-7deg); }
+          80%  { transform: scale(1) rotate(5deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes shakePeriodic {
+          0%, 85%, 100% { transform: rotate(0deg); }
+          87% { transform: rotate(-10deg); }
+          89% { transform: rotate(10deg); }
+          91% { transform: rotate(-8deg); }
+          93% { transform: rotate(8deg); }
+          95% { transform: rotate(-4deg); }
+          97% { transform: rotate(4deg); }
         }
       </style>
       `,
       didOpen: (p) => {
         const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" });
       },
-      buttonsStyling: false, 
-      confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
+      buttonsStyling: false,
+      confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> OK`,
       customClass:
       {
         confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
@@ -478,30 +477,63 @@ const Configuracion: React.FC = () => {
     });
   };
 
-  const confirmModal = (icon: string, title: string, message: string) => {
-    return Swal.fire({
-      title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">${title}</p>`,
-      html: `<p style="font-size: 16px; padding: 0 30px">${message}</p>`,
-      iconHtml: `
-      <i class="mdi mdi-${icon} success-icon"></i>
+  const confirmModal = (icon: "exclamation" | "question", title: string, message: string) => {
+    const iconHtml = icon === "exclamation" ? `
+      <i class="fa-solid fa-exclamation aviso-exclamation"></i>
       <style>
-        .success-icon {
+        .aviso-exclamation {
           font-size: 90px;
-          animation: pop 0.4s ease-out forwards;
+          animation: shakeInitial 0.6s ease-in-out,
+                     shakePeriodic 4s ease-in-out 1.5s infinite;
+        }
+        @keyframes shakeInitial {
+          0%   { transform: scale(0.5) rotate(0deg); opacity: 0; }
+          20%  { transform: scale(1.15) rotate(-12deg); opacity: 1; }
+          40%  { transform: scale(1.05) rotate(10deg); }
+          60%  { transform: scale(1.05) rotate(-7deg); }
+          80%  { transform: scale(1) rotate(5deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes shakePeriodic {
+          0%, 85%, 100% { transform: rotate(0deg); }
+          87% { transform: rotate(-10deg); }
+          89% { transform: rotate(10deg); }
+          91% { transform: rotate(-8deg); }
+          93% { transform: rotate(8deg); }
+          95% { transform: rotate(-4deg); }
+          97% { transform: rotate(4deg); }
+        }
+      </style>
+      ` : `
+      <i class="fa-solid fa-question aviso-question"></i>
+      <style>
+        .aviso-question {
+          font-size: 90px;
+          animation: pop 0.4s ease-out forwards,
+                     popPeriodic 4s ease-in-out 1.5s infinite;
         }
         @keyframes pop {
           0% { transform: scale(0.5); opacity: 0; }
           70% { transform: scale(1.15); opacity: 1; }
           100% { transform: scale(1); }
         }
+        @keyframes popPeriodic {
+          0%, 85%, 100% { transform: scale(1); }
+          90% { transform: scale(1.15); }
+          95% { transform: scale(0.95); }
+        }
       </style>
-      `,
+      `;
+    return Swal.fire({
+      title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">${title}</p>`,
+      html: `<p style="font-size: 16px; padding: 0 30px">${message}</p>`,
+      iconHtml,
       didOpen: (p) => {
         const el = p.querySelector(".swal2-icon") as HTMLElement;
         if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" });
       },
       buttonsStyling: false,
-      confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
+      confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> OK`,
       customClass: {
         confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
       },
@@ -836,36 +868,29 @@ const Configuracion: React.FC = () => {
         </div>
       </div>
 
-      <aside
-        className={`fixed top-[64px] right-0 h-[calc(100vh-64px)] bg-white border-l border-gray-200 transition-all duration-300 ease-in-out z-40 ${ isPanelOpen ? "" : "translate-x-full" }`}
-        style={{ width: isPanelOpen ? 420 : 0}}
-      >
-        <div className="flex h-full w-full">
-          <div className="flex flex-col border-r border-gray-100 h-full shrink-0" style={{ width: 420 }}>
-            <div className="px-3 py-4 shrink-0 bg-linear-to-r from-white to-gray-100">
-              <div className="flex items-center gap-2 justify-between">
-                <div className="flex items-center gap-2">
-                  <button 
-                    title="Regresar"
-                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-sea-blue bg-linear-to-b hover:from-sea-blue/10 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
-                    onClick={() => setIsPanelOpen(false)}
-                  >
-                    <i className={`mdi mdi-chevron-right text-2xl`}></i>
-                  </button>
-                  <div>
-                    <p className="text-xs font-bold text-gray-800 truncate uppercase max-w-[320px]">
-                      <i className="mdi mdi-account-multiple-plus mr-2"></i>
-                      {formData.ID ? "Editar Usuario" : "Nuevo Usuario"}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {formData.ID ? "Edición de cuenta de usuario" : "Registro de cuenta de usuario."}
-                    </p>
-                  </div>
-                </div>
+      {isPanelOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => setIsPanelOpen(false)}></div>
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
+            <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 shrink-0">
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-sea-blue truncate">
+                  {formData.ID ? "Editar Usuario" : "Nuevo Usuario"}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {formData.ID ? "Edición de cuenta de usuario" : "Registro de cuenta de usuario."}
+                </p>
               </div>
+              <button
+                title="Cerrar"
+                className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-sea-blue hover:bg-gray-100 rounded-lg transition-all cursor-pointer shrink-0"
+                onClick={() => setIsPanelOpen(false)}
+              >
+                <i className="fa-solid fa-xmark text-lg"></i>
+              </button>
             </div>
 
-            <form 
+            <form
               id="medicoForm"
               onSubmit={handleSave}
               className="flex-1 overflow-y-auto px-3 py-4 flex flex-col"
@@ -873,7 +898,7 @@ const Configuracion: React.FC = () => {
               <div className="flex-1 overflow-y-auto p-2 space-y-3">
                 <div>
                   <h3 className="text-xs font-bold text-gray-800 mb-2 flex items-center">
-                    <i className="mdi mdi-lock-open mr-2"></i>
+                    <i className="fa-solid fa-lock-open mr-2"></i>
                     Acceso al Sistema
                   </h3>
                   <div className="grid grid-cols-11 md:grid-cols-2 gap-3">
@@ -890,16 +915,16 @@ const Configuracion: React.FC = () => {
                           placeholder="5 dígitos"
                           disabled={loadingMat || formData.ID !== null}
                           maxLength={5}
-                          className={`w-full border rounded-lg px-3 py-2 pr-8 text-xs shadow-md outline-none ${loadingMat || formData.ID !== null ? "bg-gray-50 text-gray-800 border-gray-100" : matriculaDuplicada || matriculaNoEncontrada ? "border-red-200 bg-red-50 text-red-500" : "border-gray-100 focus:border-clinical-blue focus:ring-1 focus:ring-clinical-blue"}`}
+                          className={`w-full border rounded-lg px-3 py-2 pr-8 text-xs shadow-xs outline-none ${loadingMat || formData.ID !== null ? "bg-gray-50 text-gray-800 border-gray-50" : matriculaDuplicada || matriculaNoEncontrada ? "border-red-200 bg-red-50 text-red-500" : "border-gray-50 focus:border-clinical-blue focus:ring-1 focus:ring-clinical-blue"}`}
                         />
                         {loadingMat && (
                           <div className="absolute right-2 top-1/2 -translate-y-1/2">
-                            <i className="mdi mdi-loading mdi-spin text-gray-400 text-sm"></i>
+                            <i className="fa-solid fa-spinner fa-spin text-gray-400 text-sm"></i>
                           </div>
                         )}
                         {!loadingMat && matriculaDuplicada && (
                           <div className="absolute right-2 top-1/2 -translate-y-1/2 group/mat">
-                            <i className="mdi mdi-alert-circle text-red-400 text-sm cursor-pointer"></i>
+                            <i className="fa-solid fa-circle-exclamation text-red-400 text-sm cursor-pointer"></i>
                             <div className="absolute right-0 bottom-full mb-1.5 hidden group-hover/mat:block z-50 w-40">
                               <div className="bg-red-500 text-white text-[10px] rounded-md px-2 py-1.5 shadow-lg leading-tight">
                                 La matrícula ingresada ya se encuentra registrada.
@@ -926,7 +951,7 @@ const Configuracion: React.FC = () => {
                           const selectedOption = e.target.options[e.target.selectedIndex];
                           setFormData((prev) => ({  ...prev,  Id_Rol: parseInt(e.target.value),  Rol: selectedOption.text  }));
                         }}
-                        className="w-full border border-gray-100 shadow-md rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
+                        className="w-full border border-gray-50 shadow-xs rounded-lg p-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
                       >
                         <option value="" disabled hidden>Seleccionar</option>
                         <option value="1">Admin</option>
@@ -947,7 +972,7 @@ const Configuracion: React.FC = () => {
                         value={formData.Usuario}
                         onChange={handleInputChange}
                         placeholder="Cuenta"
-                        className={`w-full border rounded-lg px-3 py-2 pr-10 text-xs shadow-md outline-none ${cuentaNoEncontrada ? "border-red-200 bg-red-50 text-red-500" : "border-gray-100 bg-gray-50 text-gray-800"}`}
+                        className={`w-full border rounded-lg px-3 py-2 pr-10 text-xs shadow-xs outline-none ${cuentaNoEncontrada ? "border-red-200 bg-red-50 text-red-500" : "border-gray-50 bg-gray-50 text-gray-800"}`}
                         disabled
                       />
                     </div>
@@ -963,7 +988,7 @@ const Configuracion: React.FC = () => {
                           value={formData.Correo}
                           onChange={handleInputChange}
                           disabled={!emailEdit}
-                          className={`w-full border rounded-lg px-3 py-2 text-xs shadow-md outline-none ${cuentaNoEncontrada ? "border-red-200 bg-red-50 text-red-500" : !emailEdit ? "border-gray-100 bg-gray-50 text-gray-800" : "border-gray-100 focus:ring-1 focus:ring-sea-blue"}`}
+                          className={`w-full border rounded-lg px-3 py-2 text-xs shadow-xs outline-none ${cuentaNoEncontrada ? "border-red-200 bg-red-50 text-red-500" : !emailEdit ? "border-gray-50 bg-gray-50 text-gray-800" : "border-gray-50 focus:ring-1 focus:ring-sea-blue"}`}
                           // pr-10
                           placeholder="Correo"
                         />
@@ -976,7 +1001,7 @@ const Configuracion: React.FC = () => {
                 </div>
                 <div className="space-y-4">
                   <h3 className="text-xs font-bold text-gray-800 mt-6 mb-2 flex items-center">
-                  <i className="mdi mdi-information-slab-circle mr-2"></i>
+                  <i className="fa-solid fa-circle-info mr-2"></i>
                     Datos Personales
                   </h3>
                   <div>
@@ -988,7 +1013,7 @@ const Configuracion: React.FC = () => {
                       name="Nombre"
                       value={formData.Nombre}
                       disabled={true}
-                      className="w-full border border-gray-100 shadow-md rounded-lg px-3 py-2 text-xs bg-gray-50 text-gray-800"
+                      className="w-full border border-gray-50 shadow-xs rounded-lg px-3 py-2 text-xs bg-gray-50 text-gray-800"
                       placeholder="Nombre(s)"
                     />
                   </div>
@@ -1001,7 +1026,7 @@ const Configuracion: React.FC = () => {
                       name="Puesto"
                       value={formData.Puesto}
                       disabled={true}
-                      className="w-full border border-gray-100 shadow-md rounded-lg px-3 py-2 text-xs bg-gray-50 text-gray-800"
+                      className="w-full border border-gray-50 shadow-xs rounded-lg px-3 py-2 text-xs bg-gray-50 text-gray-800"
                       placeholder="Puesto"
                     />
                   </div>
@@ -1009,7 +1034,7 @@ const Configuracion: React.FC = () => {
                 {(formData.Id_Rol == 1 || formData.Id_Rol == 2) && (
                   <>
                     <h3 className="text-xs font-bold text-gray-800 mt-6 mb-2 flex items-center">
-                      <i className="mdi mdi-medal mr-2"></i>
+                      <i className="fa-solid fa-award mr-2"></i>
                       Datos Profesionales
                     </h3>
                     <div className="space-y-4">
@@ -1021,7 +1046,7 @@ const Configuracion: React.FC = () => {
                           value={formData.Especialidad}
                           onChange={handleInputChange}
                           placeholder="Especialidad"
-                          className="w-full border border-gray-100 shadow-md rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
+                          className="w-full border border-gray-50 shadow-xs rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
                         />
                       </div>
                       <div>
@@ -1032,7 +1057,7 @@ const Configuracion: React.FC = () => {
                           value={formData.Cedula}
                           onChange={handleInputChange}
                           placeholder="Número de cédula"
-                          className="w-full border border-gray-100 shadow-md rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
+                          className="w-full border border-gray-50 shadow-xs rounded-lg px-3 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none"
                         />
                       </div>
                     </div>
@@ -1045,20 +1070,18 @@ const Configuracion: React.FC = () => {
                 </div>
               )} */}
             </form>
-            <div className={`px-5 py-4 shrink-0 flex justify-between items-center `}>
+            <div className="px-5 py-4 border-t border-gray-100 shrink-0 flex justify-end">
               <button
-                // onClick={() => handleSubmit()}
                 form="medicoForm"
                 className="w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
               >
-                <i className="mdi mdi-account-check mr-2"></i>
+                <i className="fa-solid fa-user-check mr-2"></i>
                 Guardar Usuario
               </button>
             </div>
-
           </div>
         </div>
-      </aside>
+      )}
     </div>
   );
 };

@@ -50,7 +50,7 @@ function parsearFechaDDMonYYYY(fecha: string): Date | null {
 // JWT, nunca del cliente, porque controla si el servicio regresa contenido
 // clínico sensible (diagnóstico diferencial, aptitud laboral detallada).
 //
-// Vista de página completa (mismo patrón que ExpedienteDepartamento.tsx), no
+// Vista de página completa (mismo patrón que DashboardDepartamento.tsx), no
 // drawer/modal: se accede desde Pacientes/Reingresos al hacer clic sobre un
 // paciente. Ruta /Pacientes/:matricula o /Reingresos/:matricula (ver
 // Topbar.tsx para el breadcrumb "Pacientes/Reingresos > Matrícula - Nombre");

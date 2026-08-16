@@ -15,7 +15,7 @@ const SERIES_PRESION = [
   { key: "diastolica", label: "Diastólica", color: "#009BDE" },
 ] as const;
 
-// Mismo estilo de tooltip que las gráficas de Expediente (Somatometría, Cardiovascular, etc.).
+// Mismo estilo de tooltip que las gráficas de Dashboard (Somatometría, Cardiovascular, etc.).
 const tooltipCls = "bg-white shadow-lg rounded-lg p-2.5 text-[11px]";
 
 const TooltipPresion: React.FC<any> = ({ active, payload, label }) => {

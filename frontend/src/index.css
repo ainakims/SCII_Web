@@ -94,7 +94,7 @@ svg:focus {
   outline: none !important;
 }
 
-/* Barrido continuo tipo "shine" sobre las gráficas del dashboard (Expediente
+/* Barrido continuo tipo "shine" sobre las gráficas del dashboard (Dashboard
    y Análisis Individual), para que se sientan "vivas" incluso después de la
    animación de carga inicial. Ver shared/ShimmerOverlay.tsx. */
 @keyframes shimmer-sweep {

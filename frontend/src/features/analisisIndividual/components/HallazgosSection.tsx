@@ -7,7 +7,7 @@ interface HallazgosSectionProps {
 }
 
 // Mismo idioma visual que los recuadros de "resumen IA" al pie de
-// Somatometría/Cardiovascular/Metabólico en Expediente (icono en cuadro
+// Somatometría/Cardiovascular/Metabólico en Dashboard (icono en cuadro
 // suave + texto a la derecha, fondo plano sin borde) — no el borde
 // izquierdo/rounded-lg de antes, que no aparece en ningún otro lado del sistema.
 const HallazgosSection: React.FC<HallazgosSectionProps> = ({ hallazgos }) => (

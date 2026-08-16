@@ -884,10 +884,10 @@ const Agenda: React.FC = () => {
     Swal.fire({
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">${title}</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">${message}</p>`,
-      iconHtml: `<i class="mdi mdi-check-circle-outline success-icon"></i><style> .success-icon { color: #54BBAB; font-size: 90px; animation: pop 0.4s ease-out forwards; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } </style>`,
+      iconHtml: `<i class="fa-solid fa-check success-icon"></i><style> .success-icon { color: #545454; font-size: 90px; animation: pop 0.4s ease-out forwards, popPeriodic 4s ease-in-out 1.5s infinite; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } @keyframes popPeriodic { 0%, 85%, 100% { transform: scale(1); } 90% { transform: scale(1.15); } 95% { transform: scale(0.95); } } </style>`,
       didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" }); },
       buttonsStyling: false,
-      confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
+      confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> OK`,
       customClass:
       {
         confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
@@ -900,16 +900,29 @@ const Agenda: React.FC = () => {
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">${title}</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">${message}</p>`,
       iconHtml: `
-      <i class="mdi mdi-alert-circle-outline success-icon"></i>
+      <i class="fa-solid fa-exclamation aviso-exclamation"></i>
       <style>
-        .success-icon {
+        .aviso-exclamation {
           font-size: 90px;
-          animation: pop 0.4s ease-out forwards;
+          animation: shakeInitial 0.6s ease-in-out,
+                     shakePeriodic 4s ease-in-out 1.5s infinite;
         }
-        @keyframes pop {
-          0% { transform: scale(0.5); opacity: 0; }
-          70% { transform: scale(1.15); opacity: 1; }
-          100% { transform: scale(1); }
+        @keyframes shakeInitial {
+          0%   { transform: scale(0.5) rotate(0deg); opacity: 0; }
+          20%  { transform: scale(1.15) rotate(-12deg); opacity: 1; }
+          40%  { transform: scale(1.05) rotate(10deg); }
+          60%  { transform: scale(1.05) rotate(-7deg); }
+          80%  { transform: scale(1) rotate(5deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes shakePeriodic {
+          0%, 85%, 100% { transform: rotate(0deg); }
+          87% { transform: rotate(-10deg); }
+          89% { transform: rotate(10deg); }
+          91% { transform: rotate(-8deg); }
+          93% { transform: rotate(8deg); }
+          95% { transform: rotate(-4deg); }
+          97% { transform: rotate(4deg); }
         }
       </style>
       `,
@@ -917,7 +930,7 @@ const Agenda: React.FC = () => {
         const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" });
       },
       buttonsStyling: false,
-      confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> OK`,
+      confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> OK`,
       customClass:
       {
         confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
@@ -930,16 +943,22 @@ const Agenda: React.FC = () => {
       title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">${title}</p>`,
       html: `<p style="font-size: 16px; padding: 0 40px">${message}</p>`,
       iconHtml: `
-      <i class="mdi mdi-help-circle-outline success-icon"></i>
+      <i class="fa-solid fa-question aviso-question"></i>
       <style>
-        .success-icon {
+        .aviso-question {
           font-size: 90px;
-          animation: pop 0.4s ease-out forwards;
+          animation: pop 0.4s ease-out forwards,
+                     popPeriodic 4s ease-in-out 1.5s infinite;
         }
         @keyframes pop {
           0% { transform: scale(0.5); opacity: 0; }
           70% { transform: scale(1.15); opacity: 1; }
           100% { transform: scale(1); }
+        }
+        @keyframes popPeriodic {
+          0%, 85%, 100% { transform: scale(1); }
+          90% { transform: scale(1.15); }
+          95% { transform: scale(0.95); }
         }
       </style>
       `,
@@ -948,8 +967,8 @@ const Agenda: React.FC = () => {
         if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" });
       },
       buttonsStyling: false,
-      confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i>${confirma}`,
-      denyButtonText: `<i class="mdi mdi-close-thick mr-1"></i>${cancelar}`,
+      confirmButtonText: `<i class="fa-solid fa-check mr-1"></i>${confirma}`,
+      denyButtonText: `<i class="fa-solid fa-xmark mr-1"></i>${cancelar}`,
       showDenyButton: true,
       customClass: {
         confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
@@ -964,16 +983,29 @@ const Agenda: React.FC = () => {
       html: `<p style="font-size: 16px; padding: 0 40px">Ya existe una cita para el día <b>${dayNames[weekDates[overlapAppointment.dia]?.getDay() ?? 0].toLowerCase()} ${weekDates[overlapAppointment.dia]?.getDate()} a las ${overlapAppointment.time}</b>. ¿Desea permitir que se empalmen?</p>`,
       // <b>${overlapAppointment.nombre}</b>
       iconHtml: `
-      <i class="mdi mdi-alert-circle-outline success-icon"></i>
+      <i class="fa-solid fa-exclamation aviso-exclamation"></i>
       <style>
-        .success-icon {
+        .aviso-exclamation {
           font-size: 90px;
-          animation: pop 0.4s ease-out forwards;
+          animation: shakeInitial 0.6s ease-in-out,
+                     shakePeriodic 4s ease-in-out 1.5s infinite;
         }
-        @keyframes pop {
-          0% { transform: scale(0.5); opacity: 0; }
-          70% { transform: scale(1.15); opacity: 1; }
-          100% { transform: scale(1); }
+        @keyframes shakeInitial {
+          0%   { transform: scale(0.5) rotate(0deg); opacity: 0; }
+          20%  { transform: scale(1.15) rotate(-12deg); opacity: 1; }
+          40%  { transform: scale(1.05) rotate(10deg); }
+          60%  { transform: scale(1.05) rotate(-7deg); }
+          80%  { transform: scale(1) rotate(5deg); }
+          100% { transform: scale(1) rotate(0deg); }
+        }
+        @keyframes shakePeriodic {
+          0%, 85%, 100% { transform: rotate(0deg); }
+          87% { transform: rotate(-10deg); }
+          89% { transform: rotate(10deg); }
+          91% { transform: rotate(-8deg); }
+          93% { transform: rotate(8deg); }
+          95% { transform: rotate(-4deg); }
+          97% { transform: rotate(4deg); }
         }
       </style>
       `,
@@ -982,8 +1014,8 @@ const Agenda: React.FC = () => {
         if (el) Object.assign(el.style, { border:"none", background:"transparent", boxShadow:"none", width:"auto", height:"auto" });
       },
       buttonsStyling: false,
-      confirmButtonText: `<i class="mdi mdi-check-bold mr-1"></i> Permitir`,
-      cancelButtonText: `<i class="mdi mdi-close-thick mr-1"></i> Cancelar`,
+      confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> Permitir`,
+      cancelButtonText: `<i class="fa-solid fa-xmark mr-1"></i> Cancelar`,
       showCancelButton: true,
       customClass: {
         confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
@@ -1734,68 +1766,59 @@ const Agenda: React.FC = () => {
         </div>
       </div>
 
-      <aside
-        className={`fixed top-[64px] right-0 h-[calc(100vh-64px)] bg-white border-l border-gray-200 transition-all duration-300 ease-in-out z-40 ${isPanelOpen ? "" : "translate-x-full"}`}
-        style={{ width: 420 }}
-      >
-        {isLoadingEdit && (
-          <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-xs z-[9999] rounded-lg">
-            <div className="flex flex-col items-center gap-3">
-              {/* <div className="w-12 h-12 rounded-full border-4 border-gray-200 border-t-sea-blue border-r-sky-blue border-b-sky-blue/40 animate-spin"></div> */}
-              <div className="w-12 h-12 rounded-full animate-spin bg-linear-to-r from-sea-blue to-sky-blue p-[4px]">
-                <div className="w-full h-full rounded-full bg-white"></div>
-              </div>
-            </div>
-          </div>
-        )}
-        <div className="flex h-full w-full">
-          <div className="flex flex-col border-r border-gray-100 h-full shrink-0" style={{ width: 420 }}>
-            <div className="px-3 py-4 shrink-0 bg-linear-to-r from-white to-gray-100">
-              <div className="flex items-center gap-2 justify-between">
-                <div className="flex items-center gap-2">
-                  <button
-                    title={"Regresar"}
-                    // className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-sea-blue hover:bg-gray-100 rounded-xl transition-all cursor-pointer"
-                    className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-sea-blue bg-linear-to-b hover:from-sea-blue/10 hover:to-gray-50 rounded-xl transition-all cursor-pointer"
-                    onClick={async () => {
-                      if (!isViewMode && editingId) {
-                        const originalApt = appointments.find(a => a.id === editingId);
-                        if (originalApt) handleEditAppointment(originalApt);
-                        else setIsViewMode(true);
-                      } else {
-                        closePanel();
-                      }
-                    }}
-                  >
-                    <i className={`mdi mdi-chevron-${!isViewMode && editingId ? "left" : "right"} text-2xl`}></i>
-                  </button>
-                  <div>
-                    <p className="text-[14px] font-bold text-sea-blue truncate max-w-[320px]">
-                      {/* <i className={`mdi mdi-${isViewMode ? "calendar-blank" : editingId ? "calendar-edit" : "calendar-blank"} mr-1.5`}></i> */}
-                      {isViewMode ? "Info. de Cita" : editingId ? "Edición de Cita" : "Agendar Cita"}
-                    </p>
-                    <p className="text-xs text-gray-500 truncate">
-                      {(() => {
-                        const start = weekDates[0];
-                        const end = weekDates[6];
-                        const fmtDay = (d: Date) => d.getDate();
-                        const fmtMonth = (d: Date) => d.toLocaleString("es-ES", { month: "long" }); // .toUpperCase()
-                        const fmtYear = (d: Date) => d.getFullYear();
-
-                        if (start.getMonth() === end.getMonth()) { return `${fmtDay(start)} al ${fmtDay(end)} de ${fmtMonth(start)} ${fmtYear(start)}`; }
-                        else if (start.getFullYear() === end.getFullYear()) { return `${fmtDay(start)} ${fmtMonth(start)} al ${fmtDay(end)} ${fmtMonth(end)} ${fmtYear(end)}`; }
-                        else { return `${fmtDay(start)} ${fmtMonth(start)} ${fmtYear(start)} al ${fmtDay(end)} ${fmtMonth(end)} ${fmtYear(end)}`; }
-                      })()}
-                    </p>
+      {isPanelOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={closePanel}></div>
+          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
+            {isLoadingEdit && (
+              <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-xs z-[9999] rounded-lg">
+                <div className="flex flex-col items-center gap-3">
+                  <div className="w-12 h-12 rounded-full animate-spin bg-linear-to-r from-sea-blue to-sky-blue p-[4px]">
+                    <div className="w-full h-full rounded-full bg-white"></div>
                   </div>
                 </div>
               </div>
+            )}
+            <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 shrink-0">
+              <div className="min-w-0">
+                <p className="text-sm font-bold text-sea-blue truncate">
+                  {isViewMode ? "Info. de Cita" : editingId ? "Edición de Cita" : "Agendar Cita"}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {(() => {
+                    const start = weekDates[0];
+                    const end = weekDates[6];
+                    const fmtDay = (d: Date) => d.getDate();
+                    const fmtMonth = (d: Date) => d.toLocaleString("es-ES", { month: "long" }); // .toUpperCase()
+                    const fmtYear = (d: Date) => d.getFullYear();
+
+                    if (start.getMonth() === end.getMonth()) { return `${fmtDay(start)} al ${fmtDay(end)} de ${fmtMonth(start)} ${fmtYear(start)}`; }
+                    else if (start.getFullYear() === end.getFullYear()) { return `${fmtDay(start)} ${fmtMonth(start)} al ${fmtDay(end)} ${fmtMonth(end)} ${fmtYear(end)}`; }
+                    else { return `${fmtDay(start)} ${fmtMonth(start)} ${fmtYear(start)} al ${fmtDay(end)} ${fmtMonth(end)} ${fmtYear(end)}`; }
+                  })()}
+                </p>
+              </div>
+              <button
+                title={!isViewMode && editingId ? "Cancelar edición" : "Cerrar"}
+                onClick={async () => {
+                  if (!isViewMode && editingId) {
+                    const originalApt = appointments.find(a => a.id === editingId);
+                    if (originalApt) handleEditAppointment(originalApt);
+                    else setIsViewMode(true);
+                  } else {
+                    closePanel();
+                  }
+                }}
+                className="w-9 h-9 flex items-center justify-center text-gray-400 hover:text-sea-blue hover:bg-gray-100 rounded-lg transition-all cursor-pointer shrink-0"
+              >
+                <i className={`fa-solid ${!isViewMode && editingId ? "fa-arrow-left" : "fa-xmark"} text-lg`}></i>
+              </button>
             </div>
 
             <div className="flex-1 overflow-y-auto px-3 py-4 flex flex-col gap-1.5">
               <div className="flex-1 overflow-y-auto p-2 space-y-3">
                 <h3 className="text-xs font-bold text-gray-800 mb-2 flex items-center">
-                  <i className="mdi mdi-account-circle mr-2"></i>
+                  <i className="fa-solid fa-circle-user mr-2"></i>
                   Datos del Paciente
                 </h3>
                 {editingId && formData.motivo !== "IND" && formData.motivo !== "VAC" && formData.motivo !== "IMSS" && formData.motivo !== "SEG" && formData.motivo !== "PER" ? (
@@ -1808,7 +1831,7 @@ const Agenda: React.FC = () => {
                         type="text"
                         value={formData.matricula}
                         disabled
-                        className="w-full border rounded-lg px-3 py-2 text-xs outline-none border-gray-100 shadow-md bg-gray-50"
+                        className="w-full border rounded-lg px-3 py-2 text-xs outline-none border-gray-50 shadow-xs bg-gray-50"
                       />
                     </div>
                     <div>
@@ -1817,7 +1840,7 @@ const Agenda: React.FC = () => {
                         type="text"
                         value={formData.patientName}
                         disabled
-                        className="w-full border rounded-lg px-3 py-2 text-xs outline-none border-gray-100 shadow-md bg-gray-50"
+                        className="w-full border rounded-lg px-3 py-2 text-xs outline-none border-gray-50 shadow-xs bg-gray-50"
                       />
                     </div>
                   </>
@@ -1828,7 +1851,7 @@ const Agenda: React.FC = () => {
                         <label className="block text-xs font-medium text-gray-700 mb-1">
                           Matrícula / Nombre
                         </label>
-                        <div className="w-full border border-gray-100 rounded-lg shadow-md bg-gray-50 cursor-not-allowed px-2 py-2 flex items-center gap-2">
+                        <div className="w-full border border-gray-50 rounded-lg shadow-xs bg-gray-50 cursor-not-allowed px-2 py-2 flex items-center gap-2">
                           <Grip className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                           <span className="text-xs">
                             TODOS
@@ -1851,7 +1874,7 @@ const Agenda: React.FC = () => {
                           </label>
                         </div>
                         <div
-                          className={`w-full border border-gray-100 rounded-lg shadow-md bg-white ${isViewMode ? "" : "focus-within:border-clinical-blue focus-within:ring-1 focus-within:ring-clinical-blue"}`}
+                          className={`w-full border border-gray-50 rounded-lg shadow-xs bg-white ${isViewMode ? "" : "focus-within:border-clinical-blue focus-within:ring-1 focus-within:ring-clinical-blue"}`}
                           onClick={() => !isViewMode && (document.getElementById('mat-search-input') as HTMLInputElement)?.focus()}
                         >
                           {!isViewMode && (
@@ -1868,7 +1891,7 @@ const Agenda: React.FC = () => {
                                 className="flex-1 outline-none text-xs bg-transparent placeholder-gray-400"
                               />
                               {matLoadingAuto && (
-                                <i className="mdi mdi-loading mdi-spin text-gray-400 text-base shrink-0"></i>
+                                <i className="fa-solid fa-spinner fa-spin text-gray-400 text-base shrink-0"></i>
                               )}
                               {showSuggestions && matSuggestions.length > 0 && (
                                 <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-50 max-h-40 overflow-y-auto">
@@ -1916,7 +1939,7 @@ const Agenda: React.FC = () => {
                                       onMouseDown={(e) => { e.preventDefault(); handleRemovePatient(p.matricula); }}
                                       className="ml-auto text-gray-400 hover:text-red-500 transition-colors cursor-pointer leading-none shrink-0"
                                     >
-                                      <i className="mdi mdi-close-thick text-[10px]"></i>
+                                      <i className="fa-solid fa-xmark text-[10px]"></i>
                                     </button>
                                   )}
                                 </span>
@@ -1929,7 +1952,7 @@ const Agenda: React.FC = () => {
                   </div>
                 )}
                 <h3 className="text-xs font-bold text-gray-800 mt-6 mb-2 flex items-center">
-                  <i className="mdi mdi-calendar-blank mr-2"></i>
+                  <i className="fa-solid fa-calendar-days mr-2"></i>
                   Detalle de Agenda
                 </h3>
                 <div>
@@ -1937,7 +1960,7 @@ const Agenda: React.FC = () => {
                     Motivo
                   </label>
                   <select
-                    className={`w-full border border-gray-100 shadow-md rounded-lg px-2 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none ${isViewMode || selectedPatients.length > 1 ? "bg-gray-50 cursor-not-allowed" : ""}`}
+                    className={`w-full border border-gray-50 shadow-xs rounded-lg px-2 py-2 text-xs focus:ring-1 focus:ring-sea-blue outline-none ${isViewMode || selectedPatients.length > 1 ? "bg-gray-50 cursor-not-allowed" : ""}`}
                     value={formData.motivo}
                     onChange={(e) => {
                       const val = e.target.value;
@@ -1985,14 +2008,14 @@ const Agenda: React.FC = () => {
                       setFormData(f => ({ ...f, dia: String(dayIndex) }));
                     }}
                     disabled={isViewMode}
-                    className={`w-full border border-gray-100 shadow-md rounded-lg px-3 py-2 text-xs ${isViewMode ? "bg-gray-50 cursor-not-allowed" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
+                    className={`w-full border border-gray-50 shadow-xs rounded-lg px-3 py-2 text-xs ${isViewMode ? "bg-gray-50 cursor-not-allowed" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
                   />
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Hora de inicio</label>
                     <select
-                      className={`w-full border border-gray-100 shadow-md rounded-lg px-2 py-2 text-xs ${isViewMode ? "bg-gray-50 cursor-not-allowed" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
+                      className={`w-full border border-gray-50 shadow-xs rounded-lg px-2 py-2 text-xs ${isViewMode ? "bg-gray-50 cursor-not-allowed" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
                       value={toHora24(formData.hora, formData.periodo) + formData.minutos / 60}
                       disabled={isViewMode}
                       onChange={(e) => {
@@ -2028,7 +2051,7 @@ const Agenda: React.FC = () => {
                   <div>
                     <label className="block text-xs font-medium text-gray-700 mb-1">Hora de fin</label>
                     <select
-                      className={`w-full border border-gray-100 shadow-md rounded-lg px-2 py-2 text-xs ${isViewMode ? "bg-gray-50 cursor-not-allowed" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
+                      className={`w-full border border-gray-50 shadow-xs rounded-lg px-2 py-2 text-xs ${isViewMode ? "bg-gray-50 cursor-not-allowed" : ""} focus:ring-1 focus:ring-sea-blue outline-none`}
                       value={toHora24(formData.hora, formData.periodo) + formData.minutos / 60 + Number(formData.duracion)}
                       disabled={isViewMode}
                       onChange={(e) => {
@@ -2060,7 +2083,7 @@ const Agenda: React.FC = () => {
                   </label>
                   <textarea
                     rows={4}
-                    className={`w-full border rounded-lg px-3 py-2 text-xs outline-none transition-colors border-gray-100 shadow-md focus:border-clinical-blue focus:ring-1" ${isViewMode ? "bg-gray-50 cursor-not-allowed" : ""} resize-none`}
+                    className={`w-full border rounded-lg px-3 py-2 text-xs outline-none transition-colors border-gray-50 shadow-xs focus:border-clinical-blue focus:ring-1" ${isViewMode ? "bg-gray-50 cursor-not-allowed" : ""} resize-none`}
                     value={formData.notas}
                     onChange={(e) => { setFormData(f => ({ ...f, notas: e.target.value })); }}
                     disabled={!!isViewMode}
@@ -2080,7 +2103,7 @@ const Agenda: React.FC = () => {
                       onClick={() => handleConfirmCita()}
                       className="w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
                     >
-                      <i className="mdi mdi-account-check mr-2"></i>
+                      <i className="fa-solid fa-user-check mr-2"></i>
                       Asistencia
                     </button>
                     <button
@@ -2092,7 +2115,7 @@ const Agenda: React.FC = () => {
                       }}
                       className="w-full flex items-center justify-center bg-gray-100 hover:bg-gray-50/50 hover:-translate-y-1 text-gray-600 px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-gray-400/30 transition-all cursor-pointer whitespace-nowrap"
                     >
-                      <i className="mdi mdi-pencil mr-2"></i>
+                      <i className="fa-solid fa-pencil mr-2"></i>
                       Editar
                     </button>
                   </>
@@ -2102,7 +2125,7 @@ const Agenda: React.FC = () => {
                       onClick={() => handleUpdateCita()}
                       className="w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
                     >
-                      <i className="mdi mdi-content-save mr-2"></i>
+                      <i className="fa-solid fa-floppy-disk mr-2"></i>
                       Guardar
                     </button>
                     <button
@@ -2110,7 +2133,7 @@ const Agenda: React.FC = () => {
                       onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleDeleteAppointment(); }}
                       className="w-full flex items-center justify-center bg-gray-100 hover:bg-gray-50/50 hover:-translate-y-1 text-sea-blue px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-gray-400/30 transition-all cursor-pointer whitespace-nowrap"
                     >
-                      <i className="mdi mdi-cancel mr-2"></i>
+                      <i className="fa-solid fa-ban mr-2"></i>
                       Eliminar
                     </button>
                   </>
@@ -2120,7 +2143,7 @@ const Agenda: React.FC = () => {
                       onClick={() => handleSaveCita()}
                       className="w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
                     >
-                      <i className="mdi mdi-timer mr-2"></i>
+                      <i className="fa-solid fa-stopwatch mr-2"></i>
                       Guardar Cita
                     </button>
                     <button
@@ -2128,7 +2151,7 @@ const Agenda: React.FC = () => {
                       onClick={() => openPanel()}
                       className="w-full flex items-center justify-center bg-gray-100 hover:bg-gray-50/50 hover:-translate-y-1 text-sea-blue px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-gray-400/30 transition-all cursor-pointer whitespace-nowrap"
                     >
-                      <i className="mdi mdi-broom mr-2"></i>
+                      <i className="fa-solid fa-broom mr-2"></i>
                       Limpiar
                     </button>
                   </>
@@ -2137,7 +2160,7 @@ const Agenda: React.FC = () => {
             )}
           </div>
         </div>
-      </aside>
+      )}
 
       {/* ─── Modal independiente de Grupos ─── */}
       <AnimatePresence>
