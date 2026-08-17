@@ -63,7 +63,7 @@ export async function evaluarSaludConAnalisisIA(idUsuario: string, esUsuarioMedi
       "Content-Type": "text/xml; charset=utf-8",
       SOAPAction: SOAP_ACTION,
     },
-    // httpsAgent: agenteDev,
+    httpsAgent: agenteDev,
     timeout: 60000,
   });
 

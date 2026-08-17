@@ -165,7 +165,8 @@ const PacienteRegistroModal: React.FC<PacienteRegistroModalProps> = ({ open, pac
 
       setFormData({
         ...DEFAULT_FORM,
-        curp: (paciente.CURP ?? "").trim(),
+        // Igual que Riesgo/TipoSanguineo: el SOAP devuelve objetos para campos vacíos (truthy), por eso ?? no aplica
+        curp: (typeof paciente.CURP === "string" ? paciente.CURP : "").trim(),
         nss: paciente.NSS ?? "",
         categoria: paciente.Categoria_desc ?? "",
         compania: paciente.Compania ?? "",
@@ -192,7 +193,7 @@ const PacienteRegistroModal: React.FC<PacienteRegistroModalProps> = ({ open, pac
       });
 
       setEditingId(paciente.IdPaciente ?? null);
-      originalCurpRef.current = (paciente.CURP ?? "").trim().toUpperCase();
+      originalCurpRef.current = (typeof paciente.CURP === "string" ? paciente.CURP : "").trim().toUpperCase();
       setEditingType(paciente.Empl_matricula && paciente.Empl_matricula !== "0" ? "internal" : "external");
     } else {
       setFormData(DEFAULT_FORM);
