@@ -1,11 +1,18 @@
 import React, { useMemo, useState } from "react";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { DistribucionRiesgoDepto } from "../analytics";
+import { RegistroValidado } from "../types";
+import { clasificarRiesgo } from "../clinicalRules";
+import { useIrAPacientesFiltrados } from "../useIrAPacientesFiltrados";
 import ShimmerOverlay from "./shared/ShimmerOverlay";
 
 interface RiesgoPorDepartamentoChartProps {
   datos: DistribucionRiesgoDepto[];
+  estadoActual: RegistroValidado[];
 }
+
+const fmtTextoRiesgo = (r: RegistroValidado) => clasificarRiesgo(r.Riesgo).label;
+const valorRiesgo = (r: RegistroValidado) => r.Riesgo;
 
 // Barras agrupadas (sin stackId), no apiladas: a diferencia de un stacked bar,
 // un departamento con 1 caso de riesgo alto sigue siendo visible como su
@@ -34,7 +41,11 @@ const TooltipRiesgoDepto: React.FC<any> = ({ active, payload, label }) => {
   );
 };
 
-const RiesgoPorDepartamentoChart: React.FC<RiesgoPorDepartamentoChartProps> = ({ datos }) => {
+const RiesgoPorDepartamentoChart: React.FC<RiesgoPorDepartamentoChartProps> = ({ datos, estadoActual }) => {
+  // Clic en una barra -> Pacientes.tsx, filtrado a las matrículas de ese
+  // departamento + nivel de riesgo (mismo patrón que el resto del dashboard).
+  const irAPacientesFiltrados = useIrAPacientesFiltrados();
+
   // Mismo toggle de leyenda que el resto del dashboard (Somatometría/Cardiovascular):
   // la serie oculta se fuerza a 0 sin perder el conteo real en `datos`.
   const [seriesOcultas, setSeriesOcultas] = useState<Set<string>>(new Set());
@@ -55,6 +66,24 @@ const RiesgoPorDepartamentoChart: React.FC<RiesgoPorDepartamentoChartProps> = ({
       }),
     [datos, seriesOcultas]
   );
+
+  // Registros agrupados por departamento + nivel de riesgo (mismo criterio
+  // que distribucionRiesgoPorDepartamento en analytics.ts, pero conservando
+  // el registro completo en vez de solo el conteo, para poder armar el
+  // filtroClinico al hacer clic en una barra).
+  const registrosPorDeptoRiesgo = useMemo(() => {
+    const mapa = new Map<string, Record<"sano" | "moderado" | "alto", RegistroValidado[]>>();
+    estadoActual.forEach((r) => {
+      if (!r.Depto_Series) return;
+      const nivel = clasificarRiesgo(r.Riesgo).nivel;
+      const key = nivel === "normal" ? "sano" : nivel === "leve" ? "moderado" : nivel === "alto" || nivel === "critico" ? "alto" : null;
+      if (!key) return;
+      const bucket = mapa.get(r.Depto_Series) ?? { sano: [], moderado: [], alto: [] };
+      bucket[key].push(r);
+      mapa.set(r.Depto_Series, bucket);
+    });
+    return mapa;
+  }, [estadoActual]);
 
   if (datos.length === 0) {
     return (
@@ -86,7 +115,20 @@ const RiesgoPorDepartamentoChart: React.FC<RiesgoPorDepartamentoChartProps> = ({
             <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
             <Tooltip content={<TooltipRiesgoDepto />} cursor={{ fill: "#f8fafc" }} />
             {SERIES_RIESGO.map((s) => (
-              <Bar key={s.key} dataKey={s.key} name={s.label} fill={s.color} radius={[4, 4, 0, 0]} animationDuration={900} animationEasing="ease-out" />
+              <Bar
+                key={s.key}
+                dataKey={s.key}
+                name={s.label}
+                fill={s.color}
+                radius={[4, 4, 0, 0]}
+                animationDuration={900}
+                animationEasing="ease-out"
+                style={{ cursor: "pointer" }}
+                onClick={(data: any) => {
+                  const registros = registrosPorDeptoRiesgo.get(data.depto)?.[s.key] ?? [];
+                  irAPacientesFiltrados(`${s.label} · ${data.depto}`, "riesgo", "Riesgo", registros, fmtTextoRiesgo, valorRiesgo);
+                }}
+              />
             ))}
           </BarChart>
         </ResponsiveContainer>

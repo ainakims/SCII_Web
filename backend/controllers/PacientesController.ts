@@ -2,6 +2,18 @@ const jwt = require("jsonwebtoken");
 import { DB } from "../server/config/db";
 import { Request, Response } from "express";
 import { Parametros, TipoConsulta } from "../interfaces/params_web_service";
+import { cacheGet, cacheSet, cacheInvalidar } from "../utils/simpleCache";
+
+// La lista de pacientes/reingresos casi no cambia y el SP es pesado — se
+// cachea 20 minutos por cada valor de @Activo (activos y reingresos son
+// universos distintos, cada uno con su propia entrada). Las escrituras
+// (GenerarPaciente/EdicionPaciente/EliminaPaciente) invalidan ambas al
+// terminar, así que el cache nunca sirve algo desactualizado por un cambio
+// hecho desde este mismo backend — solo evita relecturas repetidas.
+const TTL_CACHE_PACIENTES_MS = 20 * 60 * 1000;
+const KEY_PACIENTES_ACTIVOS = "pacientes:1";
+const KEY_PACIENTES_INACTIVOS = "pacientes:0";
+const KEY_PROVEEDORES = "pacientes:proveedores";
 
 export function PacientesController(db: DB) {
   const { executeConnection } = db;
@@ -9,14 +21,23 @@ export function PacientesController(db: DB) {
   const ObtenerPacientes = async (req: Request, res: Response): Promise<Response> => {
     try {
       const { esActivo } = req.body;
+      const activo = esActivo === false || esActivo === "0" ? "0" : "1";
+      const cacheKey = activo === "1" ? KEY_PACIENTES_ACTIVOS : KEY_PACIENTES_INACTIVOS;
+
+      const cacheado = cacheGet<unknown>(cacheKey);
+      if (cacheado !== undefined) {
+        return res.json({ ok: true, data: cacheado });
+      }
 
       const params: Parametros[] = [
         { Nombre: "@Case",       Valor: "0" },
-        { Nombre: "@Activo",  Valor: esActivo === false || esActivo === "0" ? "0" : "1" }
+        { Nombre: "@Activo",  Valor: activo }
       ];
 
       const sql = "[TNGCORE].[dbo].[SCII_Obtener_Pacientes]";
       const result = await executeConnection<boolean>(sql, TipoConsulta.ProcedimientoAlmacenado, params);
+
+      cacheSet(cacheKey, result, TTL_CACHE_PACIENTES_MS);
 
       return res.json({
         ok: true,
@@ -34,12 +55,19 @@ export function PacientesController(db: DB) {
 
   const ObtenerProveedor = async (req: Request, res: Response): Promise<Response> => {
     try {
+      const cacheado = cacheGet<unknown>(KEY_PROVEEDORES);
+      if (cacheado !== undefined) {
+        return res.json({ ok: true, data: cacheado });
+      }
+
       const params: Parametros[] = [
         { Nombre: "@Case",      Valor: "1" }
       ];
 
       const sql = "[TNGCORE].[dbo].[SCII_Obtener_Pacientes]";
       const result = await executeConnection<boolean>(sql, TipoConsulta.ProcedimientoAlmacenado, params);
+
+      cacheSet(KEY_PROVEEDORES, result, TTL_CACHE_PACIENTES_MS);
 
       return res.json({
         ok: true,
@@ -83,6 +111,8 @@ export function PacientesController(db: DB) {
       const sql = "[TNGCORE].[dbo].[SCII_Control_Pacientes]";
       const result = await executeConnection<boolean>(sql, TipoConsulta.ProcedimientoAlmacenado, params);
 
+      cacheInvalidar(KEY_PACIENTES_ACTIVOS, KEY_PACIENTES_INACTIVOS);
+
       return res.json({
         ok: true,
         data: result
@@ -122,9 +152,11 @@ export function PacientesController(db: DB) {
         { Nombre: "@Riesgo",              Valor: String(Riesgo ?? "").trim() },
         { Nombre: "@Tipo",                Valor: "" },
       ];
-      
+
       const sql = "[TNGCORE].[dbo].[SCII_Control_Pacientes]";
       const result = await executeConnection<boolean>(sql, TipoConsulta.ProcedimientoAlmacenado, params);
+
+      cacheInvalidar(KEY_PACIENTES_ACTIVOS, KEY_PACIENTES_INACTIVOS);
 
       return res.json({
         ok: true,
@@ -164,9 +196,11 @@ export function PacientesController(db: DB) {
         { Nombre: "@Riesgo",              Valor: "" },
         { Nombre: "@Tipo",                Valor: "" },
       ];
-      
+
       const sql = "[TNGCORE].[dbo].[SCII_Control_Pacientes]";
       const result = await executeConnection<boolean>(sql, TipoConsulta.ProcedimientoAlmacenado, params);
+
+      cacheInvalidar(KEY_PACIENTES_ACTIVOS, KEY_PACIENTES_INACTIVOS);
 
       return res.json({
         ok: true,

@@ -1,12 +1,13 @@
 import API_BASE_URL from "../config";
 import { fetchWithAuth } from "../services/api";
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useNavigate, useLocation } from "react-router-dom";
 import Swal from "sweetalert2";
 import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthToken";
-import PacientesTabla, { PacienteResumen } from "../features/saludPoblacional/components/PacientesTabla";
+import PacientesTabla, { PacienteResumen, ColumnaClinica } from "../features/saludPoblacional/components/PacientesTabla";
 import PacienteRegistroModal, { Paciente } from "../features/saludPoblacional/components/PacienteRegistroModal";
+import { FiltroClinico } from "../features/saludPoblacional/filtroClinico";
 
 const PacientesTablaSkeleton: React.FC = () => (
   <div className="h-full rounded-lg bg-gray-50 overflow-hidden animate-pulse">
@@ -29,13 +30,35 @@ const PacientesTablaSkeleton: React.FC = () => (
 const Pacientes: React.FC = () => {
   const { user } = useAuth() as { user: { rol?: string; matricula?: string } };
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if ((user?.rol ?? "").toLowerCase().trim() !== "admin" && (user?.rol ?? "").toLowerCase().trim() !== "médico") {
       navigate("/Agenda");
     }
   }, [user, navigate]);
-    
+
+  // Filtro clínico que llega al navegar desde una gráfica del Dashboard (ver
+  // filtroClinico.ts) — ya trae las matrículas y el texto a mostrar, no
+  // requiere pedirle nada nuevo al backend.
+  const [filtroClinico, setFiltroClinico] = useState<FiltroClinico | null>(
+    (location.state as { filtroClinico?: FiltroClinico } | null)?.filtroClinico ?? null
+  );
+
+  const quitarFiltroClinico = (): void => {
+    setFiltroClinico(null);
+    navigate(location.pathname, { replace: true, state: {} });
+  };
+
+  // Si se navega de nuevo a /Pacientes con otro filtroClinico (ej. se vuelve
+  // al Dashboard y se da clic en otra barra) sin desmontar este componente,
+  // React Router no vuelve a ejecutar el useState inicial — hay que
+  // sincronizarlo aquí.
+  useEffect(() => {
+    const incoming = (location.state as { filtroClinico?: FiltroClinico } | null)?.filtroClinico ?? null;
+    if (incoming) setFiltroClinico(incoming);
+  }, [location.state]);
+
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
 
   const [modalOpen, setModalOpen] = useState<boolean>(false);
@@ -87,6 +110,20 @@ const Pacientes: React.FC = () => {
       setLoadingPacientes(false);
     }
   };
+
+  const pacientesFiltrados = useMemo(() => {
+    if (!filtroClinico) return pacientes;
+    const matriculas = new Set(filtroClinico.entradas.map((e) => e.matricula));
+    return pacientes.filter((p) => matriculas.has(p.Empl_matricula));
+  }, [pacientes, filtroClinico]);
+
+  const columnaClinica: ColumnaClinica | undefined = useMemo(() => {
+    if (!filtroClinico) return undefined;
+    return {
+      label: filtroClinico.columnaLabel,
+      valores: Object.fromEntries(filtroClinico.entradas.map((e) => [e.matricula, { texto: e.texto, valor: e.valor, fecha: e.fecha }])),
+    };
+  }, [filtroClinico]);
 
   const handleOpenModal = (paciente: Paciente | null = null): void => {
     setModalPaciente(paciente);
@@ -252,19 +289,35 @@ const Pacientes: React.FC = () => {
               <i className="fa-solid fa-user-group text-sea-blue mr-3"></i>
               Pacientes
             </h2>
+            {filtroClinico && (
+              <div className="flex items-center justify-between gap-3 bg-sky-blue/10 text-sea-blue text-xs font-medium px-4 py-2.5 rounded-lg mb-3 shrink-0">
+                <span className="flex items-center gap-2">
+                  <i className="fa-solid fa-filter"></i>
+                  Mostrando {pacientesFiltrados.length} paciente{pacientesFiltrados.length === 1 ? "" : "s"} · {filtroClinico.bucketLabel}
+                </span>
+                <button
+                  onClick={quitarFiltroClinico}
+                  className="flex items-center gap-1 text-sea-blue hover:text-sky-blue transition-colors cursor-pointer"
+                >
+                  <i className="fa-solid fa-xmark"></i>
+                  Quitar filtro
+                </button>
+              </div>
+            )}
             <div className="flex-1 min-h-0">
               {loadingPacientes ? (
                 <PacientesTablaSkeleton />
               ) : (
                 <PacientesTabla
                   activo={true}
-                  pacientes={pacientes as PacienteResumen[]}
+                  pacientes={pacientesFiltrados as PacienteResumen[]}
                   fillHeight
                   basePath="/Pacientes"
                   showFecha={false}
                   onEdit={(p) => handleOpenModal(p as unknown as Paciente)}
                   onDelete={(p) => handleDelete(p.IdPaciente)}
                   onVerDocumentos={(p) => navigate("/Documentos", { state: { matricula: String(p.Empl_matricula ?? "") } })}
+                  columnaClinica={columnaClinica}
                 />
               )}
             </div>

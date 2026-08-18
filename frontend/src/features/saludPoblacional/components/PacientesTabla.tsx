@@ -21,6 +21,24 @@ export interface PacienteResumen {
   FechaNacimiento?: string;
 }
 
+export interface ValorColumnaClinica {
+  texto: string;
+  valor: number | null;
+  // Fecha de la medición que dio origen al valor — se muestra en un tooltip
+  // al pasar el mouse sobre la celda, para saber de cuándo es el dato.
+  fecha: string | null;
+}
+
+// Columna adicional que solo aparece cuando se llega a esta tabla filtrada
+// desde una gráfica del Dashboard (ver filtroClinico.ts) — nunca se muestra
+// de otra forma. `label` es el encabezado (ej. "IMC", "ICT", "Glucosa") y
+// `valores` trae el texto a mostrar + el valor numérico (para ordenar/filtrar)
+// por matrícula.
+export interface ColumnaClinica {
+  label: string;
+  valores: Record<string, ValorColumnaClinica>;
+}
+
 interface PacientesTablaProps {
   activo: boolean;
   pacientes: PacienteResumen[];
@@ -30,9 +48,10 @@ interface PacientesTablaProps {
   onEdit?: (paciente: PacienteResumen) => void;
   onDelete?: (paciente: PacienteResumen) => void;
   onVerDocumentos?: (paciente: PacienteResumen) => void;
+  columnaClinica?: ColumnaClinica;
 }
 
-type SortCol = "matricula" | "nombre" | "especialidad" | "fecha" | "riesgo" | null;
+type SortCol = "matricula" | "nombre" | "especialidad" | "fecha" | "riesgo" | "clinico" | null;
 type SortDir = "asc" | "desc" | "none";
 
 const ITEMS_POR_PAGINA = 100;
@@ -48,13 +67,23 @@ const ICONO_ESPECIALIDAD: Record<string, string> = {
 };
 const ICONO_ESPECIALIDAD_DEFAULT = "";
 
+// Formatea la fecha del tooltip de la columna clínica (dd/mm/aaaa). Fecha
+// llega tal cual vino de RegistroValidado.Fecha.original — puede traer hora
+// (ISO con "T"), por eso se parsea con Date en vez de solo cortar el string.
+const fmtFechaClinica = (fecha: string | null): string => {
+  if (!fecha) return "Sin fecha registrada";
+  const d = new Date(fecha);
+  if (Number.isNaN(d.getTime())) return "Sin fecha registrada";
+  return `Medición: ${d.toLocaleDateString("es-MX", { day: "2-digit", month: "2-digit", year: "numeric" })}`;
+};
+
 const ICONO_RIESGO: Record<string, { icon: string; color: string }> = {
   BAJO: { icon: "circle-check", color: "text-aqua-green" },
   MEDIO: { icon: "circle-exclamation", color: "text-sunray-yellow" },
   ALTO: { icon: "triangle-exclamation", color: "text-red-500" },
 };
 
-const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes, fillHeight = false, basePath = "/Pacientes", showFecha = true, onEdit, onDelete, onVerDocumentos }) => {
+const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes, fillHeight = false, basePath = "/Pacientes", showFecha = true, onEdit, onDelete, onVerDocumentos, columnaClinica }) => {
   const navigate = useNavigate();
   const [navegandoAMatricula, setNavegandoAMatricula] = useState<string | null>(null);
   const irAAnalisis = async (p: PacienteResumen) => {
@@ -86,6 +115,19 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes, fill
 
   const [sortCol, setSortCol] = useState<SortCol>(null);
   const [sortDir, setSortDir] = useState<SortDir>("none");
+
+  // Al llegar filtrado desde una gráfica del Dashboard, lo más útil es ver de
+  // entrada quién tiene el valor más alto (ej. el peso más alto dentro de
+  // "Sobrepeso"), no el orden en que vino del backend. Se dispara con
+  // columnaClinica?.label (no con el objeto completo) para no resetear el
+  // orden si el usuario ya lo cambió a mano y el componente vuelve a
+  // renderizar con la misma columna activa.
+  useEffect(() => {
+    if (columnaClinica) {
+      setSortCol("clinico");
+      setSortDir("desc");
+    }
+  }, [columnaClinica?.label]);
 
   const cycleSort = (col: SortCol) => {
     if (sortCol !== col) { setSortCol(col); setSortDir("asc"); return; }
@@ -120,10 +162,11 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes, fill
       if (sortCol === "nombre") return p.Empl_Nombres ?? "";
       if (sortCol === "especialidad") return p.Especialidad ?? "";
       if (sortCol === "fecha") return (activo ? p.FechaConsulta : p.Empl_fecha_baja) ?? "";
+      if (sortCol === "clinico") return String(columnaClinica?.valores[p.Empl_matricula]?.valor ?? "");
       return p.Riesgo ?? "";
     };
     return [...filtrados].sort((a, b) => factor * valor(a).localeCompare(valor(b), "es", { numeric: true }));
-  }, [filtrados, sortCol, sortDir, activo]);
+  }, [filtrados, sortCol, sortDir, activo, columnaClinica]);
 
   useEffect(() => {
     setPagina(1);
@@ -174,6 +217,7 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes, fill
               {encabezado("especialidad", "Especialidad", "w-[170px]", "fa-solid fa-screwdriver-wrench")}
               {showFecha && encabezado("fecha", activo ? "Última Consulta" : "Fecha Baja", "text-left w-[170px]", "fa-solid fa-calendar-week")}
               {encabezado("riesgo", "Riesgo", "text-left w-[170px]", "fa-solid fa-radiation")}
+              {columnaClinica && encabezado("clinico", columnaClinica.label, "text-left w-[170px]", "fa-solid fa-vial")}
               {hayAcciones && (
                 <th className="px-5 py-3 text-center font-semibold text-gray-700 w-[170px]"><i className="fa-solid fa-arrow-pointer text-xs text-gray-400 group-hover:text-gray-500 mr-1"></i>Acciones</th>
               )}
@@ -301,6 +345,8 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes, fill
                   <td colSpan={showFecha ? 3 : 2} className="px-5 py-2"></td>
                 )}
 
+                {columnaClinica && <td className="px-5 py-2"></td>}
+
                 {!showFecha && activo && hayAcciones ? (
                   <>
                     <td className="px-5 py-2">
@@ -392,6 +438,24 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes, fill
                       );
                     })()}
                   </td>
+                  {columnaClinica && (() => {
+                    const dato = columnaClinica.valores[p.Empl_matricula];
+                    return (
+                      <td className="px-5 py-2 text-left text-gray-700 font-semibold">
+                        {dato ? (
+                          <span className="relative inline-flex items-center gap-1 group/clinico cursor-help max-w-full">
+                            <span className="truncate">{dato.texto}</span>
+                            <i className="fa-solid fa-clock text-[10px] text-gray-300 group-hover/clinico:text-sea-blue transition-colors shrink-0"></i>
+                            <span className="absolute left-0 bottom-full mb-1.5 hidden group-hover/clinico:block z-50 whitespace-nowrap">
+                              <span className="block bg-gray-800 text-white text-[10px] rounded-md px-2 py-1.5 shadow-lg leading-tight">
+                                {fmtFechaClinica(dato.fecha)}
+                              </span>
+                            </span>
+                          </span>
+                        ) : "—"}
+                      </td>
+                    );
+                  })()}
                   {hayAcciones && (
                     <td className="px-2 pr-0 whitespace-nowrap">
                       <div className="flex items-center gap-1 justify-center">
@@ -446,7 +510,7 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes, fill
             })}
             {mostrados.length === 0 && (
               <tr>
-                <td colSpan={(hayAcciones ? 7 : 5) + (showFecha ? 1 : 0)} className="text-center text-gray-400 text-xs py-8">Sin coincidencias.</td>
+                <td colSpan={(hayAcciones ? 7 : 5) + (showFecha ? 1 : 0) + (columnaClinica ? 1 : 0)} className="text-center text-gray-400 text-xs py-8">Sin coincidencias.</td>
               </tr>
             )}
           </tbody>

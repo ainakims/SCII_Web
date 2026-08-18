@@ -4,6 +4,7 @@ import { RegistroValidado } from "../types";
 import { estadisticasIndicador } from "../analytics";
 import { clasificarIMC, clasificarIMCSimplificado, clasificarICT, NIVEL_ESTILOS, Nivel } from "../clinicalRules";
 import { generarResumenMedico } from "../resumenMedico";
+import { useIrAPacientesFiltrados } from "../useIrAPacientesFiltrados";
 import SectionCard from "./shared/SectionCard";
 import KpiCard from "./shared/KpiCard";
 import ShimmerOverlay from "./shared/ShimmerOverlay";
@@ -78,7 +79,30 @@ const TooltipImcCategoria: React.FC<any> = ({ active, payload }) => {
   );
 };
 
+// Formateadores compartidos por los distintos puntos de clic-para-filtrar de
+// esta sección: arman el texto que se ve en la columna clínica de
+// Pacientes.tsx cuando se llega vía filtroClinico — un solo valor, el que
+// dio origen al filtro (ej. si se hizo clic en "Sobrepeso", solo interesa el
+// Peso; en ICT, solo el ICT), no todos los campos relacionados.
+const fmtTextoPeso = (r: RegistroValidado) => (r.Peso.numerico != null ? `${r.Peso.numerico} kg` : "—");
+const valorImc = (r: RegistroValidado) => (r.IMC.usado != null ? r.IMC.usado : null);
+const valorIct = (r: RegistroValidado) => {
+  const cinturaCm = r.PA.numerico;
+  const alturaM = r.Altura.numerico;
+  return cinturaCm != null && alturaM ? cinturaCm / (alturaM * 100) : null;
+};
+const fmtTextoIctValor = (r: RegistroValidado) => {
+  const ratio = valorIct(r);
+  return ratio != null ? `ICT ${ratio.toFixed(2)}` : "—";
+};
+
 export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ estadoActual }) => {
+  // Clic en un elemento de cualquiera de las 3 gráficas de esta sección ->
+  // Pacientes.tsx, ya filtrado a las matrículas de ese elemento. No hay
+  // llamada nueva al backend: estadoActual ya trae todo lo necesario (viene
+  // del mismo fetch que arma estas gráficas).
+  const irAPacientesFiltrados = useIrAPacientesFiltrados();
+
   const [filtroTipoEmpleado, setFiltroTipoEmpleado] = useState<TipoEmpleado>("");
   const [categoriasImcOcultas, setCategoriasImcOcultas] = useState<Set<string>>(new Set());
   const toggleCategoriaImc = (label: string) => {
@@ -124,7 +148,10 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
     return (
       <g
         style={{ transform: `translate(${dx}px, ${dy}px)`, transition: "transform 350ms cubic-bezier(0.34, 1.56, 0.64, 1)" }}
-        onClick={() => toggleSegmentoIct(payload.label)}
+        onClick={() => {
+          toggleSegmentoIct(payload.label);
+          irAPacientesFiltrados(payload.label, "ict", "ICT", payload.registros ?? [], fmtTextoIctValor, valorIct);
+        }}
         className="cursor-pointer"
       >
         <Sector
@@ -149,12 +176,16 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
 
   const distribucionImc = useMemo(() => {
     const conteo = new Map<string, number>();
+    const registrosPorLabel = new Map<string, RegistroValidado[]>();
     estadoActual.forEach((r) => {
       if (r.IMC.estado === "FALTANTE") return;
       const { label } = clasificarIMC(r.IMC.usado);
       conteo.set(label, (conteo.get(label) ?? 0) + 1);
+      const arr = registrosPorLabel.get(label) ?? [];
+      arr.push(r);
+      registrosPorLabel.set(label, arr);
     });
-    return ORDEN_IMC.map((o) => ({ ...o, count: conteo.get(o.label) ?? 0 }));
+    return ORDEN_IMC.map((o) => ({ ...o, count: conteo.get(o.label) ?? 0, registros: registrosPorLabel.get(o.label) ?? [] }));
   }, [estadoActual]);
 
   // Datos que realmente se dibujan: las categorías ocultas por la leyenda se
@@ -168,7 +199,7 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
   // acompañar la distribución de IMC con la misma unidad de análisis (estado
   // actual). Calculado con PA (cintura, cm) / Altura (convertida a cm).
   const distribucionIct = useMemo(() => {
-    const conteo = new Map<string, { count: number; nivel: Nivel }>();
+    const conteo = new Map<string, { count: number; nivel: Nivel; registros: RegistroValidado[] }>();
     estadoActual.forEach((r) => {
       const cinturaCm = r.PA.numerico;
       const alturaM = r.Altura.numerico;
@@ -176,7 +207,9 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
       const alturaCm = alturaM * 100;
       const { label, nivel } = clasificarIctCalculado(cinturaCm / alturaCm);
       const actual = conteo.get(label);
-      conteo.set(label, { count: (actual?.count ?? 0) + 1, nivel });
+      const registros = actual?.registros ?? [];
+      registros.push(r);
+      conteo.set(label, { count: (actual?.count ?? 0) + 1, nivel, registros });
     });
     return Array.from(conteo.entries()).map(([label, v]) => ({ label, ...v }));
   }, [estadoActual]);
@@ -195,11 +228,18 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
   // promedio. Los puntos se distribuyen (jitter) dentro de la columna de su
   // departamento para que no se sobrepongan exactamente. El color identifica al
   // departamento (no la severidad clínica del punto).
-  const { puntosImcPorDepto, departamentos, statsPorDepto } = useMemo(() => {
+  const { puntosImcPorDepto, departamentos, statsPorDepto, registrosPorDepto } = useMemo(() => {
     const conteoPorDepto = new Map<string, number>();
+    // Registros completos por departamento (no solo el conteo): es lo que se
+    // manda a Pacientes.tsx cuando se da clic en un punto — el filtro es por
+    // departamento completo, no por la persona individual del punto.
+    const registrosPorDeptoLocal = new Map<string, RegistroValidado[]>();
     estadoActual.forEach((r) => {
       if (r.IMC.estado === "FALTANTE" || !r.Depto_Series) return;
       conteoPorDepto.set(r.Depto_Series, (conteoPorDepto.get(r.Depto_Series) ?? 0) + 1);
+      const arr = registrosPorDeptoLocal.get(r.Depto_Series) ?? [];
+      arr.push(r);
+      registrosPorDeptoLocal.set(r.Depto_Series, arr);
     });
 
     const deptos = Array.from(conteoPorDepto.entries()).sort((a, b) => b[1] - a[1]).map(([depto]) => depto);
@@ -208,7 +248,7 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
     const normalPorDepto = new Map<string, number>();
     const anormalPorDepto = new Map<string, number>();
     const contadorEnDepto = new Map<string, number>();
-    const puntos: { x: number; y: number; nivel: Nivel; depto: string; color: string }[] = [];
+    const puntos: { x: number; y: number; nivel: Nivel; depto: string; color: string; matricula: string }[] = [];
     estadoActual.forEach((r) => {
       if (r.IMC.estado === "FALTANTE" || !r.Depto_Series) return;
       const idx = indexPorDepto.get(r.Depto_Series);
@@ -227,6 +267,7 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
         nivel: clasificarIMC(valorImc).nivel,
         depto: r.Depto_Series as string,
         color: dentroDelUmbral ? "#009BDE" : "#EF4444",
+        matricula: r.Matricula,
       });
     });
 
@@ -238,7 +279,7 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
       stats.set(d, { count, normal: normalPorDepto.get(d) ?? 0, anormal: anormalPorDepto.get(d) ?? 0 });
     });
 
-    return { puntosImcPorDepto: puntos, departamentos: deptos, statsPorDepto: stats };
+    return { puntosImcPorDepto: puntos, departamentos: deptos, statsPorDepto: stats, registrosPorDepto: registrosPorDeptoLocal };
   }, [estadoActual]);
 
   // Métricas nutricionales adicionales (mejora solicitada).
@@ -271,7 +312,15 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
               <XAxis dataKey="label" tick={{ fontSize: 10 }} interval={0} angle={0} textAnchor="end" height={50} />
               <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
               <Tooltip content={<TooltipImcCategoria />} cursor={{ fill: "#f8fafc" }} />
-              <Bar dataKey="count" name="Personas" radius={[4, 4, 0, 0]} animationDuration={900} animationEasing="ease-out">
+              <Bar
+                dataKey="count"
+                name="Personas"
+                radius={[4, 4, 0, 0]}
+                animationDuration={900}
+                animationEasing="ease-out"
+                style={{ cursor: "pointer" }}
+                onClick={(data: any) => irAPacientesFiltrados(data.label, "imc", "Peso", data.registros ?? [], fmtTextoPeso, valorImc)}
+              >
                 {distribucionImcVisible.map((d, i) => <Cell key={i} fill={d.color} />)}
               </Bar>
             </BarChart>
@@ -438,17 +487,32 @@ export const AntropometriaContenido: React.FC<AntropometriaSectionProps> = ({ es
                   />
                   {/* Barra invisible por departamento: no se ve (fill transparente),
                       pero le da al mouse un "carril" completo (todo el alto y el
-                      ancho de la columna) sobre el que activar el tooltip — igual
-                      que en una gráfica de barras, en vez de tener que apuntar a
-                      un punto exacto. */}
+                      ancho de la columna) sobre el que activar el tooltip y el
+                      clic — igual que en una gráfica de barras, en vez de tener
+                      que apuntar exacto a uno de los puntos dispersos. */}
                   <Bar
                     yAxisId="hover"
                     dataKey="total"
                     data={departamentos.map((d, i) => ({ x: i, total: 1, depto: d, color: PALETA_DEPTO[i % PALETA_DEPTO.length] }))}
                     fill="transparent"
                     isAnimationActive={false}
+                    style={{ cursor: "pointer" }}
+                    onClick={(data: any) => {
+                      if (!data?.depto) return;
+                      const registros = registrosPorDepto.get(data.depto) ?? [];
+                      irAPacientesFiltrados(`Distribución de IMC · ${data.depto}`, "imc", "Peso", registros, fmtTextoPeso, valorImc);
+                    }}
                   />
-                  <Scatter data={puntosImcPorDepto}>
+                  <Scatter
+                    data={puntosImcPorDepto}
+                    style={{ cursor: "pointer" }}
+                    onClick={(entry: any) => {
+                      const p = entry?.payload ?? entry;
+                      if (!p?.depto) return;
+                      const registros = registrosPorDepto.get(p.depto) ?? [];
+                      irAPacientesFiltrados(`Distribución de IMC · ${p.depto}`, "imc", "Peso", registros, fmtTextoPeso, valorImc);
+                    }}
+                  >
                     {puntosImcPorDepto.map((p, i) => <Cell key={i} fill={p.color} fillOpacity={0.8} />)}
                   </Scatter>
                 </ComposedChart>

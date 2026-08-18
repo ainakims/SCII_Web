@@ -304,6 +304,7 @@ export interface PuntoRelacion {
   matricula: string;
   x: number;
   y: number;
+  fecha: string | null;
 }
 
 export function construirRelacion(
@@ -315,7 +316,7 @@ export function construirRelacion(
   registros.forEach((r) => {
     const x = obtenerValor(r, campoX);
     const y = obtenerValor(r, campoY);
-    if (x != null && y != null) puntos.push({ matricula: r.Matricula, x, y });
+    if (x != null && y != null) puntos.push({ matricula: r.Matricula, x, y, fecha: r.Fecha.original });
   });
   return puntos;
 }

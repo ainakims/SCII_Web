@@ -2,8 +2,9 @@ import React, { useMemo, useState } from "react";
 import { XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell, ScatterChart, Scatter, ReferenceLine } from "recharts";
 import { RegistroValidado } from "../types";
 import { estadisticasIndicador, obtenerValor, construirRelacion, IndicadorClave } from "../analytics";
-import { clasificarGlucosa, clasificarColesterol, clasificarTrigliceridos, UMBRALES_LABORATORIO, Nivel, Clasificacion } from "../clinicalRules";
+import { UMBRALES_LABORATORIO, Nivel } from "../clinicalRules";
 import { generarResumenMedico } from "../resumenMedico";
+import { useIrAPacientesConEntradas, useIrAPacientesFiltrados } from "../useIrAPacientesFiltrados";
 import SectionCard from "./shared/SectionCard";
 import ShimmerOverlay from "./shared/ShimmerOverlay";
 
@@ -28,6 +29,10 @@ const tooltipCls = "bg-white shadow-lg rounded-lg p-2.5 text-[11px]";
 const ExploradorMetabolico: React.FC<{ estadoActual: RegistroValidado[] }> = ({ estadoActual }) => {
   const [varX, setVarX] = useState<IndicadorClave>("Glucosa");
   const [varY, setVarY] = useState<IndicadorClave>("Trigliceridos");
+  // Cada punto ya es una sola persona (construirRelacion no agrupa por nada,
+  // a diferencia de los buckets clínicos de BloqueIndicador) — el clic filtra
+  // directo a esa persona, no hay "departamento" ni categoría que agrupar aquí.
+  const irAPacientesConEntradas = useIrAPacientesConEntradas();
 
   const puntos = useMemo(() => construirRelacion(estadoActual, varX, varY), [estadoActual, varX, varY]);
   const umbralesX = UMBRALES_LABORATORIO[varX];
@@ -72,7 +77,22 @@ const ExploradorMetabolico: React.FC<{ estadoActual: RegistroValidado[] }> = ({ 
               <ReferenceLine y={umbralesY[1]} stroke="#ef4444" strokeDasharray="4 4" />
             </>
           )}
-          <Scatter data={puntos} fill="#0070BD" fillOpacity={0.6} />
+          <Scatter
+            data={puntos}
+            fill="#0070BD"
+            fillOpacity={0.6}
+            style={{ cursor: "pointer" }}
+            onClick={(entry: any) => {
+              const p = entry?.payload ?? entry;
+              if (!p?.matricula) return;
+              irAPacientesConEntradas(
+                `${varX} ${p.x} · ${varY} ${p.y}`,
+                "metabolico",
+                varX,
+                [{ matricula: p.matricula, texto: `${p.x} mg/dL`, valor: p.x, fecha: p.fecha }]
+              );
+            }}
+          />
         </ScatterChart>
       </ResponsiveContainer>
       <ShimmerOverlay subtle />
@@ -93,17 +113,30 @@ const NIVEL_COLOR: Record<Nivel, string> = {
   sin_dato: "#9ca3af",
 };
 
+// Clasificación simplificada por umbral de laboratorio (los mismos dos cortes
+// que ya se dibujan como ReferenceLine ámbar/rojo en cada bloque), en vez de
+// las categorías clínicas finas (Normal/Prediabetes/Diabetes, etc.) que tenía
+// antes cada indicador — a pedido del usuario, resulta más simple de evaluar
+// de un vistazo: 3 franjas fijas en vez de 3-4 categorías con nombres
+// distintos por indicador.
+function clasificarPorUmbral(valor: number, umbrales: [number, number] | undefined): { label: string; nivel: Nivel } {
+  if (!umbrales) return { label: "Sin dato", nivel: "sin_dato" };
+  if (valor < umbrales[0]) return { label: "Dentro de rango normal", nivel: "normal" };
+  if (valor < umbrales[1]) return { label: "Valor limítrofe", nivel: "leve" };
+  return { label: "Valor elevado", nivel: "alto" };
+}
+
 interface BloqueProps {
   titulo: string;
   icono: string;
   campo: IndicadorClave;
   unidad: string;
-  clasificador: (valor: number | null) => Clasificacion;
   estadoActual: RegistroValidado[];
 }
 
-const BloqueIndicador: React.FC<BloqueProps> = ({ titulo, icono, campo, unidad, clasificador, estadoActual }) => {
+const BloqueIndicador: React.FC<BloqueProps> = ({ titulo, icono, campo, unidad, estadoActual }) => {
   const umbrales = UMBRALES_LABORATORIO[campo];
+  const irAPacientesFiltrados = useIrAPacientesFiltrados();
 
   // Valores individuales (una persona = un punto), para ver de un vistazo quién
   // está dentro/fuera de cada umbral de laboratorio.
@@ -111,10 +144,33 @@ const BloqueIndicador: React.FC<BloqueProps> = ({ titulo, icono, campo, unidad, 
     return estadoActual
       .map((r, i) => {
         const valor = obtenerValor(r, campo);
-        return valor == null ? null : { x: i, y: valor, nivel: clasificador(valor).nivel };
+        if (valor == null) return null;
+        const { nivel, label } = clasificarPorUmbral(valor, umbrales);
+        return { x: i, y: valor, nivel, label, matricula: r.Matricula };
       })
-      .filter((p): p is { x: number; y: number; nivel: Nivel } => p != null);
-  }, [estadoActual, campo, clasificador]);
+      .filter((p): p is { x: number; y: number; nivel: Nivel; label: string; matricula: string } => p != null);
+  }, [estadoActual, campo, umbrales]);
+
+  // Agrupa por la misma franja del punto ("Debajo/En/Encima del umbral"), no
+  // por posición en el eje X (que solo es el índice del arreglo, sin
+  // significado): clic en cualquier punto de esa franja filtra a todo el grupo.
+  const registrosPorLabel = useMemo(() => {
+    const mapa = new Map<string, RegistroValidado[]>();
+    estadoActual.forEach((r) => {
+      const valor = obtenerValor(r, campo);
+      if (valor == null) return;
+      const { label } = clasificarPorUmbral(valor, umbrales);
+      const arr = mapa.get(label) ?? [];
+      arr.push(r);
+      mapa.set(label, arr);
+    });
+    return mapa;
+  }, [estadoActual, campo, umbrales]);
+
+  const fmtTexto = useMemo(() => (r: RegistroValidado) => {
+    const valor = obtenerValor(r, campo);
+    return `${titulo} ${valor ?? "—"} ${unidad}`;
+  }, [campo, titulo, unidad]);
 
   return (
     <div className="p-4 rounded-xl shadow-xl bg-linear-to-b from-white to-gray-50">
@@ -154,7 +210,15 @@ const BloqueIndicador: React.FC<BloqueProps> = ({ titulo, icono, campo, unidad, 
                 <ReferenceLine y={umbrales[1]} stroke="#ef4444" strokeDasharray="4 4" label={{ value: `${umbrales[1]}`, fontSize: 9, fill: "#ef4444", position: "insideTopLeft" }} />
               </>
             )}
-            <Scatter data={puntosIndividuales}>
+            <Scatter
+              data={puntosIndividuales}
+              style={{ cursor: "pointer" }}
+              onClick={(entry: any) => {
+                const p = entry?.payload ?? entry;
+                if (!p?.label) return;
+                irAPacientesFiltrados(`${titulo} · ${p.label}`, "metabolico", titulo, registrosPorLabel.get(p.label) ?? [], fmtTexto, (r) => obtenerValor(r, campo));
+              }}
+            >
               {puntosIndividuales.map((p, i) => <Cell key={i} fill={NIVEL_COLOR[p.nivel]} fillOpacity={0.75} />)}
             </Scatter>
           </ScatterChart>
@@ -177,9 +241,9 @@ export const MetabolicoContenido: React.FC<MetabolicoSectionProps> = ({ estadoAc
   return (
     <>
       <div className="grid grid-cols-1 gap-6">
-        <BloqueIndicador titulo="Glucosa" icono="water" campo="Glucosa" unidad="mg/dL" clasificador={clasificarGlucosa} estadoActual={estadoActual} />
-        <BloqueIndicador titulo="Colesterol" icono="virus" campo="Colesterol" unidad="mg/dL" clasificador={clasificarColesterol} estadoActual={estadoActual} />
-        <BloqueIndicador titulo="Triglicéridos" icono="atom-variant" campo="Trigliceridos" unidad="mg/dL" clasificador={clasificarTrigliceridos} estadoActual={estadoActual} />
+        <BloqueIndicador titulo="Glucosa" icono="water" campo="Glucosa" unidad="mg/dL" estadoActual={estadoActual} />
+        <BloqueIndicador titulo="Colesterol" icono="virus" campo="Colesterol" unidad="mg/dL" estadoActual={estadoActual} />
+        <BloqueIndicador titulo="Triglicéridos" icono="atom-variant" campo="Trigliceridos" unidad="mg/dL" estadoActual={estadoActual} />
       </div>
       <div className="flex items-start gap-2 bg-horz-blue/15 text-yellow-700 text-[11px] px-3 py-2 rounded-lg mt-6">
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-sky-blue/10 shrink-0">

@@ -4,9 +4,25 @@ import { RegistroValidado } from "../types";
 import { estadisticasIndicador, histogramaConjunto, obtenerValor, promedioPorGrupo } from "../analytics";
 import { clasificarPresion } from "../clinicalRules";
 import { generarResumenMedico } from "../resumenMedico";
+import { useIrAPacientesFiltrados } from "../useIrAPacientesFiltrados";
 import SectionCard from "./shared/SectionCard";
 import KpiCard from "./shared/KpiCard";
 import ShimmerOverlay from "./shared/ShimmerOverlay";
+
+// Texto que se ve en la columna clínica de Pacientes.tsx al llegar filtrado
+// desde alguna de las gráficas de esta sección — un solo valor, el que
+// originó el filtro: solo Sistólica si se hizo clic ahí, solo Diastólica si
+// fue esa barra. La dona ACC/AHA es la excepción: la lectura de presión
+// arterial es en sí misma el par sistólica/diastólica, no dos datos aparte.
+const fmtTextoSistolica = (r: RegistroValidado) => (r.Sistolica.numerico != null ? `${r.Sistolica.numerico} mmHg` : "—");
+const fmtTextoDiastolica = (r: RegistroValidado) => (r.Diastolica.numerico != null ? `${r.Diastolica.numerico} mmHg` : "—");
+const fmtTextoPresion = (r: RegistroValidado) => {
+  const sist = r.Sistolica.numerico;
+  const diast = r.Diastolica.numerico;
+  return `PA ${sist ?? "—"}/${diast ?? "—"} mmHg`;
+};
+const valorSistolica = (r: RegistroValidado) => r.Sistolica.numerico;
+const valorDiastolica = (r: RegistroValidado) => r.Diastolica.numerico;
 
 interface CardiovascularSectionProps {
   estadoActual: RegistroValidado[];
@@ -56,6 +72,11 @@ const TooltipDistPresion: React.FC<any> = ({ active, payload, label }) => {
 
 // Sección 25 del documento.
 export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ estadoActual }) => {
+  // Clic en un elemento de cualquiera de las gráficas de esta sección ->
+  // Pacientes.tsx, ya filtrado a las matrículas de ese elemento (ver
+  // AntropometriaSection.tsx, mismo patrón).
+  const irAPacientesFiltrados = useIrAPacientesFiltrados();
+
   // Series ocultas por clic en la leyenda de "Distribución presión arterial"
   // (mismo toggle mostrar/ocultar que las leyendas de Somatometría).
   const [seriesPresionOcultas, setSeriesPresionOcultas] = useState<Set<string>>(new Set());
@@ -94,6 +115,37 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
     return histogramaConjunto({ "Sistólica": sist, "Diastólica": diast }, 10);
   }, [estadoActual]);
 
+  // Mismo binning que distPresion (tamaño de intervalo 10) pero conservando el
+  // registro completo de cada persona por bin y por serie, para poder armar
+  // el filtroClinico al hacer clic en una barra. histogramaConjunto no
+  // conserva esa referencia (solo recibe arreglos de números), así que se
+  // recalcula aquí en vez de tocar esa función compartida.
+  const TAM_INTERVALO_PRESION = 10;
+  const registrosPorBinPresion = useMemo(() => {
+    const mapa = new Map<string, { Sistólica: RegistroValidado[]; Diastólica: RegistroValidado[] }>();
+    const entradaPara = (label: string) => {
+      let entrada = mapa.get(label);
+      if (!entrada) {
+        entrada = { Sistólica: [], Diastólica: [] };
+        mapa.set(label, entrada);
+      }
+      return entrada;
+    };
+    estadoActual.forEach((r) => {
+      const sist = obtenerValor(r, "Sistolica");
+      if (sist != null) {
+        const inicio = Math.floor(sist / TAM_INTERVALO_PRESION) * TAM_INTERVALO_PRESION;
+        entradaPara(`${inicio}-${inicio + TAM_INTERVALO_PRESION}`).Sistólica.push(r);
+      }
+      const diast = obtenerValor(r, "Diastolica");
+      if (diast != null) {
+        const inicio = Math.floor(diast / TAM_INTERVALO_PRESION) * TAM_INTERVALO_PRESION;
+        entradaPara(`${inicio}-${inicio + TAM_INTERVALO_PRESION}`).Diastólica.push(r);
+      }
+    });
+    return mapa;
+  }, [estadoActual]);
+
   // Datos que realmente se dibujan: la serie oculta por la leyenda se fuerza a
   // 0 (la barra desaparece) sin perder el conteo real en `distPresion`.
   const distPresionVisible = useMemo(
@@ -121,14 +173,18 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
   // Estadios de presión arterial (ACC/AHA), a partir de Sistólica + Diastólica combinadas.
   const estadiosPresion = useMemo(() => {
     const conteo = new Map<string, number>();
+    const registrosPorLabel = new Map<string, RegistroValidado[]>();
     estadoActual.forEach((r) => {
       const sist = obtenerValor(r, "Sistolica");
       const diast = obtenerValor(r, "Diastolica");
       if (sist == null || diast == null) return;
       const { label } = clasificarPresion(sist, diast);
       conteo.set(label, (conteo.get(label) ?? 0) + 1);
+      const arr = registrosPorLabel.get(label) ?? [];
+      arr.push(r);
+      registrosPorLabel.set(label, arr);
     });
-    return ORDEN_PRESION.map((label) => ({ label, count: conteo.get(label) ?? 0 }));
+    return ORDEN_PRESION.map((label) => ({ label, count: conteo.get(label) ?? 0, registros: registrosPorLabel.get(label) ?? [] }));
   }, [estadoActual]);
   const totalConPresion = estadiosPresion.reduce((acc, e) => acc + e.count, 0);
 
@@ -153,8 +209,26 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
               <XAxis dataKey="label" tick={{ fontSize: 10 }} />
               <YAxis tick={{ fontSize: 10 }} allowDecimals={false} />
               <Tooltip content={<TooltipDistPresion />} cursor={{ fill: "#f8fafc" }} />
-              <Bar dataKey="Sistólica" name="Sistólica" fill={COLOR_PRESION["Sistólica"]} radius={[4, 4, 0, 0]} animationDuration={900} animationEasing="ease-out" />
-              <Bar dataKey="Diastólica" name="Diastólica" fill={COLOR_PRESION["Diastólica"]} radius={[4, 4, 0, 0]} animationDuration={900} animationEasing="ease-out" />
+              <Bar
+                dataKey="Sistólica"
+                name="Sistólica"
+                fill={COLOR_PRESION["Sistólica"]}
+                radius={[4, 4, 0, 0]}
+                animationDuration={900}
+                animationEasing="ease-out"
+                style={{ cursor: "pointer" }}
+                onClick={(data: any) => irAPacientesFiltrados(`Sistólica ${data.label}`, "presion", "Sistólica", registrosPorBinPresion.get(data.label)?.Sistólica ?? [], fmtTextoSistolica, valorSistolica)}
+              />
+              <Bar
+                dataKey="Diastólica"
+                name="Diastólica"
+                fill={COLOR_PRESION["Diastólica"]}
+                radius={[4, 4, 0, 0]}
+                animationDuration={900}
+                animationEasing="ease-out"
+                style={{ cursor: "pointer" }}
+                onClick={(data: any) => irAPacientesFiltrados(`Diastólica ${data.label}`, "presion", "Diastólica", registrosPorBinPresion.get(data.label)?.Diastólica ?? [], fmtTextoDiastolica, valorDiastolica)}
+              />
             </BarChart>
           </ResponsiveContainer>
           <ShimmerOverlay subtle />
@@ -201,6 +275,11 @@ export const CardiovascularContenido: React.FC<CardiovascularSectionProps> = ({ 
                     animationBegin={0}
                     animationDuration={900}
                     animationEasing="ease-out"
+                    style={{ cursor: "pointer" }}
+                    onClick={(data: any) => {
+                      const d = data?.payload ?? data;
+                      irAPacientesFiltrados(d.label, "presion", "Presión arterial", d.registros ?? [], fmtTextoPresion, valorSistolica);
+                    }}
                   >
                     {estadiosPresionVisible.map((e, i) => <Cell key={i} fill={COLOR_ESTADIO_PRESION[e.label]} />)}
                   </Pie>

@@ -57,7 +57,7 @@ const MatricesPoblacionalSection: React.FC<MatricesPoblacionalSectionProps> = ({
           hecho clic en un periodo todavía) y muestra un placeholder que
           indica qué hacer, en vez de dejar un hueco sin explicación. */}
       <div className="flex flex-col gap-6">
-        <RiesgoPorDepartamentoChart datos={riesgoPorDepto} />
+        <RiesgoPorDepartamentoChart datos={riesgoPorDepto} estadoActual={estadoActual} />
       </div>
       <div className="flex flex-col lg:flex-row gap-6">
         <ConsultasPorDepartamentoChart
