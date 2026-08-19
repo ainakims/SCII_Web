@@ -715,7 +715,7 @@ const Documentos: React.FC = () => {
               <motion.div
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
-                className={`bg-white rounded-xl flex-1 min-h-0 overflow-y-auto shadow-xs p-6`}
+                className={`bg-white rounded-xl shrink-0 shadow-xs p-6`}
               >
                 <h2 className="text-sm font-bold text-gray-800 flex items-center mb-4 shrink-0">
                   <i className="fa-solid fa-user text-sea-blue mr-3"></i>
@@ -789,14 +789,14 @@ const Documentos: React.FC = () => {
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.1 }}
-                  className="bg-white rounded-xl shadow-xs p-6 flex-1 min-h-0 overflow-y-auto"
+                  className="bg-white rounded-xl shadow-xs p-6 flex-1 min-h-0 flex flex-col"
                 >
                   <h2 className="text-sm font-bold text-gray-800 flex items-center mb-4 shrink-0">
                     <i className="fa-solid fa-cloud-arrow-up text-sea-blue mr-3"></i>
                     Subir Documento
                   </h2>
-                  <form onSubmit={handleFileUpload} className="space-y-4">
-                    <div>
+                  <form onSubmit={handleFileUpload} className="flex-1 min-h-0 flex flex-col gap-4">
+                    <div className="shrink-0">
                       <label className="block text-xs font-semibold text-gray-700 mb-1">
                         Clasificación
                       </label>
@@ -813,7 +813,7 @@ const Documentos: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className={`relative border-2 border-dashed rounded-xl p-3 mb-4.5 mt-4.5 transition-colors group text-center ${
+                    <div className={`relative border-2 border-dashed rounded-xl p-3 flex-1 min-h-0 flex flex-col items-center justify-center transition-colors group text-center ${
                       file        ? "border-sea-blue/40 bg-sea-blue/5" :
                       fileError   ? "border-red-200 bg-red-50" :
                       patient     ? "border-gray-200 hover:border-sea-blue/40" :
@@ -880,7 +880,7 @@ const Documentos: React.FC = () => {
                     <button
                       type="submit"
                       disabled={uploading}
-                      className={`w-full items-center ${patient ? "bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white cursor-pointer" : "bg-linear-to-r from-sea-blue/80 to-sky-blue/80 text-white"} px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all`}
+                      className={`w-full shrink-0 items-center ${patient ? "bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white cursor-pointer" : "bg-linear-to-r from-sea-blue/80 to-sky-blue/80 text-white"} px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all`}
                     >
                       {uploading ? <><i className="fa-solid fa-spinner fa-spin mr-2"></i>Cargando...</> : "Cargar Documento"}
                     </button>
