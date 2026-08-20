@@ -1730,7 +1730,7 @@ const Consultas: React.FC = () => {
         style={{ marginRight: showHistory ? 300 : 0 }}
       >
         <div className="max-w-7xl mx-auto px-4 space-y-6 pb-10">
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-linear-to-r from-white to-gray-50 p-4 sm:p-6 rounded-xl border border-gray-50 shadow-xs gap-4">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 sm:p-6 rounded-xl border border-gray-50 shadow-xs gap-4">
             <div>
               <h1 className="text-2xl font-bold text-sea-blue flex items-center">
                 Consulta Médica
@@ -1832,7 +1832,7 @@ const Consultas: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.1 }}
-                className={`bg-linear-to-b from-white to-gray-50 rounded-xl border border-gray-50 shadow-xs p-6`}
+                className={`bg-white rounded-xl border border-gray-50 shadow-xs p-6`}
               >
                 <div className="mb-4 relative flex items-center">
                   <h2 className="text-sm font-bold text-gray-800 flex items-center">
@@ -1984,7 +1984,7 @@ const Consultas: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.2 }}
-                className={`bg-linear-to-b from-white to-gray-50 rounded-xl border border-gray-50 shadow-xs p-6`}
+                className={`bg-white rounded-xl border border-gray-50 shadow-xs p-6`}
               >
                 <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
                   <i className="fa-solid fa-comment-medical text-sea-blue mr-3"></i>
@@ -2115,7 +2115,7 @@ const Consultas: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.3 }}
-                className={`bg-linear-to-b from-white to-gray-50 rounded-xl border border-gray-50 shadow-xs p-6`}
+                className={`bg-white rounded-xl border border-gray-50 shadow-xs p-6`}
               >
                 <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
                   <i className="fa-solid fa-person text-sea-blue mr-3"></i>
@@ -2369,7 +2369,7 @@ const Consultas: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.4 }}
-                className={`bg-linear-to-b from-white to-gray-50 rounded-xl border border-gray-50 shadow-xs p-6`}
+                className={`bg-white rounded-xl border border-gray-50 shadow-xs p-6`}
               >
                 <h2 className="text-sm font-bold text-gray-800 mb-4 flex items-center">
                   <i className="fa-solid fa-clipboard text-sea-blue mr-3"></i>
@@ -2407,7 +2407,7 @@ const Consultas: React.FC = () => {
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 transition={{ delay: 0.5 }}
-                className={`bg-linear-to-b from-white to-gray-50 rounded-xl border border-gray-50 shadow-xs px-6 py-4`}
+                className={`bg-white rounded-xl border border-gray-50 shadow-xs px-6 py-4`}
               >
                 <div className="mb-4 flex items-center justify-between">
                   <h2 className="text-sm font-bold text-gray-800 mb-0 flex items-center">

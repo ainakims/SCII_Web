@@ -93,12 +93,12 @@ const MatrizProtocolosChart: React.FC<MatrizProtocolosChartProps> = ({ protocolo
         </div>
       </div>
       <div className="overflow-x-auto">
-        <table className="w-full text-xs border-collapse">
+        <table className="w-full text-xs border-collapse table-fixed">
           <thead>
             <tr>
-              <th className="text-left text-[10px] font-bold text-gray-400 uppercase pb-2 pr-3">Protocolo</th>
+              <th className="w-40 text-left text-[10px] font-bold text-gray-400 uppercase pb-2 pr-3">Protocolo</th>
               {MESES_ANIO.map((m) => <th key={m} className="text-center text-[10px] font-bold text-gray-400 uppercase pb-2 px-1">{m}</th>)}
-              <th className="text-center text-[10px] font-bold text-sea-blue uppercase pb-2 pl-3 border-l border-gray-200">Total</th>
+              <th className="w-12 text-center text-[10px] font-bold text-sea-blue uppercase pb-2 pl-3 border-l border-gray-200">Total</th>
             </tr>
           </thead>
           <tbody>
@@ -106,8 +106,7 @@ const MatrizProtocolosChart: React.FC<MatrizProtocolosChartProps> = ({ protocolo
               const total = conteoMeses.reduce((a, b) => a + (b ?? 0), 0);
               return (
                 <tr key={protocolo.IdProtocolo} className="border-t border-gray-100">
-                  <td className="py-1.5 pr-3 font-semibold text-gray-600 whitespace-nowrap">
-                    <i className="mdi mdi-stethoscope text-sea-blue mr-1"></i>
+                  <td className="py-1.5 pr-3 font-semibold text-gray-600 truncate" title={protocolo.Nombre}>
                     {protocolo.Nombre}
                   </td>
                   {conteoMeses.map((v, i) => (

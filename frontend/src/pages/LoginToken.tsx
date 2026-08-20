@@ -394,12 +394,12 @@ const Login: React.FC = () => {
                       Usuario
                     </label>
                     <div className="relative group">
-                      <i className="mdi mdi-pentagon absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xl pointer-events-none group-focus-within:text-clinical-blue transition-colors"></i>
+                      <i className="fa-solid fa-pentagon absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs pointer-events-none group-focus-within:text-clinical-blue transition-colors"></i>
                       <input
                         type="text"
                         value={usuario}
                         onChange={(e) => setUsuario(e.target.value)}
-                        className="w-full pl-10 pr-4 py-3 text-xs font-semibold text-slate-400 bg-white border border-gray-100 shadow-md rounded-md focus:outline-none focus:ring-2 focus:ring-clinical-blue/20 focus:border-clinical-blue transition-all"
+                        className="w-full pl-10 pr-4 py-3 text-xs font-semibold text-slate-400 bg-white border border-gray-50 shadow-xs rounded-md focus:outline-none focus:ring-2 focus:ring-clinical-blue/20 focus:border-clinical-blue transition-all"
                         // className="peer w-full px-6 pt-7 pb-3 bg-slate-50/50 border border-slate-100 rounded-xl text-xs font-semibold text-slate-400 outline-none focus:border-secondary focus:bg-white transition-all shadow-sm"
                         placeholder="Cuenta"
                       />
@@ -411,12 +411,12 @@ const Login: React.FC = () => {
                       Contraseña
                     </label>
                     <div className="relative group">
-                      <i className="mdi mdi-key absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xl pointer-events-none group-focus-within:text-clinical-blue transition-colors"></i>
+                      <i className="fa-solid fa-key absolute left-3 top-1/2 -translate-y-1/2 text-slate-300 text-xs pointer-events-none group-focus-within:text-clinical-blue transition-colors"></i>
                       <input
                         type={showPassword ? "text" : "password"}
                         value={password}
                         onChange={(e) => setPassword(e.target.value)}
-                        className="w-full pl-10 pr-12 py-3 text-xs font-semibold text-slate-400 bg-white border border-gray-100 shadow-md rounded-md focus:outline-none focus:ring-2 focus:ring-clinical-blue/20 focus:border-clinical-blue transition-all"
+                        className="w-full pl-10 pr-12 py-3 text-xs font-semibold text-slate-400 bg-white border border-gray-50 shadow-xs rounded-md focus:outline-none focus:ring-2 focus:ring-clinical-blue/20 focus:border-clinical-blue transition-all"
                         placeholder="Clave de Acceso"
                       />
                       <button
@@ -424,7 +424,7 @@ const Login: React.FC = () => {
                         onClick={() => setShowPass(!showPassword)}
                         className="absolute right-3 top-1/2 -translate-y-1/2 p-1.5 text-gray-400 hover:text-sea-blue hover:bg-clinical-blue/5 rounded-lg transition-all focus:outline-none cursor-pointer"
                       >
-                        <i className={`mdi ${showPassword ? "mdi-eye-closed" : "mdi-eye"} text-xl`}></i>
+                        <i className={`fa-solid ${showPassword ? "fa-eye-slash" : "fa-eye"} text-sm`}></i>
                       </button>
                     </div>
                   </div>

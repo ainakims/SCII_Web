@@ -334,20 +334,68 @@ allowOutsideClick: false,
       });
     } else {
       Swal.fire({
-        title: "Autorizar reingreso",
-        html: AVISO_IA_HTML,
+        title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Autorizar reingreso</p>`,
+        html: `
+          <p style="font-size: 16px">Si confirma esta acción se <b>notificará como reingreso apto</b> al área de RRHH.</p>
+          <div class="flex items-start gap-2 bg-gray-100 text-gray-600 rounded-lg mt-4 px-3 py-2" style="text-align:left">
+            <i class="fa-solid fa-circle-exclamation mt-0.5"></i>
+            <p class="leading-relaxed" style="font-size: 12px">Recuerda evaluar el resultado del análisis antes de continuar.</p>
+          </div>
+        `,
+        iconHtml: `
+          <i class="fa-solid fa-question aviso-question"></i>
+          <style>
+            .aviso-question {
+              color: #545454;
+              font-size: 90px;
+              animation: pop 0.4s ease-out forwards,
+                         popPeriodic 4s ease-in-out 1.5s infinite;
+            }
+            @keyframes pop {
+              0% { transform: scale(0.5); opacity: 0; }
+              70% { transform: scale(1.15); opacity: 1; }
+              100% { transform: scale(1); }
+            }
+            @keyframes popPeriodic {
+              0%, 85%, 100% { transform: scale(1); }
+              90% { transform: scale(1.15); }
+              95% { transform: scale(0.95); }
+            }
+          </style>
+        `,
+        didOpen: (p) => {
+          const el = p.querySelector(".swal2-icon") as HTMLElement;
+          if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" });
+        },
+        buttonsStyling: false,
         showDenyButton: true,
-        showCancelButton: true,
-        confirmButtonText: "Autorizar",
-        denyButtonText: "No autorizar",
-        cancelButtonText: "Cancelar",
-        confirmButtonColor: "#002E6D",
-        denyButtonColor: "#dc2626",
+        confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> Aprobar`,
+        denyButtonText: `<i class="fa-solid fa-xmark mr-1"></i> Denegar`,
+        customClass: {
+          confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer",
+          denyButton: "flex items-center bg-gray-50 hover:bg-gray-100/80 hover:-translate-y-1 text-gray-800 px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-gray-500/30 transition-all cursor-pointer ml-3",
+        },
       }).then((result) => {
         if (result.isConfirmed) {
-          Swal.fire({ icon: "success", title: "Reingreso autorizado", text: "Se registró la autorización para la recontratación de este candidato.", confirmButtonColor: "#002E6D" });
+          Swal.fire({
+            title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Reingreso autorizado</p>`,
+            html: `<p style="font-size: 16px; padding: 0 40px">Se registró la autorización para la recontratación de este candidato.</p>`,
+            iconHtml: `<i class="fa-solid fa-check success-icon"></i><style> .success-icon { color: #545454; font-size: 90px; animation: pop 0.4s ease-out forwards, popPeriodic 4s ease-in-out 1.5s infinite; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } @keyframes popPeriodic { 0%, 85%, 100% { transform: scale(1); } 90% { transform: scale(1.15); } 95% { transform: scale(0.95); } } </style>`,
+            didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" }); },
+            buttonsStyling: false,
+            confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> OK`,
+            customClass: { confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer" },
+          });
         } else if (result.isDenied) {
-          Swal.fire({ icon: "info", title: "Reingreso no autorizado", text: "Se registró que no se autoriza la recontratación de este candidato.", confirmButtonColor: "#002E6D" });
+          Swal.fire({
+            title: `<p style="font-size: 18px" class="font-bold uppercase text-gray-800">Reingreso no autorizado</p>`,
+            html: `<p style="font-size: 16px; padding: 0 40px">Se registró que no se autoriza la recontratación de este candidato.</p>`,
+            iconHtml: `<i class="fa-solid fa-circle-info success-icon"></i><style> .success-icon { color: #545454; font-size: 90px; animation: pop 0.4s ease-out forwards, popPeriodic 4s ease-in-out 1.5s infinite; } @keyframes pop { 0% { transform: scale(0.5); opacity: 0; } 70% { transform: scale(1.15); opacity: 1; } 100% { transform: scale(1); } } @keyframes popPeriodic { 0%, 85%, 100% { transform: scale(1); } 90% { transform: scale(1.15); } 95% { transform: scale(0.95); } } </style>`,
+            didOpen: (p) => { const el = p.querySelector(".swal2-icon") as HTMLElement; if (el) Object.assign(el.style, { border: "none", background: "transparent", boxShadow: "none", width: "auto", height: "auto" }); },
+            buttonsStyling: false,
+            confirmButtonText: `<i class="fa-solid fa-check mr-1"></i> OK`,
+            customClass: { confirmButton: "flex items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 mb-2 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer" },
+          });
         }
       });
     }
@@ -419,7 +467,7 @@ allowOutsideClick: false,
                     <KpiCard
                       icon="weight-scale"
                       label="Peso actual"
-                      value={peso ? `${peso.valor} kg` : ""}
+                      value={peso ? `${peso.valor} kg` : "N/A"}
                     />
                   </div>
                 );
@@ -450,17 +498,17 @@ allowOutsideClick: false,
               onClick={generar}
               disabled={loading}
               title={resultado ? "Regenerar análisis" : "Generar análisis"}
-              className="flex items-center gap-2 border border-gray-100 shadow-md bg-white text-gray-600 hover:text-sea-blue px-4 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
+              className="w-35 flex items-center justify-center border border-gray-100 shadow-md bg-white text-gray-600 hover:text-sea-blue px-5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none"
             >
-              <i className={`mdi ${loading ? "mdi-loading mdi-spin" : "mdi-refresh"}`}></i>
+              <i className="fa-solid fa-rotate text-xs mr-2"></i>
               Regenerar
             </button>
             <button
               onClick={abrirModalAccion}
               disabled={!resultado}
-              className="flex items-center gap-2 bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-4 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap disabled:opacity-40 disabled:pointer-events-none"
+              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap disabled:opacity-40 disabled:pointer-events-none"
             >
-              <i className={`mdi ${esActivo ? "mdi-calendar-check-outline" : "mdi-account-check-outline"}`}></i>
+              <i className={`fa-solid ${esActivo ? "fa-calendar-week" : "fa-user-check"} text-xs mr-2`}></i>
               {esActivo ? "Seguimiento" : "Autorizar"}
             </button>
           </div>
