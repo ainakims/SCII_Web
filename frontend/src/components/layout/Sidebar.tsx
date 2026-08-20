@@ -138,7 +138,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
         isCollapsed ? "w-20" : "w-64"
       }`}
     >
-      <div className="h-16 flex items-center px-6 overflow-hidden whitespace-nowrap">
+      <div className="h-16 flex items-center px-6 overflow-hidden whitespace-nowrap shadow-[3px_0_5px_-1px_rgba(0,0,0,0.15)]">
 
         {/* <i className="fa fa-star-of-life ml-0.5 text-2xl text-aqua-green mr-2 flex-shrink-0"></i> */}
         

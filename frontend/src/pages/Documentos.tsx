@@ -111,14 +111,24 @@ const buildUploadUrl = (doc: Pick<Document, "Direccion" | "Nombre">, matricula: 
   return `${API_BASE_URL}/uploads/${encodeURIComponent(matricula)}/${encodeURIComponent(doc.Nombre)}`;
 };
 
-const VisorPDFInline = ({ pdfId, pdfName, pdfDate, pdfUrl, isFullscreen, onClose, onDelete, onToggleFullscreen }: { pdfId: number; pdfName: string; pdfDate: string; pdfUrl: string; isFullscreen: boolean; onClose: () => void, onDelete: (id: number) => void; onToggleFullscreen: () => void; }) => {
+const VisorPDFSkeleton: React.FC = () => (
+  <div className="w-full h-full flex items-center justify-center animate-pulse p-4">
+    <div className="h-full aspect-[3/4] max-w-full bg-white rounded-lg shadow-xs p-8 flex flex-col gap-3">
+      <div className="h-3 w-2/5 rounded-full bg-gray-200"></div>
+      <div className="h-3 w-1/4 rounded-full bg-gray-200 mb-4"></div>
+      {Array.from({ length: 10 }).map((_, i) => (
+        <div key={i} className={`h-2.5 rounded-full bg-gray-100 ${i % 4 === 3 ? "w-3/5" : "w-full"}`}></div>
+      ))}
+    </div>
+  </div>
+);
+
+const VisorPDFInline = ({ pdfId, pdfName, pdfDate, pdfUrl, isFullscreen, onClose, onDelete, onToggleFullscreen }: { pdfId: number; pdfName: string; pdfDate: string; pdfUrl: string | null; isFullscreen: boolean; onClose: () => void, onDelete: (id: number) => void; onToggleFullscreen: () => void; }) => {
   const { user } = useAuth() as { user: { rol?: string; matricula?: string } };
 
   const esPrivilegiado = ["admin", "médico", "medico"].includes(
     (user?.rol ?? "").toLowerCase().trim()
   );
-
-  if (!pdfUrl) return null;
 
   return (
     <div className="flex flex-col h-full bg-white animate-in slide-in-from-right duration-200">
@@ -155,10 +165,14 @@ const VisorPDFInline = ({ pdfId, pdfName, pdfDate, pdfUrl, isFullscreen, onClose
         </div>
       </div>
       <div className="flex-1 bg-slate-100">
-        <iframe
-          src={`${pdfUrl}#zoom=65`}
-          className="w-full h-full border-none"
-        />
+        {pdfUrl ? (
+          <iframe
+            src={`${pdfUrl}#zoom=65`}
+            className="w-full h-full border-none"
+          />
+        ) : (
+          <VisorPDFSkeleton />
+        )}
       </div>
     </div>
   );
@@ -189,7 +203,7 @@ const Documentos: React.FC = () => {
   const [fileError, setFileError] = useState(false);
 
   const [activeCategory, setActiveCategory] = useState<number | null>(null);
-  const [selectedPdf, setSelectedPdf] = useState<{ id: number; nombre: string; date: string; url: string } | null>(null);
+  const [selectedPdf, setSelectedPdf] = useState<{ id: number; nombre: string; date: string; url: string | null } | null>(null);
   const [isPdfOpen, setIsPdfOpen] = useState(false);
   const [isPdfFullscreen, setIsPdfFullscreen] = useState(false);
 
@@ -593,28 +607,46 @@ const Documentos: React.FC = () => {
 
   const handleOpenPdf = async (doc: Document) => {
     try {
-      let blob: Blob | null = null;
+      const directUrl = buildUploadUrl(doc, patient!.Matricula);
+
+      // Mostrar el visor con skeleton mientras se confirma (vía HEAD, sin
+      // bajar el cuerpo del archivo) que el PDF existe físicamente — evita
+      // que el iframe llegue a mostrar el "Cannot GET ..." del navegador
+      // cuando el archivo no está en disco y hay que caer al respaldo de BD.
+      setSelectedPdf({ id: doc.IdDoc, nombre: doc.Nombre, date: doc.FechaCarga, url: null });
+      setIsPdfOpen(true);
 
       try {
-        const response = await fetch(buildUploadUrl(doc, patient!.Matricula));
-        if (response.ok) blob = await response.blob();
+        const headRes = await fetch(directUrl, { method: "HEAD" });
+        if (headRes.ok) {
+          const size = parseInt(headRes.headers.get("content-length") ?? "0", 10);
+          if (size > 0) setDocuments(prev => prev.map(d => d.IdDoc === doc.IdDoc ? { ...d, Tamano: size } : d));
+          setSelectedPdf(prev => (prev && prev.id === doc.IdDoc ? { ...prev, url: directUrl } : prev));
+          return;
+        }
       } catch { /* sin archivo en disco, se intenta con FileBytes abajo */ }
 
-      if (!blob && doc.TieneFileBytes) {
-        const fileBytes = await fetchFileBytes(patient!.Matricula, doc.IdDoc);
-        blob = fileBytesToBlob(fileBytes);
+      // No hay archivo físico: usar el respaldo de bytes en BD.
+      if (!doc.TieneFileBytes) {
+        errorModal("Archivo no disponible", "No se encontró el archivo en el servidor ni en la base de datos.");
+        setIsPdfOpen(false);
+        setSelectedPdf(null);
+        return;
       }
+
+      const fileBytes = await fetchFileBytes(patient!.Matricula, doc.IdDoc);
+      const blob = fileBytesToBlob(fileBytes);
 
       if (!blob) {
         errorModal("Archivo no disponible", "No se encontró el archivo en el servidor ni en la base de datos.");
+        setIsPdfOpen(false);
+        setSelectedPdf(null);
         return;
       }
 
       const url = URL.createObjectURL(blob);
-      // actualizar tamaño real del archivo
-      setDocuments(prev => prev.map(d => d.IdDoc === doc.IdDoc ? { ...d, Tamano: blob!.size } : d));
-      setSelectedPdf({ id: doc.IdDoc, nombre: doc.Nombre, date: doc.FechaCarga, url });
-      setIsPdfOpen(true);
+      setDocuments(prev => prev.map(d => d.IdDoc === doc.IdDoc ? { ...d, Tamano: blob.size } : d));
+      setSelectedPdf(prev => (prev && prev.id === doc.IdDoc ? { ...prev, url } : prev));
     } catch (err) {
       console.error("Error al abrir PDF:", err);
     }
@@ -813,7 +845,7 @@ const Documentos: React.FC = () => {
                       </select>
                     </div>
 
-                    <div className={`relative border-2 border-dashed rounded-xl p-3 flex-1 min-h-0 flex flex-col items-center justify-center transition-colors group text-center ${
+                    <div className={`relative border-2 border-dashed rounded-xl p-2 flex-1 min-h-0 flex flex-col items-center justify-center gap-0.5 transition-colors group text-center overflow-hidden ${
                       file        ? "border-sea-blue/40 bg-sea-blue/5" :
                       fileError   ? "border-red-200 bg-red-50" :
                       patient     ? "border-gray-200 hover:border-sea-blue/40" :
@@ -863,16 +895,16 @@ const Documentos: React.FC = () => {
                           setFileError(false);
                         } : undefined}
                       />
-                      <i className={`fa-solid fa-file-arrow-up text-3xl mx-auto mb-2 block w-fit transition-colors ${
+                      <i className={`fa-solid fa-file-arrow-up text-xl mx-auto shrink-0 hidden [@media(min-height:850px)]:block w-fit transition-colors ${
                         file      ? "text-sea-blue" :
                         fileError ? "text-red-300" :
                         patient   ? "text-gray-300 group-hover:text-sea-blue" :
                                     "text-gray-300"
                       }`}></i>
-                      <label className={`block text-xs font-semibold truncate mb-1 ${fileError && !file ? "text-red-500" : "text-gray-700"}`}>
+                      <label className={`block w-full max-w-full px-2 text-xs font-semibold truncate shrink-0 leading-tight ${fileError && !file ? "text-red-500" : "text-gray-700"}`}>
                         {file ? file.name : fileError ? "Seleccionar PDF (obligatorio)" : "Seleccionar PDF o arrastrar aquí"}
                       </label>
-                      <p className={`text-xs ${fileError && !file ? "text-red-300" : "text-gray-400"} mt-1`}>
+                      <p className={`text-[10px] shrink-0 leading-tight ${fileError && !file ? "text-red-300" : "text-gray-400"}`}>
                         Máximo {MAX_UPLOAD_MB} MB
                       </p>
                     </div>
@@ -959,10 +991,6 @@ const Documentos: React.FC = () => {
 
       <aside
         className={`fixed top-[64px] h-[calc(100vh-64px)] bg-white shadow-xs transition-all duration-300 ease-in-out z-40 ${ isAsideOpen ? "" : "translate-x-full" }`}
-        // Siempre se define left y width juntos (nunca se quita ninguno de los dos entre
-        // renders) para que la transición a pantalla completa sea animada por CSS en vez
-        // de saltar de golpe — mezclar "right:0 + width" con "left" (como antes) no se
-        // puede animar porque una propiedad aparece/desaparece de un frame a otro.
         style={(() => {
           const asideWidth = isPdfFullscreen
             ? viewportW - fullscreenLeft
@@ -1021,7 +1049,9 @@ const Documentos: React.FC = () => {
                           {docNombre}
                         </p>
                         <p className="text-[10px] text-gray-400 font-medium uppercase truncate">
-                          {formatSize(doc.Tamano)}
+                          {doc.Tamano > 0
+                            ? formatSize(doc.Tamano)
+                            : <span className="inline-block h-2.5 w-10 rounded-full bg-gray-200 animate-pulse align-middle"></span>}
                         </p>
                       </div>
                     </div>
