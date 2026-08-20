@@ -8,7 +8,7 @@
   --color-sunray-yellow: #FFC627;
   --color-sunset-orange: #EE7523;
   /* --font-sans: "Inter", "Roboto", sans-serif; */
-  --font-sans: "Montserrat", sans-serif;
+  --font-sans: "Montserrat Variable", sans-serif;
 }
 
 @layer base {
@@ -22,7 +22,7 @@
 
   body
   { 
-    font-family: 'Montserrat', sans-serif;
+    font-family: 'Montserrat Variable', sans-serif;
     background-color: #f3f4f6;
     color: var(--color-sea-blue);
     -webkit-font-smoothing: antialiased;
