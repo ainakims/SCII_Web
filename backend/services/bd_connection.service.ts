@@ -23,6 +23,11 @@ export async function executeQuery<T>(params: ParamsWebService): Promise<Respons
     }
 
     function normalizeValue(value: any): any {
+      // xml2js repite el nodo (p.ej. un campo nulo duplicado) como arreglo
+      // en vez de objeto único; sin este caso, un item como { $: {...} }
+      // llega crudo hasta React y truena con el error #31 al intentar
+      // renderizarlo directo.
+      if (Array.isArray(value)) return normalizeValue(value[0]);
       if (value !== null && typeof value === "object") {
         if ("_" in value) return value._;
         if ("$" in value) return "";
