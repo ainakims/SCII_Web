@@ -5,7 +5,7 @@ import Swal from "sweetalert2";
 import { useReactToPrint } from "react-to-print";
 import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthToken";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import ShimmerOverlay from "../features/saludPoblacional/components/shared/ShimmerOverlay";
 import { useSidebarWidth } from "../context/SidebarContext";
 
@@ -421,6 +421,7 @@ const Consultas: React.FC = () => {
   // const { user } = useAuth() as { user: { id: number; } };
   const { user } = useAuth() as { user: { id: number; rol?: string; matricula?: string } };
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if ((user?.rol ?? "").toLowerCase().trim() !== "admin" && (user?.rol ?? "").toLowerCase().trim() !== "médico") {
@@ -484,6 +485,16 @@ const Consultas: React.FC = () => {
     alergiasMedicamentos: null,
     alergias: null,
   });
+
+  // Llega desde Pacientes/Reingresos (botón "Consultas") con la matrícula ya
+  // conocida — se precarga la búsqueda igual que hace Documentos.tsx.
+  useEffect(() => {
+    const incomingMatricula = (location.state as { matricula?: string } | null)?.matricula;
+    if (incomingMatricula) {
+      setPatientData(prev => ({ ...prev, id: null, matricula: incomingMatricula, nombre: "", embarcacion: "", edad: "", especialidad: "", alergiasMedicamentos: null, alergias: null }));
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   const [formData, setFormData] = useState<FormData>({
     FechaAtencion: toDatetimeLocal(new Date()),
@@ -1742,7 +1753,7 @@ const Consultas: React.FC = () => {
             <button
               onClick={handleSaveConsult}
               disabled={saving || loadingMat || !matriculaValida}
-              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
+              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer"
             >
               {saving
                 ? <><i className="fa-solid fa-spinner fa-spin mr-2"></i></>
@@ -1851,7 +1862,7 @@ const Consultas: React.FC = () => {
                           fetchHistory(patientData.tipoPaciente, patientData.id ?? patientData.matricula);
                         }
                       }}
-                      className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-[55%] text-white px-4 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
+                      className="absolute right-0 top-1/2 -translate-y-1/2 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-[55%] text-white px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap"
                     >
                       <i className="fa-solid fa-clock-rotate-left mr-2"></i>
                       Ver Historial
@@ -1869,7 +1880,7 @@ const Consultas: React.FC = () => {
                         type="text"
                         value={patientData.matricula ?? ""}
                         onChange={handleSearchPatient}
-                        placeholder="Buscar por matrícula o CURP"
+                        placeholder="Buscar matrícula o CURP"
                         // disabled={loadingMat}
                         disabled={loadingMat || pacienteExterno}
                         maxLength={18}
@@ -2418,7 +2429,7 @@ const Consultas: React.FC = () => {
                     onClick={agregarMedicamento}
                     disabled={!matriculaValida}
                     // className="flex items-center bg-horz-blue/15 hover:bg-horz-blue/30 -translate-y-1 hover:-translate-y-2 text-sea-blue px-2.5 py-1 rounded-lg text-sm font-medium border border-horz-blue transition-all cursor-pointer"
-                    className="flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-4 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
+                    className="flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-4 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap"
                   >
                     <i className="fa-solid fa-plus mr-2"></i>
                     Añadir Fármaco
@@ -2534,7 +2545,7 @@ const Consultas: React.FC = () => {
                 <button
                   onClick={handleSaveConsult}
                   disabled={saving || loadingMat || !matriculaValida}
-                  className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+                  className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer"
                 >
                   {saving ? <><i className="fa-solid fa-spinner fa-spin mr-2"></i></> : <><i className="fa-solid fa-plus mr-2"></i></> }
                   Guardar
@@ -2590,7 +2601,7 @@ const Consultas: React.FC = () => {
                     <button
                       onClick={handleAIAnalysis}
                       disabled={analyzing || !matriculaValida}
-                      className="relative z-0 w-full items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+                      className="relative z-0 w-full items-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer"
                     >
                       {analyzing ? "Procesando..." : "Analizar Consulta Actual"}
                     </button>
@@ -2783,10 +2794,10 @@ const Consultas: React.FC = () => {
                         <button
                           onClick={handleCargarResultados}
                           disabled={signosCargados}
-                          className="mt-4 w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+                          className="mt-4 w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 disabled:opacity-60 disabled:cursor-default disabled:hover:-translate-y-0 disabled:hover:from-sea-blue disabled:hover:to-sky-blue hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer"
                         >
                           {/* <i className={`fa-solid ${signosCargados ? "fa-check" : "fa-download"} mr-2`}></i> */}
-                          {signosCargados ? "Resultados cargados" : "Cargar Resultados"}
+                          {signosCargados ? "Resultados Cargados" : "Cargar Resultados"}
                         </button>
                       </motion.div>
                     )}

@@ -48,6 +48,8 @@ interface PacientesTablaProps {
   onEdit?: (paciente: PacienteResumen) => void;
   onDelete?: (paciente: PacienteResumen) => void;
   onVerDocumentos?: (paciente: PacienteResumen) => void;
+  onVerEvaluacion?: (paciente: PacienteResumen) => void;
+  onVerConsultas?: (paciente: PacienteResumen) => void;
   columnaClinica?: ColumnaClinica;
 }
 
@@ -83,7 +85,7 @@ const ICONO_RIESGO: Record<string, { icon: string; color: string }> = {
   ALTO: { icon: "triangle-exclamation", color: "text-red-500" },
 };
 
-const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes, fillHeight = false, basePath = "/Pacientes", showFecha = true, onEdit, onDelete, onVerDocumentos, columnaClinica }) => {
+const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes, fillHeight = false, basePath = "/Pacientes", showFecha = true, onEdit, onDelete, onVerDocumentos, onVerEvaluacion, onVerConsultas, columnaClinica }) => {
   const navigate = useNavigate();
   const [navegandoAMatricula, setNavegandoAMatricula] = useState<string | null>(null);
   const irAAnalisis = async (p: PacienteResumen) => {
@@ -140,7 +142,7 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes, fill
     return sortDir === "asc" ? "fa-sort-up" : "fa-sort-down";
   };
 
-  const hayAcciones = Boolean(onEdit || onDelete || onVerDocumentos);
+  const hayAcciones = Boolean(onEdit || onDelete || onVerDocumentos || onVerEvaluacion || onVerConsultas);
   const hayFiltrosActivos = Boolean(busqueda || filtroTipoEmpleado || filtroTipoContrato || filtroSexo);
 
   const filtrados = useMemo(() => {
@@ -489,15 +491,36 @@ const PacientesTabla: React.FC<PacientesTablaProps> = ({ activo, pacientes, fill
                             </button>
                           )
                         ) : (
-                          onVerDocumentos && (
-                            <button
-                              onClick={(e) => { e.stopPropagation(); onVerDocumentos(p); }}
-                              className="w-6 text-gray-400 hover:text-sky-blue transition-all cursor-pointer"
-                              title="Documentación"
-                            >
-                              <i className="fa-regular fa-file text-xs"></i>
-                            </button>
-                          )
+                          <>
+                            {/* Documentos, Evaluación y Consultas ocultos de momento.
+                            {onVerDocumentos && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onVerDocumentos(p); }}
+                                className="w-6 text-gray-400 hover:text-sky-blue transition-all cursor-pointer"
+                                title="Documentos"
+                              >
+                                <i className="fa-solid fa-file text-xs"></i>
+                              </button>
+                            )}
+                            {onVerEvaluacion && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onVerEvaluacion(p); }}
+                                className="w-6 text-gray-400 hover:text-sky-blue transition-all cursor-pointer"
+                                title="Evaluación"
+                              >
+                                <i className="fa-solid fa-clipboard-list text-xs"></i>
+                              </button>
+                            )}
+                            {onVerConsultas && (
+                              <button
+                                onClick={(e) => { e.stopPropagation(); onVerConsultas(p); }}
+                                className="w-6 text-gray-400 hover:text-sky-blue transition-all cursor-pointer"
+                                title="Consultas"
+                              >
+                                <i className="fa-solid fa-truck-medical text-xs"></i>
+                              </button>
+                            )} */}
+                          </>
                         )}
                       </div>
                     </td>

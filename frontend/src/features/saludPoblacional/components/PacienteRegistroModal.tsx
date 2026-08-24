@@ -2,6 +2,7 @@ import API_BASE_URL from "../../../config";
 import { fetchWithAuth } from "../../../services/api";
 import React, { useEffect, useRef, useState } from "react";
 import Swal from "sweetalert2";
+import { motion, AnimatePresence } from "framer-motion";
 
 // Modal de alta/edición de paciente, extraído de Pacientes.tsx para poder
 // reutilizarlo desde otras tablas que envían el mismo tipo de registro (ej.
@@ -384,12 +385,24 @@ const PacienteRegistroModal: React.FC<PacienteRegistroModalProps> = ({ open, pac
     }
   };
 
-  if (!open) return null;
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={onClose}></div>
-      <div className="relative bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          key="paciente-modal-backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-50 bg-gray-900/40 backdrop-blur-sm flex items-center justify-center p-4"
+          onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+        >
+      <motion.div
+        key="paciente-modal-panel"
+        initial={{ opacity: 0, scale: 0.95, y: 10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 10 }}
+        transition={{ duration: 0.18 }}
+        className="relative bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
         <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 shrink-0">
           <div className="min-w-0">
             <p className="text-sm font-bold text-sea-blue truncate">
@@ -699,14 +712,16 @@ const PacienteRegistroModal: React.FC<PacienteRegistroModalProps> = ({ open, pac
         <div className="px-5 py-4 border-t border-gray-100 shrink-0 flex justify-end">
           <button
             form="pacienteForm"
-            className="w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold shadow-md shadow-blue-500/30 transition-all cursor-pointer whitespace-nowrap"
+            className="w-full flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-xs font-semibold transition-all cursor-pointer whitespace-nowrap"
           >
             <i className="fa-solid fa-user-check mr-2"></i>
             Guardar Paciente
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 };
 

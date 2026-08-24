@@ -15,16 +15,30 @@ import Inventario from './pages/Inventario';
 import Documentos from './pages/Documentos';
 import Pacientes from './pages/Pacientes';
 import Reingresos from './pages/Reingresos';
+import Incapacidad from './pages/Incapacidad';
 import Configuracion from './pages/Configuracion';
 import SaludPoblacional from './pages/SaludPoblacional';
 import Dashboard from './pages/Dashboard';
 import DashboardDepartamento from './pages/DashboardDepartamento';
 import AnalisisIndividual from './pages/AnalisisIndividual';
 
-import { AuthProvider } from './context/AuthToken';
+import { AuthProvider, useAuth } from './context/AuthToken';
 import TitleManager from './components/layout/TitleManager';
 import ProtectedRoute from './components/layout/ProtectedRoute';
 import Login from './pages/LoginToken';
+
+// Mismo criterio de rol que usan Pacientes/Evaluacion/Consultas para
+// restringir sus propias pantallas: admin/médico -> Dashboard, cualquier
+// otro rol -> Agenda. Se usa tanto en "/" como en el catch-all ("*") para
+// que cualquier ruta desconocida o sin permiso caiga en el inicio correcto
+// en vez de una pantalla en blanco.
+const InicioRedirect: React.FC = () => {
+  const { user } = useAuth() as { user: { rol?: string } | null };
+  const esPrivilegiado = ["admin", "médico", "medico"].includes(
+    (user?.rol ?? "").toLowerCase().trim()
+  );
+  return <Navigate to={esPrivilegiado ? "/Dashboard" : "/Agenda"} replace />;
+};
 
 function App() {
   return (
@@ -41,14 +55,11 @@ function App() {
               <MainLayout />
             </ProtectedRoute>
           }>
-            {/* Ruta vacía ("/") -> Dashboard, la ventana principal de la app.
+            {/* Ruta vacía ("/") -> pantalla principal según rol (ver InicioRedirect).
                 Redirect explícito (no solo renderizar Dashboard aquí) para que
-                la URL se normalice a /Dashboard y el breadcrumb/nav activo del
-                Topbar/Sidebar la reconozcan igual que si se hubiera navegado ahí
-                directamente. Placeholder para permisos: cuando se defina la
-                pantalla principal para roles no admin/médico, este es el único
-                lugar que hay que tocar (condicionar el "to" según el rol). */}
-            <Route index element={<Navigate to="/Dashboard" replace />} />
+                la URL se normalice y el breadcrumb/nav activo del Topbar/Sidebar
+                la reconozcan igual que si se hubiera navegado ahí directamente. */}
+            <Route index element={<InicioRedirect />} />
             <Route path="Perfil" element={<Perfil />} />
             <Route path="Agenda" element={<Agenda />} />
             <Route path="Consultas" element={<Consultas />} />
@@ -62,11 +73,12 @@ function App() {
             <Route path="Pacientes/:matricula" element={<AnalisisIndividual />} />
             <Route path="Reingresos" element={<Reingresos />} />
             <Route path="Reingresos/:matricula" element={<AnalisisIndividual />} />
+            <Route path="Incapacidad" element={<Incapacidad />} />
             <Route path="Configuracion" element={<Configuracion />} />
             <Route path="SaludPoblacional" element={<SaludPoblacional />} />
             <Route path="Dashboard" element={<Dashboard />} />
             <Route path="Dashboard/Departamento/:nombre" element={<DashboardDepartamento />} />
-            <Route path="*" element={<div className="p-8 text-center text-gray-500">Módulo en construcción</div>} />
+            <Route path="*" element={<InicioRedirect />} />
           </Route>
         </Routes>
       </AuthProvider>

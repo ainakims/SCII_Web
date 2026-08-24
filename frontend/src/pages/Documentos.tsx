@@ -711,7 +711,7 @@ const Documentos: React.FC = () => {
                   type="text"
                   value={matricula}
                   onChange={(e) => { if (!esPrivilegiado) return; setMatricula(e.target.value); setNotFound(false); }}
-                  placeholder="Matrícula (5 dígitos)"
+                  placeholder="Buscar matrícula"
                   maxLength={5}
                   disabled={loading}
                   readOnly={!esPrivilegiado}
@@ -912,7 +912,7 @@ const Documentos: React.FC = () => {
                     <button
                       type="submit"
                       disabled={uploading}
-                      className={`w-full shrink-0 items-center ${patient ? "bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white cursor-pointer" : "bg-linear-to-r from-sea-blue/80 to-sky-blue/80 text-white"} px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all`}
+                      className={`w-full shrink-0 items-center ${patient ? "bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white cursor-pointer" : "bg-linear-to-r from-sea-blue/80 to-sky-blue/80 text-white"} px-5 py-2.5 rounded-lg text-sm font-medium transition-all`}
                     >
                       {uploading ? <><i className="fa-solid fa-spinner fa-spin mr-2"></i>Cargando...</> : "Cargar Documento"}
                     </button>

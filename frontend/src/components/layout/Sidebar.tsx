@@ -61,8 +61,9 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
       icon: "address-book",
       roles: ["admin", "médico"],
       children: [
-        { name: "Pacientes",  icon: "user-group",   path: "/Pacientes",  roles: ["admin", "médico"] },
-        { name: "Reingresos", icon: "arrows-spin",  path: "/Reingresos", roles: ["admin", "médico"] },
+        { name: "Pacientes",   icon: "user-group",       path: "/Pacientes",   roles: ["admin", "médico"] },
+        { name: "Reingresos",  icon: "arrows-spin",      path: "/Reingresos",  roles: ["admin", "médico"] },
+        { name: "Incapacidad", icon: "wheelchair-move",  path: "/Incapacidad", roles: ["admin", "médico"] },
       ],
     },
     { type: "item", name: "Agenda", icon: "calendar-week", path: "/Agenda", roles: ["admin", "médico", "usuario"] },
