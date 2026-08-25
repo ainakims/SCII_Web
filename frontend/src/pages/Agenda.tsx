@@ -1233,7 +1233,7 @@ const Agenda: React.FC = () => {
                 </button> */}
                 <button
                   onClick={() => openPanel()}
-                  className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
+                  className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer"
                 >
                   <i className="fa-solid fa-plus text-xs mr-2"></i>
                   Agendar
@@ -1766,10 +1766,24 @@ const Agenda: React.FC = () => {
         </div>
       </div>
 
+      <AnimatePresence>
       {isPanelOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={closePanel}></div>
-          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
+          <motion.div
+            key="agenda-panel-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm"
+            onClick={closePanel}
+          ></motion.div>
+          <motion.div
+            key="agenda-panel-card"
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.18 }}
+            className="relative bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
             {isLoadingEdit && (
               <div className="absolute inset-0 flex items-center justify-center bg-white/50 backdrop-blur-xs z-[9999] rounded-lg">
                 <div className="flex flex-col items-center gap-3">
@@ -2158,9 +2172,10 @@ const Agenda: React.FC = () => {
                 )}
               </div>
             )}
-          </div>
+          </motion.div>
         </div>
       )}
+      </AnimatePresence>
 
       {/* ─── Modal independiente de Grupos ─── */}
       <AnimatePresence>

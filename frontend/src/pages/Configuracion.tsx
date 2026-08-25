@@ -617,7 +617,7 @@ const Configuracion: React.FC = () => {
             </div>
             <button
               onClick={openPanelNew}
-              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
+              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer"
             >
               <i className="fa-solid fa-plus text-xs mr-2"></i>
               Nuevo

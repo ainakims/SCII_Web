@@ -6,9 +6,6 @@ import { motion } from "framer-motion";
 import PacientesTabla, { PacienteResumen } from "../features/saludPoblacional/components/PacientesTabla";
 import PacienteRegistroModal, { Paciente } from "../features/saludPoblacional/components/PacienteRegistroModal";
 
-// Mismo skeleton que usa la tabla de Reingresos dentro de Dashboard.tsx,
-// mientras se carga el directorio completo por primera vez. h-full (no
-// h-[420px]): dentro de esta página la tabla ocupa todo el alto disponible.
 const PacientesTablaSkeleton: React.FC = () => (
   <div className="h-full rounded-lg bg-gray-50 overflow-hidden animate-pulse">
     <div className="h-10 bg-linear-to-r from-white to-gray-100"></div>
@@ -113,6 +110,8 @@ const Reingresos: React.FC = () => {
                   basePath="/Reingresos"
                   onEdit={(p) => { setModalPaciente(p as unknown as Paciente); setModalOpen(true); }}
                   onVerDocumentos={(p) => navigate("/Documentos", { state: { matricula: String(p.Empl_matricula ?? "") } })}
+                  onVerEvaluacion={(p) => navigate("/Evaluacion", { state: { matricula: String(p.Empl_matricula ?? "") } })}
+                  onVerConsultas={(p) => navigate("/Consultas", { state: { matricula: String(p.Empl_matricula ?? "") } })}
                 />
               )}
             </div>

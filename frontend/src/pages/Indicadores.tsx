@@ -689,7 +689,7 @@ const Indicadores: React.FC = () => {
                 <>
                   <div>
                     <h1 className="text-2xl font-bold bg-linear-to-r from-sea-blue to-sky-blue bg-clip-text text-transparent flex items-center">
-                      Indicadores TNG Sano
+                      Indicadores
                     </h1>
                     <p className="text-sm text-gray-500 mt-1">
                       Control general de indicadores del personal de confianza
@@ -706,7 +706,7 @@ const Indicadores: React.FC = () => {
                   onClick={handleExportar}
                   disabled={exportando}
                   // title="Exportar a Excel"
-                  className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0 hidden"
+                  className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0 hidden"
                 >
                   <i className={`fa-solid ${exportando ? "fa-spinner fa-spin" : "fa-file-excel"} mr-2`}></i>
                   {exportando ? "Generando..." : "Exportar"}
@@ -716,7 +716,7 @@ const Indicadores: React.FC = () => {
                   <select
                     value={selectedYear}
                     onChange={(e) => setSelectedYear(Number(e.target.value))}
-                    className="w-full appearance-none bg-linear-to-r from-gray-50 to-gray-100 text-sea-blue pl-10 pr-10 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer"
+                    className="w-full appearance-none bg-gray-100 text-sea-blue pl-10 pr-10 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer"
                   >
                     {Array.from({ length: currentYear - 2016 + 1 }, (_, i) => 2016 + i).map((y) => (
                       <option key={y} value={y}>
@@ -2597,10 +2597,24 @@ const Indicadores: React.FC = () => {
 
       
     
+      <AnimatePresence>
       {isProgramarOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm" onClick={() => { setIsProgramarOpen(false); setIsPanelOpen(false); }}></div>
-          <div className="relative bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
+          <motion.div
+            key="indicador-panel-backdrop"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="absolute inset-0 bg-gray-900/40 backdrop-blur-sm"
+            onClick={() => { setIsProgramarOpen(false); setIsPanelOpen(false); }}
+          ></motion.div>
+          <motion.div
+            key="indicador-panel-card"
+            initial={{ opacity: 0, scale: 0.95, y: 10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95, y: 10 }}
+            transition={{ duration: 0.18 }}
+            className="relative bg-white rounded-xl shadow-xl w-full max-w-xl max-h-[90vh] flex flex-col overflow-hidden">
             <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-gray-100 shrink-0">
               <div className="min-w-0">
                 <p className="text-sm font-bold text-sea-blue truncate">
@@ -2883,9 +2897,10 @@ const Indicadores: React.FC = () => {
                 {saving ? (isEditingMensual ? "Actualizando..." : "Guardando...") : (isEditingMensual ? "Actualizar Registro" : "Guardar Registro")}
               </button>
             </div>
-          </div>
+          </motion.div>
         </div>
       )}
+      </AnimatePresence>
 
       <Carnet
         open={isCarnetOpen}

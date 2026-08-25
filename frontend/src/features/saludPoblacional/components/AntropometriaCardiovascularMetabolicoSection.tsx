@@ -31,7 +31,7 @@ const AntropometriaCardiovascularMetabolicoSection: React.FC<AntropometriaCardio
       title={tabActual.titulo}
       subtitle={tabActual.subtitulo}
       actions={
-        <div className="flex items-center gap-1 bg-white border border-gray-100 shadow-md rounded-lg p-1">
+        <div className="flex items-center gap-1 bg-white border border-gray-100 rounded-lg p-1">
           {TABS_ACM.map((t) => (
             <button
               key={t.id}

@@ -31,6 +31,7 @@ const PAGE_TITLES: PageTitles = {
   '/Dashboard':     { label: 'Dashboard',    icon: 'mdi-view-dashboard-outline' },
   '/Pacientes':     { label: 'Pacientes',     icon: 'mdi-account-multiple-outline' },
   '/Reingresos':    { label: 'Reingresos',    icon: 'mdi-account-switch-outline' },
+  '/Incapacidad':   { label: 'Incapacidades',  icon: 'mdi-wheelchair-accessibility' },
   '/Agenda':        { label: 'Agenda',        icon: 'mdi-calendar-blank' },
   '/Consultas':     { label: 'Consultas',     icon: 'mdi-clipboard-pulse-outline' },
   '/Indicadores':   { label: 'Indicadores',   icon: 'mdi-heart-pulse' },

@@ -273,7 +273,7 @@ const Pacientes: React.FC = () => {
             </div>
             <button
               onClick={() => handleOpenModal()}
-              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-lg shadow-blue-500/30 transition-all cursor-pointer"
+              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer"
             >
               <i className="fa-solid fa-user-plus text-xs mr-2"></i>
               Agregar
@@ -317,6 +317,8 @@ const Pacientes: React.FC = () => {
                   onEdit={(p) => handleOpenModal(p as unknown as Paciente)}
                   onDelete={(p) => handleDelete(p.IdPaciente)}
                   onVerDocumentos={(p) => navigate("/Documentos", { state: { matricula: String(p.Empl_matricula ?? "") } })}
+                  onVerEvaluacion={(p) => navigate("/Evaluacion", { state: { matricula: String(p.Empl_matricula ?? "") } })}
+                  onVerConsultas={(p) => navigate("/Consultas", { state: { matricula: String(p.Empl_matricula ?? "") } })}
                   columnaClinica={columnaClinica}
                 />
               )}

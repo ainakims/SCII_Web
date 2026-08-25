@@ -149,7 +149,7 @@ const Recetas: React.FC = () => {
                   type="text"
                   value={searchTerm}
                   onChange={(e) => setSearchTerm(e.target.value)}
-                  placeholder="Matrícula (5 dígitos)"
+                  placeholder="Buscar matrícula"
                   maxLength={5}
                   disabled={isSearching}
                   className={`w-[318px] border rounded-lg pl-9 px-3 py-2 pr-10 text-xs shadow-md outline-none transition-colors ${notFound ? "border-red-400 bg-red-50 text-red-700" : isSearching ? "border-gray-100 bg-white" : "border-gray-100 bg-white focus:border-clinical-blue focus:ring-1"}`}

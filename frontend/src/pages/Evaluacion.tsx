@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { motion } from 'framer-motion';
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { useAuth } from "../context/AuthToken";
 
 
@@ -987,6 +987,7 @@ const Evaluacion: React.FC = () => {
   // const { user } = useAuth();
   const { user } = useAuth() as { user: { rol?: string; matricula?: string } };
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     if ((user?.rol ?? "").toLowerCase().trim() !== "admin" && (user?.rol ?? "").toLowerCase().trim() !== "médico") {
@@ -1012,6 +1013,21 @@ const Evaluacion: React.FC = () => {
     id: null, matricula: null, nombre: "", tipoPaciente: null,
     estatus: null, especialidad: "", edad: "",
   });
+
+  // Llega desde Pacientes/Reingresos (botón "Evaluación") con la matrícula ya
+  // conocida — se precarga la búsqueda igual que hace Documentos.tsx.
+  useEffect(() => {
+    const incomingMatricula = (location.state as { matricula?: string } | null)?.matricula;
+    if (incomingMatricula) {
+      setSearchField("matricula");
+      setFoundField(null);
+      setPatientData((prev) => ({
+        ...prev, id: null, matricula: incomingMatricula,
+        nombre: "", edad: "", especialidad: "",
+      }));
+      window.history.replaceState({}, document.title);
+    }
+  }, [location.state]);
 
   // ── Sections ──
   const [ficha, setFicha] = useState<FichaIdentificacion>({
@@ -1860,7 +1876,7 @@ const Evaluacion: React.FC = () => {
                 type="text"
                 value={patientData.matricula ?? ""}
                 onChange={handleSearchPatient}
-                placeholder="Matrícula (5 dígitos)"
+                placeholder="Buscar matrícula"
                 disabled={loadingMat || nuevoIngreso || foundField === "nombre"}
                 maxLength={5}
                 className={`border w-full rounded-lg pl-9 px-3 py-2 pr-10 text-xs outline-none shadow-xs transition-colors ${nuevoIngreso || foundField === "nombre" ? "border-gray-50 bg-gray-50 text-gray-800" : !patientData.matricula ? "border-gray-50 focus:ring-1 focus:ring-sea-blue" : loadingMat ? "border-gray-50 bg-gray-50 text-gray-800" : matriculaNotFound ? "border-red-400 bg-red-50 text-red-700" : "border-gray-50 focus:ring-1 focus:ring-sea-blue"}`}
@@ -3792,7 +3808,7 @@ const Evaluacion: React.FC = () => {
               onClick={handleSave}
               // disabled={saving || currentStep < STEPS.length - 1}
               disabled={saving}
-              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium shadow-md shadow-blue-500/30 transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0"
+              className="w-35 flex items-center justify-center bg-linear-to-r from-sea-blue to-sky-blue hover:from-sea-blue/80 hover:to-sky-blue/80 hover:-translate-y-1 text-white px-5 py-2.5 rounded-lg text-sm font-medium transition-all cursor-pointer disabled:opacity-40 disabled:pointer-events-none disabled:shadow-none disabled:translate-y-0"
             >
               {saving
                 ? <><i className="fa-solid fa-spinner fa-spin text-xs mr-2"></i>Guardando...</>
