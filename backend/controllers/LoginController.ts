@@ -124,7 +124,7 @@ export function LoginController(db: DB) {
         { Nombre: "@UnidadNegocio", Valor: "TNG"  },
       ];
 
-      const adResult = await executeConnection<DatosCuentaMicrosoft>("[TNGCORE].[dbo].[Obtener_DatosCuentaMicrosoftAD]", TipoConsulta.ProcedimientoAlmacenado, adParams);
+      const adResult = await executeConnection<DatosCuentaMicrosoft>("[TNGCORE].[dbo].[Obtener_DatosCuentaMicrosoftAD_V2]", TipoConsulta.ProcedimientoAlmacenado, adParams);
 
       if (adResult.length === 0) {
         res.status(403).json({ message: "No se pudo encontrar el usuario en el directorio." });
@@ -196,7 +196,7 @@ export function LoginController(db: DB) {
         { Nombre: "@UnidadNegocio",  Valor: "TNG"  },
       ];
 
-      const userResult = await executeConnection<DatosCuentaMicrosoft>("[TNGCORE].[dbo].[Obtener_DatosCuentaMicrosoftAD]", TipoConsulta.ProcedimientoAlmacenado, adParams);
+      const userResult = await executeConnection<DatosCuentaMicrosoft>("[TNGCORE].[dbo].[Obtener_DatosCuentaMicrosoftAD_V2]", TipoConsulta.ProcedimientoAlmacenado, adParams);
 
       if (userResult.length === 0) {
         res.status(403).json({ message: "No se pudo encontrar el usuario en el directorio." });
@@ -340,7 +340,7 @@ export function LoginController(db: DB) {
         { Nombre: "@Usuario",       Valor: account },
         { Nombre: "@UnidadNegocio", Valor: "TNG"   },
       ];
-      const adResult = await executeConnection<DatosCuentaMicrosoft>("[TNGCORE].[dbo].[Obtener_DatosCuentaMicrosoftAD]", TipoConsulta.ProcedimientoAlmacenado, adParams);
+      const adResult = await executeConnection<DatosCuentaMicrosoft>("[TNGCORE].[dbo].[Obtener_DatosCuentaMicrosoftAD_V2]", TipoConsulta.ProcedimientoAlmacenado, adParams);
 
       const sciiParams: Parametros[] = [{ Nombre: "@Usuario", Valor: account }];
       const sciiResult = await executeConnection<Usuario>(

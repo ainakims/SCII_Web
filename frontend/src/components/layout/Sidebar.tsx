@@ -54,8 +54,10 @@ const ROLES_PRIVILEGIADOS = ["admin", "médico", "medico"];
 const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
   const menuEntries: MenuEntry[] = [
     // { name: "Dashboard",     icon: "view-dashboard",          path: "/Dashboard",     roles: ["admin", "médico"] }, //compass
-    { type: "item", name: "Dashboard", icon: "compass", path: "/Dashboard", roles: ["admin", "médico"] },
-    { type: "item", name: "Dashboard", icon: "compass", path: "/Dashboard/Usuario", roles: ["usuario"] },
+    { type: "item", name: "Dashboard", icon: "compass", path: "/Dashboard", roles: ["admin"] },
+    // Dashboard por usuario oculto del sidebar: los roles no privilegiados
+    // van a Agenda en su lugar (ver Dashboard.tsx / App.tsx InicioRedirect).
+    // { type: "item", name: "Dashboard", icon: "compass", path: "/Dashboard/Usuario", roles: ["usuario"] },
     {
       type: "group",
       name: "Personal",

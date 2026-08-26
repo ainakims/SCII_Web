@@ -77,12 +77,12 @@ const Dashboard: React.FC = () => {
   const navigate = useNavigate();
   const { user } = useAuth() as { user: { rol?: string } | null };
 
+  // Dashboard solo para admin: si no lo es, no debe quedarse aquí, va a
+  // Agenda (como estaba antes de la redirección a Dashboard por usuario).
   useEffect(() => {
-    const esPrivilegiado = ["admin", "médico", "medico"].includes(
-      (user?.rol ?? "").toLowerCase().trim()
-    );
+    const esPrivilegiado = (user?.rol ?? "").toLowerCase().trim() === "admin";
     if (!esPrivilegiado) {
-      navigate("/Dashboard/Usuario", { replace: true });
+      navigate("/Agenda", { replace: true });
     }
   }, [user, navigate]);
 
