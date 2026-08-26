@@ -41,6 +41,7 @@ const PAGE_TITLES: PageTitles = {
   '/Documentos':    { label: 'Documentos',    icon: 'mdi-file-document-outline' },
   '/Configuracion': { label: 'Configuración', icon: 'mdi-cog-outline' },
   '/Dashboard': { label: 'Dashboard', icon: 'mdi-folder-account-outline' },
+  '/Dashboard/Usuario': { label: 'Dashboard', icon: 'mdi-view-dashboard-outline' },
 };
 
 // Ruta dinámica /Dashboard/Departamento/:nombre: no tiene una entrada propia
@@ -78,6 +79,9 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
   const page = (nombreDepto || matriculaPaciente || matriculaReingreso || matriculaIndicadores) ? PAGE_TITLES[seccionBase] : PAGE_TITLES[location.pathname];
 
   const { user, logout } = useAuth() as { user: User; logout: () => void };
+
+  const esDashboardUsuario = location.pathname === "/Dashboard/Usuario";
+  const primerNombre = (user?.nombre ?? "").trim().split(/\s+/)[0] || "";
 
   const navigate = useNavigate();
 
@@ -131,6 +135,8 @@ const Topbar: FC<TopbarProps> = ({ toggleSidebar, isCollapsed }) => {
                     })()}
                   </span>
                 </>
+              ) : esDashboardUsuario ? (
+                <span className="text-sea-blue">{`Bienvenido, ${primerNombre}!`}</span>
               ) : (
                 <span className="text-sea-blue">{page.label}</span>
               )}

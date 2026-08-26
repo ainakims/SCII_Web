@@ -355,18 +355,31 @@ const Login: React.FC = () => {
           //   backgroundPosition: "center",
           // }}
         >
-          <div className="absolute inset-0  bg-radial from-sky-blue to-sea-blue opacity-90"></div>
+          <style>{`
+            @keyframes tunnelPulse {
+              0%   { transform: scale(0.6) rotate(0deg);   opacity: 0.55; }
+              50%  { transform: scale(1.3) rotate(180deg); opacity: 0.9;  }
+              100% { transform: scale(0.6) rotate(360deg); opacity: 0.55; }
+            }
+            .tunnel-ring {
+              position: absolute;
+              inset: -20%;
+              border-radius: 9999px;
+              animation: tunnelPulse 9s ease-in-out infinite;
+            }
+          `}</style>
+          <div className="absolute inset-0 bg-radial from-sky-blue to-sea-blue opacity-90"></div>
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="tunnel-ring bg-radial from-sky-blue/60 via-sea-blue/40 to-transparent" style={{ animationDelay: "0s" }}></div>
+            <div className="tunnel-ring bg-radial from-sea-blue/50 via-sky-blue/30 to-transparent" style={{ animationDelay: "-3s" }}></div>
+            <div className="tunnel-ring bg-radial from-sky-blue/40 via-sea-blue/20 to-transparent" style={{ animationDelay: "-6s" }}></div>
+          </div>
           <div className="relative z-10 text-center text-white">
             <img
               src={tngsano}
               draggable={false}
               className="w-full h-auto max-w-100 mx-auto rounded-2xl mb-4"
             />
-            <p className="italic text-blue-100 text-sm mt-9">
-              Agenda, gestiona y controla tus <b>citas médicas</b>.
-            </p>
-            {/* <div className="h-20 flex flex-col items-center justify-center relative overflow-hidden shrink-0">
-            </div> */}
           </div>
         </div>
 

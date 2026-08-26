@@ -55,6 +55,7 @@ const Sidebar: FC<SidebarProps> = ({ isCollapsed }) => {
   const menuEntries: MenuEntry[] = [
     // { name: "Dashboard",     icon: "view-dashboard",          path: "/Dashboard",     roles: ["admin", "médico"] }, //compass
     { type: "item", name: "Dashboard", icon: "compass", path: "/Dashboard", roles: ["admin", "médico"] },
+    { type: "item", name: "Dashboard", icon: "compass", path: "/Dashboard/Usuario", roles: ["usuario"] },
     {
       type: "group",
       name: "Personal",

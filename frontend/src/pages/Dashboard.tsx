@@ -3,6 +3,7 @@ import { fetchWithAuth } from "../services/api";
 import React, { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import Swal from "sweetalert2";
+import { useAuth } from "../context/AuthToken";
 
 import { RegistroValidado, RegistroConsultaValidado } from "../features/saludPoblacional/types";
 import { construirEstadoActual } from "../features/saludPoblacional/analytics";
@@ -74,6 +75,17 @@ const TITULO_DEPARTAMENTOS = {
 // Reingresos.tsx, accesibles desde el sidebar).
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
+  const { user } = useAuth() as { user: { rol?: string } | null };
+
+  useEffect(() => {
+    const esPrivilegiado = ["admin", "médico", "medico"].includes(
+      (user?.rol ?? "").toLowerCase().trim()
+    );
+    if (!esPrivilegiado) {
+      navigate("/Dashboard/Usuario", { replace: true });
+    }
+  }, [user, navigate]);
+
   const [registros, setRegistros] = useState<RegistroValidado[]>([]);
   const [loading, setLoading] = useState(true);
 

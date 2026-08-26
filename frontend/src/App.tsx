@@ -19,6 +19,7 @@ import Incapacidad from './pages/Incapacidad';
 import Configuracion from './pages/Configuracion';
 import SaludPoblacional from './pages/SaludPoblacional';
 import Dashboard from './pages/Dashboard';
+import DashboardUsuario from './pages/DashboardUsuario';
 import DashboardDepartamento from './pages/DashboardDepartamento';
 import AnalisisIndividual from './pages/AnalisisIndividual';
 
@@ -77,6 +78,7 @@ function App() {
             <Route path="Configuracion" element={<Configuracion />} />
             <Route path="SaludPoblacional" element={<SaludPoblacional />} />
             <Route path="Dashboard" element={<Dashboard />} />
+            <Route path="Dashboard/Usuario" element={<DashboardUsuario />} />
             <Route path="Dashboard/Departamento/:nombre" element={<DashboardDepartamento />} />
             <Route path="*" element={<InicioRedirect />} />
           </Route>
