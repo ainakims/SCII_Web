@@ -35,7 +35,9 @@ import Login from './pages/LoginToken';
 // en vez de una pantalla en blanco.
 const InicioRedirect: React.FC = () => {
   const { user } = useAuth() as { user: { rol?: string } | null };
-  const esPrivilegiado = (user?.rol ?? "").toLowerCase().trim() === "admin";
+  const esPrivilegiado = ["admin", "médico", "medico"].includes(
+    (user?.rol ?? "").toLowerCase().trim()
+  );
   return <Navigate to={esPrivilegiado ? "/Dashboard" : "/Agenda"} replace />;
 };
 
